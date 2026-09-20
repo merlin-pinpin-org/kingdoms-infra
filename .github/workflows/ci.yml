@@ -125,24 +125,30 @@ jobs:
           ])
           db.guilds.insertOne({ _id: "guild-1", locale: "fr", channel_categories: { admin: "123" } })
           JS
+          docker compose exec -T kingdoms-redis redis-cli MSET workflow:wf-1:step "ask_name" workflow:wf-2:step "confirm" session:user-1 "abc123"
 
-      - name: Capture reference counts and checksum
+      - name: Capture reference state (MongoDB and Redis)
         working-directory: deploy/dev
         run: |
           echo "COUNT=$(docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.countDocuments({})')" >> "$GITHUB_ENV"
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/reference.json
+          docker compose exec -T kingdoms-redis redis-cli --raw MGET workflow:wf-1:step workflow:wf-2:step session:user-1 > /tmp/reference-redis.txt
 
       - name: Run backup
         env:
           BACKUP_DIR: /tmp/kingdoms-backups
         run: ./scripts/backup_db.sh dev /tmp/kingdoms-backups
 
-      - name: Wipe the database (simulate data loss)
+      - name: Wipe both stores (simulate data loss)
         working-directory: deploy/dev
-        run: docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.dropDatabase()'
+        run: |
+          docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.dropDatabase()'
+          docker compose exec -T kingdoms-redis redis-cli FLUSHALL
 
-      - name: Restore the backup
-        run: ./scripts/restore_db.sh dev "$(ls -1t /tmp/kingdoms-backups/dev-*.archive.gz | head -n 1)" --yes
+      - name: Restore the backup (MongoDB + Redis)
+        run: |
+          BACKUP_PREFIX="$(ls -1t /tmp/kingdoms-backups/dev-*.archive.gz | head -n 1 | sed 's/\.archive\.gz$//')"
+          ./scripts/restore_db.sh dev "${BACKUP_PREFIX}.archive.gz" --yes
 
       - name: Verify the restored data matches the reference
         working-directory: deploy/dev
