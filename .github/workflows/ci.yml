@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: ShellCheck
-        uses: ludeeus/action-shellcheck@master
-        with:
-          severity: warning
+        run: shellcheck --severity=warning scripts/*.sh docker/entrypoint.sh
 
   compose:
     name: Validate compose manifests
