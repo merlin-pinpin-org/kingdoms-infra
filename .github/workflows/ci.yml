@@ -158,6 +158,8 @@ jobs:
           test "${RESTORED_COUNT}" = "${COUNT}"
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/restored.json
           diff /tmp/reference.json /tmp/restored.json
+          docker compose exec -T kingdoms-redis redis-cli --raw MGET workflow:wf-1:step workflow:wf-2:step session:user-1 > /tmp/restored-redis.txt
+          diff /tmp/reference-redis.txt /tmp/restored-redis.txt
           echo "BACKUP/RESTORE ROUND-TRIP OK (MongoDB + Redis)"
 
       - name: Verify rollback script restores the latest backup
