@@ -51,7 +51,7 @@ For a manual, reproducible deployment (test only, e.g. on the VPS):
 
 ```bash
 cp deploy/test/.env.example deploy/test/.env
-./scripts/deploy.sh dev
+./scripts/deploy.sh test
 ```
 
 `scripts/deploy.sh` is idempotent: re-running it on a deployed environment
