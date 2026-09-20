@@ -26,12 +26,12 @@ enabled later by provisioning their `.env` file — nothing else to install.
 
 - A VPS instance (any provider: OVH, Scaleway, Hetzner, DigitalOcean…)
   with at least **2 GB of RAM** and **20 GB of disk**.
-- Ubuntu Server **24.04 LTS** as the operating system (the commands below
+- Ubuntu Server **26.04 LTS** as the operating system (the commands below
   assume it; see [Ubuntu Server download](https://ubuntu.com/download/server)).
 - The SSH key or root password the provider gave you.
 
-Why Ubuntu 24.04 LTS: it is a long-term support release (security
-updates until 2029), and every tool below documents it first.
+Why Ubuntu 26.04 LTS: it is the current long-term support release
+(security updates until 2031), and every tool below documents it first.
 
 ## 1. First login and initial hardening
 
