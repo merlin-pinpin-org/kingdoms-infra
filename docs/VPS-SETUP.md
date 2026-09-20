@@ -50,7 +50,8 @@ apt update && apt upgrade -y
 ```
 
 Create a dedicated user for the Kingdoms deployment (never run services
-as root — [why](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-24-04)):
+as root — see the
+[Ubuntu Server security guide](https://documentation.ubuntu.com/server/how-to/security/introduction/)):
 
 ```bash
 adduser --disabled-password --gecos "" kingdoms
