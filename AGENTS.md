@@ -17,7 +17,8 @@ for the Kingdoms Discord bot platform.
 
 - **Read first:** [kingdoms/docs/VIBEWORKFLOW.md](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/VIBEWORKFLOW.md)
   describes the operating model (roles, session loop, approvals).
-- All code and comments are written in **English**.
+- All code, comments, documentation, commit messages, PR titles and PR
+  descriptions are written in **English**.
 - Never merge to `main`, tag, or release without explicit developer approval.
 - Never commit secrets: use `.env.example` templates; real credentials live
   only on the VPS or in GitHub secrets.
@@ -29,6 +30,10 @@ for the Kingdoms Discord bot platform.
   (source of truth) before merge.
 - Verify all shell scripts with `bash -n` and shellcheck (if available)
   before pushing.
+- **A required status check never uses a `paths:` filter**: it must report
+  on every PR, or GitHub blocks the merge of the PRs it silently skipped
+  (fixed for `check-infra.yml`; applies to every workflow backing a
+  required check).
 - **Sandbox limits are covered by GitHub Actions**: anything that cannot run
   in the dev sandbox (Docker Compose boot, `compose config`, stack
   healthchecks, backup/restore round-trips, entrypoint runs) must be
