@@ -12,11 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check env templates exist
+      - name: Check manifests fail closed without DISCORD_TOKEN
         run: |
           for env in test staging prod; do
-            echo "Checking deploy/${env}/.env.example"
-            test -f "deploy/${env}/.env.example"
+            echo "Checking deploy/${env} rejects a missing DISCORD_TOKEN"
+            if docker compose -f "deploy/${env}/docker-compose.yml" config --quiet 2>/dev/null; then
+              echo "deploy/${env} must fail without DISCORD_TOKEN" >&2
+              exit 1
+            fi
           done
       - name: Check deploy scripts are executable
         run: |
