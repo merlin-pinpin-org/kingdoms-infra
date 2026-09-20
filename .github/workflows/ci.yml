@@ -21,39 +21,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate dev manifest
+      - name: Validate test manifest
         run: |
-          cp deploy/dev/.env.example deploy/dev/.env
-          docker compose -f deploy/dev/docker-compose.yml config --quiet
+          DISCORD_TOKEN=ci-placeholder \
+            docker compose -f deploy/test/docker-compose.yml config --quiet
       - name: Validate staging manifest
         run: |
-          cp deploy/staging/.env.example deploy/staging/.env
-          docker compose -f deploy/staging/docker-compose.yml config --quiet
+          DISCORD_TOKEN=ci-placeholder \
+            docker compose -f deploy/staging/docker-compose.yml config --quiet
       - name: Validate prod manifest
         run: |
-          cp deploy/prod/.env.example deploy/prod/.env
-          docker compose -f deploy/prod/docker-compose.yml config --quiet
+          DISCORD_TOKEN=ci-placeholder \
+          KINGDOMS_BOT_IMAGE=ghcr.io/merlin-pinpin/kingdoms-services:v0.0.0-ci \
+            docker compose -f deploy/prod/docker-compose.yml config --quiet
 
   smoke:
-    name: Smoke test (dev stack boot)
+    name: Smoke test (test stack boot)
     runs-on: ubuntu-latest
+    env:
+      DISCORD_TOKEN: ci-placeholder
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start the dev stack (bot service excluded)
-        working-directory: deploy/dev
+      - name: Start the test stack (bot service excluded)
+        working-directory: deploy/test
         run: |
-          cp .env.example .env
           docker compose up -d kingdoms-mongo kingdoms-redis
 
       - name: Wait for MongoDB and Redis healthchecks
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
           timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-redis)")" = "healthy" ]; do sleep 3; done'
 
       - name: Smoke check from a bot-like container
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           mkdir -p /tmp/kingdoms-smoke
           cat > /tmp/kingdoms-smoke/smoke.py <<'PY'
@@ -88,33 +90,34 @@ jobs:
 
       - name: Show stack logs on failure
         if: failure()
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: docker compose logs || true
 
       - name: Tear down the stack
         if: always()
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: docker compose down -v || true
 
   backup-restore:
     name: Backup/restore round-trip test
     runs-on: ubuntu-latest
+    env:
+      DISCORD_TOKEN: ci-placeholder
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start the dev stack (bot service excluded)
-        working-directory: deploy/dev
+      - name: Start the test stack (bot service excluded)
+        working-directory: deploy/test
         run: |
-          cp .env.example .env
           docker compose up -d kingdoms-mongo kingdoms-redis
 
       - name: Wait for MongoDB healthcheck
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
 
       - name: Seed reference data
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms <<'JS'
           db.users.insertMany([
@@ -127,7 +130,7 @@ jobs:
           docker compose exec -T kingdoms-redis redis-cli MSET workflow:wf-1:step "ask_name" workflow:wf-2:step "confirm" session:user-1 "abc123"
 
       - name: Capture reference state (MongoDB and Redis)
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           echo "COUNT=$(docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.countDocuments({})')" >> "$GITHUB_ENV"
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/reference.json
@@ -136,21 +139,21 @@ jobs:
       - name: Run backup
         env:
           BACKUP_DIR: /tmp/kingdoms-backups
-        run: ./scripts/backup_db.sh dev /tmp/kingdoms-backups
+        run: ./scripts/backup_db.sh test /tmp/kingdoms-backups
 
       - name: Wipe both stores (simulate data loss)
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.dropDatabase()'
           docker compose exec -T kingdoms-redis redis-cli FLUSHALL
 
       - name: Restore the backup (MongoDB + Redis)
         run: |
-          BACKUP_PREFIX="$(ls -1t /tmp/kingdoms-backups/dev-*.archive.gz | head -n 1 | sed 's/\.archive\.gz$//')"
-          ./scripts/restore_db.sh dev "${BACKUP_PREFIX}.archive.gz" --yes
+          BACKUP_PREFIX="$(ls -1t /tmp/kingdoms-backups/test-*.archive.gz | head -n 1 | sed 's/\.archive\.gz$//')"
+          ./scripts/restore_db.sh test "${BACKUP_PREFIX}.archive.gz" --yes
 
       - name: Verify the restored data matches the reference
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           RESTORED_COUNT="$(docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.countDocuments({})')"
           echo "Reference count: ${COUNT}, restored count: ${RESTORED_COUNT}"
@@ -162,11 +165,11 @@ jobs:
           echo "BACKUP/RESTORE ROUND-TRIP OK (MongoDB + Redis)"
 
       - name: Verify rollback script restores the latest backup
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: |
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.deleteOne({_id: "user-3"})'
           docker compose exec -T kingdoms-redis redis-cli DEL session:user-1
-          BACKUP_DIR=/tmp/kingdoms-backups "${GITHUB_WORKSPACE}/scripts/rollback.sh" dev "" --auto
+          BACKUP_DIR=/tmp/kingdoms-backups "${GITHUB_WORKSPACE}/scripts/rollback.sh" test "" --auto
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/after-rollback.json
           diff /tmp/reference.json /tmp/after-rollback.json
           docker compose exec -T kingdoms-redis redis-cli --raw MGET workflow:wf-1:step workflow:wf-2:step session:user-1 > /tmp/after-rollback-redis.txt
@@ -175,10 +178,10 @@ jobs:
 
       - name: Show stack logs on failure
         if: failure()
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: docker compose logs || true
 
       - name: Tear down the stack
         if: always()
-        working-directory: deploy/dev
+        working-directory: deploy/test
         run: docker compose down -v || true

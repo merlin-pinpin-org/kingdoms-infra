@@ -10,9 +10,14 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(dev staging prod)
-ENVIRONMENT="${1:-dev}"
+ENVIRONMENTS=(test staging prod)
+ENVIRONMENT="${1:-test}"
+# Allow a bare archive name resolved against BACKUP_DIR (CD passes the
+# persistent backup directory this way).
 MONGO_ARCHIVE="${2:-}"
+if [[ -n "${MONGO_ARCHIVE}" && ! -f "${MONGO_ARCHIVE}" && -f "${BACKUP_DIR:-${REPO_ROOT}/backups}/${MONGO_ARCHIVE}" ]]; then
+    MONGO_ARCHIVE="${BACKUP_DIR:-${REPO_ROOT}/backups}/${MONGO_ARCHIVE}"
+fi
 CONFIRM="${3:-}"
 COMPOSE_FILE="${REPO_ROOT}/deploy/${ENVIRONMENT}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"

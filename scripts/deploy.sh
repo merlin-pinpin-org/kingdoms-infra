@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Deploy the Kingdoms stack to a target environment (dev, staging, prod).
+# Deploy the Kingdoms stack to a target environment (test, staging, prod).
 # Idempotent, with mandatory pre-deploy backup and post-deploy health gate.
 
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(dev staging prod)
-ENVIRONMENT="${1:-dev}"
+ENVIRONMENTS=(test staging prod)
+ENVIRONMENT="${1:-test}"
 ENV_DIR="${REPO_ROOT}/deploy/${ENVIRONMENT}"
 COMPOSE_FILE="${ENV_DIR}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"
@@ -24,9 +24,11 @@ die() { echo "[deploy:${ENVIRONMENT}] ERROR: $*" >&2; exit 1; }
 [[ " ${ENVIRONMENTS[*]} " == *" ${ENVIRONMENT} "* ]] || usage
 [[ -f "${COMPOSE_FILE}" ]] || die "missing compose file: ${COMPOSE_FILE}"
 
-if [[ ! -f "${ENV_DIR}/.env" ]]; then
-    die "missing ${ENV_DIR}/.env (copy it from .env.example and fill in secrets)"
-fi
+# Secrets come from the CD pipeline environment (GitHub environment
+# secrets); nothing secret is stored on the VPS. Compose substitution
+# fails closed on a missing DISCORD_TOKEN.
+[[ -n "${DISCORD_TOKEN:-}" ]] \
+    || die "DISCORD_TOKEN is not set (provide it via the GitHub environment secrets)"
 
 cd "${ENV_DIR}"
 

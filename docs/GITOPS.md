@@ -10,8 +10,9 @@ the deployed state converges to them through automation.
    manifest in `deploy/` and its documented variables.
 2. **Versioned and immutable**: every environment change goes through a pull
    request; the manifests reviewed are the manifests applied.
-3. **Pulled automatically**: CI/CD (`.github/workflows/cd.yml`) applies the
-   manifests after merge — nobody applies changes by hand on the VPS.
+3. **Pulled automatically**: CD (`.github/workflows/cd.yml`) applies the
+   manifests after merge, executed by a self-hosted runner on the VPS
+   (see [VPS-SETUP.md](VPS-SETUP.md)) — nobody applies changes by hand.
 4. **Continuously reconciled**: `scripts/deploy.sh` is idempotent; re-running
    it converges the environment to the manifest state.
 

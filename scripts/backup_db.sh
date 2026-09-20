@@ -8,9 +8,11 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(dev staging prod)
-ENVIRONMENT="${1:-dev}"
-BACKUP_DIR="${2:-${REPO_ROOT}/backups}"
+ENVIRONMENTS=(test staging prod)
+ENVIRONMENT="${1:-test}"
+# The backup directory must survive repo checkouts: CD passes a
+# persistent path via the BACKUP_DIR variable (VPS-SETUP.md).
+BACKUP_DIR="${2:-${BACKUP_DIR:-${REPO_ROOT}/backups}}"
 COMPOSE_FILE="${REPO_ROOT}/deploy/${ENVIRONMENT}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"
 REDIS_SERVICE="kingdoms-redis"
