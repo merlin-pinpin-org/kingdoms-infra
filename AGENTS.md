@@ -19,7 +19,8 @@ for the Kingdoms Discord bot platform.
   describes the operating model (roles, session loop, approvals).
 - All code, comments, documentation, commit messages, PR titles and PR
   descriptions are written in **English**.
-- Never merge to `main`, tag, or release without explicit developer approval.
+- Merges to `main`, tags and releases are gated by the repository rulesets
+  and required checks (enforced by GitHub, not by this document).
 - Never commit secrets: use `.env.example` templates; real credentials live
   only on the VPS or in GitHub secrets.
 - Deployment is **GitOps-driven**: changes to `deploy/` are applied by
@@ -44,6 +45,12 @@ for the Kingdoms Discord bot platform.
   (e.g. `kingdoms-infra#2`) since cross-repo references are common.
 - Link PRs to their issue with a closing keyword in the description
   (`Closes #N`).
+- **Anyone can run the local checks** (`bash -n`, shellcheck on scripts,
+  `docker compose config`): they require public clones only, no
+  credentials.
+- Authorized contributors (per the GitHub environment protection rules)
+  can deploy to the **dev** environment; higher environments are gated by
+  their own deployment triggers.
 
 ## Session checklist (do this by default)
 
