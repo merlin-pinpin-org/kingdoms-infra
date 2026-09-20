@@ -29,6 +29,11 @@ for the Kingdoms Discord bot platform.
   (source of truth) before merge.
 - Verify all shell scripts with `bash -n` and shellcheck (if available)
   before pushing.
+- **Sandbox limits are covered by GitHub Actions**: anything that cannot run
+  in the dev sandbox (Docker Compose boot, `compose config`, stack
+  healthchecks, backup/restore round-trips, entrypoint runs) must be
+  exercised by a CI workflow instead. When a check cannot run locally, add
+  or extend the workflow that validates it — never leave it unverified.
 - Keep the documentation in `kingdoms` in sync: a change without its doc
   update is incomplete. Reference issues fully qualified
   (e.g. `kingdoms-infra#2`) since cross-repo references are common.
