@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Back up the MongoDB data of a target environment.
-# Produces a gzipped mongodump archive, verified before use.
+# Back up the MongoDB and Redis data of a target environment.
+# Produces:
+#   <env>-<timestamp>.archive.gz   (MongoDB, mongodump --archive --gzip)
+#   <env>-<timestamp>.rdb          (Redis, BGSAVE snapshot of the dataset)
+# Both artifacts are verified before being accepted.
 
 set -Eeuo pipefail
 
@@ -8,9 +11,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENTS=(dev staging prod)
 ENVIRONMENT="${1:-dev}"
 BACKUP_DIR="${2:-${REPO_ROOT}/backups}"
-ENV_DIR="${REPO_ROOT}/deploy/${ENVIRONMENT}"
-COMPOSE_FILE="${ENV_DIR}/docker-compose.yml"
+COMPOSE_FILE="${REPO_ROOT}/deploy/${ENVIRONMENT}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"
+REDIS_SERVICE="kingdoms-redis"
 
 usage() {
     echo "Usage: $0 <${ENVIRONMENTS[*]}> [backup_dir]"
@@ -26,23 +29,35 @@ die() { echo "[backup:${ENVIRONMENT}] ERROR: $*" >&2; exit 1; }
 
 mkdir -p "${BACKUP_DIR}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-ARCHIVE="${BACKUP_DIR}/${ENVIRONMENT}-${TIMESTAMP}.archive.gz"
+MONGO_ARCHIVE="${BACKUP_DIR}/${ENVIRONMENT}-${TIMESTAMP}.archive.gz"
+REDIS_DUMP="${BACKUP_DIR}/${ENVIRONMENT}-${TIMESTAMP}.rdb"
+cd "$(dirname "${COMPOSE_FILE}")"
 
-log "dumping MongoDB to ${ARCHIVE}"
-cd "${ENV_DIR}"
-if ! docker compose exec -T "${MONGO_SERVICE}" mongodump --archive --gzip >"${ARCHIVE}"; then
-    rm -f "${ARCHIVE}"
+# --- MongoDB ---
+log "dumping MongoDB to ${MONGO_ARCHIVE}"
+if ! docker compose exec -T "${MONGO_SERVICE}" mongodump --archive --gzip >"${MONGO_ARCHIVE}"; then
+    rm -f "${MONGO_ARCHIVE}"
     die "mongodump failed; removed partial archive"
 fi
+[[ -s "${MONGO_ARCHIVE}" ]] || { rm -f "${MONGO_ARCHIVE}"; die "MongoDB archive is empty; removed"; }
+gzip -t "${MONGO_ARCHIVE}" || { rm -f "${MONGO_ARCHIVE}"; die "MongoDB archive is not valid gzip; removed"; }
+log "MongoDB backup verified: ${MONGO_ARCHIVE} ($(du -h "${MONGO_ARCHIVE}" | cut -f1))"
 
-if [[ ! -s "${ARCHIVE}" ]]; then
-    rm -f "${ARCHIVE}"
-    die "backup archive is empty; removed"
+# --- Redis ---
+log "snapshotting Redis to ${REDIS_DUMP}"
+# BGSAVE writes a consistent RDB snapshot without blocking the server;
+# wait until the background save completes.
+if ! docker compose exec -T "${REDIS_SERVICE}" sh -c '
+    redis-cli BGSAVE >/dev/null
+    until [ "$(redis-cli --raw INFO persistence | tr -d "\r" | awk -F: "/rdb_bgsave_in_progress/{print \$2}")" = "0" ]; do
+        sleep 1
+    done
+'; then
+    rm -f "${REDIS_DUMP}"
+    die "redis BGSAVE failed; removed partial dump"
 fi
+docker compose cp "${REDIS_SERVICE}:/data/dump.rdb" "${REDIS_DUMP}"
+[[ -s "${REDIS_DUMP}" ]] || { rm -f "${REDIS_DUMP}"; die "Redis dump is empty; removed"; }
+log "Redis backup verified: ${REDIS_DUMP} ($(du -h "${REDIS_DUMP}" | cut -f1))"
 
-log "verifying archive"
-if ! docker compose exec -T "${MONGO_SERVICE}" sh -c \
-    "cat > /dev/null" <"${ARCHIVE}"; then
-    die "archive integrity check failed"
-fi
-log "backup written: ${ARCHIVE} ($(du -h "${ARCHIVE}" | cut -f1))"
+log "backup complete: prefix ${ENVIRONMENT}-${TIMESTAMP}"

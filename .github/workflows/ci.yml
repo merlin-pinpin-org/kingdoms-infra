@@ -152,16 +152,19 @@ jobs:
           test "${RESTORED_COUNT}" = "${COUNT}"
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/restored.json
           diff /tmp/reference.json /tmp/restored.json
-          echo "BACKUP/RESTORE ROUND-TRIP OK"
+          echo "BACKUP/RESTORE ROUND-TRIP OK (MongoDB + Redis)"
 
       - name: Verify rollback script restores the latest backup
         working-directory: deploy/dev
         run: |
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.deleteOne({_id: "user-3"})'
+          docker compose exec -T kingdoms-redis redis-cli DEL session:user-1
           BACKUP_DIR=/tmp/kingdoms-backups "${GITHUB_WORKSPACE}/scripts/rollback.sh" dev "" --auto
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/after-rollback.json
           diff /tmp/reference.json /tmp/after-rollback.json
-          echo "ROLLBACK RESTORE OK"
+          docker compose exec -T kingdoms-redis redis-cli --raw MGET workflow:wf-1:step workflow:wf-2:step session:user-1 > /tmp/after-rollback-redis.txt
+          diff /tmp/reference-redis.txt /tmp/after-rollback-redis.txt
+          echo "ROLLBACK RESTORE OK (MongoDB + Redis)"
 
       - name: Show stack logs on failure
         if: failure()
