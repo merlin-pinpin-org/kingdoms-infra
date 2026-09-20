@@ -15,18 +15,17 @@ deployment scripts.
 
 | Path | Content |
 | ---- | ------- |
-| `deploy/` | Docker Compose manifests per environment (`dev`, `staging`, `prod`) |
+| `deploy/` | Docker Compose manifests per environment (`test`, `staging`, `prod`) |
 | `.github/workflows/` | CI/CD pipelines (lint, test, build, deploy, infra checks) |
 | `scripts/` | Deployment and database backup/restore scripts |
-| `docs/` | Deployment, environments and GitOps guides |
+| `docs/` | Deployment, environments, GitOps and VPS setup guides |
 
 ## Local development
 
 Prerequisites: Docker and Docker Compose.
 
 ```bash
-cp deploy/dev/.env.example deploy/dev/.env
-docker compose -f deploy/dev/docker-compose.yml up -d
+DISCORD_TOKEN=... docker compose -f deploy/test/docker-compose.yml up -d
 ```
 
 This starts the bot (serving `/healthz`), MongoDB and Redis. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
@@ -36,8 +35,12 @@ for the environment matrix.
 ## Deployment overview
 
 Deployment is GitOps-driven: environments are defined by the versioned
-manifests in `deploy/`, and changes are applied by CI/CD — never by hand on
-the VPS. See [docs/GITOPS.md](docs/GITOPS.md).
+manifests in `deploy/`, and changes are applied by the CD pipeline
+(`.github/workflows/cd.yml`) executed by a **self-hosted runner installed
+on the VPS** — never applied by hand. The `test` environment auto-deploys
+on every merge to `main`. See [docs/GITOPS.md](docs/GITOPS.md) for the
+model and [docs/VPS-SETUP.md](docs/VPS-SETUP.md) for the complete
+server installation guide (step by step, no Linux knowledge required).
 
 ## Contributing
 
