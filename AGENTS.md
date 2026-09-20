@@ -29,6 +29,10 @@ for the Kingdoms Discord bot platform.
   (source of truth) before merge.
 - Verify all shell scripts with `bash -n` and shellcheck (if available)
   before pushing.
+- **A required status check never uses a `paths:` filter**: it must report
+  on every PR, or GitHub blocks the merge of the PRs it silently skipped
+  (fixed for `check-infra.yml`; applies to every workflow backing a
+  required check).
 - **Sandbox limits are covered by GitHub Actions**: anything that cannot run
   in the dev sandbox (Docker Compose boot, `compose config`, stack
   healthchecks, backup/restore round-trips, entrypoint runs) must be
