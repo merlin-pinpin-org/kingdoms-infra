@@ -38,14 +38,15 @@ jobs:
   smoke:
     name: Smoke test (test stack boot)
     runs-on: ubuntu-latest
+    env:
+      DISCORD_TOKEN: ci-placeholder
     steps:
       - uses: actions/checkout@v4
 
       - name: Start the test stack (bot service excluded)
         working-directory: deploy/test
         run: |
-          DISCORD_TOKEN=ci-placeholder \
-            docker compose up -d kingdoms-mongo kingdoms-redis
+          docker compose up -d kingdoms-mongo kingdoms-redis
 
       - name: Wait for MongoDB and Redis healthchecks
         working-directory: deploy/test
@@ -100,14 +101,15 @@ jobs:
   backup-restore:
     name: Backup/restore round-trip test
     runs-on: ubuntu-latest
+    env:
+      DISCORD_TOKEN: ci-placeholder
     steps:
       - uses: actions/checkout@v4
 
       - name: Start the test stack (bot service excluded)
         working-directory: deploy/test
         run: |
-          DISCORD_TOKEN=ci-placeholder \
-            docker compose up -d kingdoms-mongo kingdoms-redis
+          docker compose up -d kingdoms-mongo kingdoms-redis
 
       - name: Wait for MongoDB healthcheck
         working-directory: deploy/test
