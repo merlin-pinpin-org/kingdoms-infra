@@ -6,8 +6,8 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(dev staging prod)
-ENVIRONMENT="${1:-dev}"
+ENVIRONMENTS=(test staging prod)
+ENVIRONMENT="${1:-test}"
 ARCHIVE="${2:-}"
 MODE="${3:-}"
 BACKUP_DIR="${BACKUP_DIR:-${REPO_ROOT}/backups}"

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Deploy the Kingdoms stack to a target environment (dev, staging, prod).
+# Deploy the Kingdoms stack to a target environment (test, staging, prod).
 # Idempotent, with mandatory pre-deploy backup and post-deploy health gate.
 
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(dev staging prod)
-ENVIRONMENT="${1:-dev}"
+ENVIRONMENTS=(test staging prod)
+ENVIRONMENT="${1:-test}"
 ENV_DIR="${REPO_ROOT}/deploy/${ENVIRONMENT}"
 COMPOSE_FILE="${ENV_DIR}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"

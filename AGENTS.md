@@ -49,7 +49,7 @@ for the Kingdoms Discord bot platform.
   `docker compose config`): they require public clones only, no
   credentials.
 - Authorized contributors (per the GitHub environment protection rules)
-  can deploy to the **dev** environment; higher environments are gated by
+  can deploy to the **test** environment; higher environments are gated by
   their own deployment triggers.
 
 ## Session checklist (do this by default)

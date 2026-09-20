@@ -8,9 +8,9 @@ Three environments, each defined by a Docker Compose manifest in `deploy/`:
 
 | Environment | Manifest | Purpose |
 | ----------- | -------- | ------- |
-| `dev` | `deploy/dev/docker-compose.yml` | Local development |
-| `staging` | `deploy/staging/docker-compose.yml` | Pre-production validation |
-| `prod` | `deploy/prod/docker-compose.yml` | Production |
+| `test` | `deploy/test/docker-compose.yml` | VPS auto-deploy on merge (validation environment) |
+| `staging` | `deploy/staging/docker-compose.yml` | VPS, manual deploy (workflow_dispatch) |
+| `prod` | `deploy/prod/docker-compose.yml` | VPS, deploy on version tags, pinned image |
 
 Each environment runs the same services:
 
@@ -29,7 +29,11 @@ Each environment runs the same services:
 ## Deploying
 
 Deployment is **GitOps-driven**: changes to `deploy/` are applied by the
-CI/CD pipeline (`.github/workflows/cd.yml`), never by hand on the VPS.
+CD pipeline (`.github/workflows/cd.yml`) running on a **self-hosted
+runner installed on the VPS** — see [VPS-SETUP.md](VPS-SETUP.md) for the
+step-by-step server installation. `test` auto-deploys on every merge to
+`main`; `staging` deploys manually (workflow_dispatch); `prod` deploys on
+version tags with a pinned image.
 
 Every deployment enforces two safety gates:
 
@@ -43,10 +47,10 @@ Every deployment enforces two safety gates:
    whole lifetime of the process; the compose healthcheck probes it and the
    gate reports a crash-looping bot as `unhealthy`.
 
-For a manual, reproducible local deployment (dev only):
+For a manual, reproducible deployment (test only, e.g. on the VPS):
 
 ```bash
-cp deploy/dev/.env.example deploy/dev/.env
+cp deploy/test/.env.example deploy/test/.env
 ./scripts/deploy.sh dev
 ```
 
@@ -56,8 +60,8 @@ converges to the manifest state.
 ## Database backup and restore
 
 ```bash
-./scripts/backup_db.sh dev                # writes backups/dev-<timestamp>.archive.gz
-./scripts/restore_db.sh dev backups/dev-<timestamp>.archive.gz --yes
+./scripts/backup_db.sh test              # writes backups/test-<timestamp>.archive.gz
+./scripts/restore_db.sh test backups/test-<timestamp>.archive.gz --yes
 ```
 
 The round trip is continuously verified: the CI job
@@ -77,8 +81,8 @@ previous committed revision when git is available, and re-applies the
 stack:
 
 ```bash
-./scripts/rollback.sh dev                              # latest backup, interactive
-./scripts/rollback.sh dev backups/dev-...archive.gz    # specific archive
+./scripts/rollback.sh test                              # latest backup, interactive
+./scripts/rollback.sh test backups/test-...archive.gz  # specific archive
 ```
 
 Rollback is also the automatic recovery path of `deploy.sh`: when the
