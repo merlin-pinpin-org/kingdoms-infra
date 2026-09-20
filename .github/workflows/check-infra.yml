@@ -1,11 +1,10 @@
 name: Check infra
 
+# Runs on every PR: a required status check must report on every pull request,
+# or it blocks the merge of PRs it silently skipped (paths filter).
+
 on:
   pull_request:
-    paths:
-      - "docker/**"
-      - "deploy/**"
-      - "scripts/**"
 
 jobs:
   check:
