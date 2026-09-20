@@ -1,11 +1,12 @@
 # Production environment. Secrets are injected via the .env file provisioned
 # on the host (never committed) or by the CD pipeline (kingdoms-infra#2).
+# The bot image tag is pinned: deployments and rollbacks move the tag on
+# purpose, never implicitly.
 
 services:
   kingdoms-bot:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be set, e.g. ghcr.io/merlin-pinpin/kingdoms-services:v0.1.0}
+    pull_policy: always
     env_file:
       - .env
     environment:

@@ -21,9 +21,13 @@ the deployed state converges to them through automation.
 flowchart LR
     PR["Pull request touching deploy/"] --> REVIEW["Developer review"]
     REVIEW --> MERGE["Merge to main"]
-    MERGE --> CI["CI: shellcheck, compose validation, build"]
+    MERGE --> CI["CI: shellcheck, compose validation, smoke, backup/restore round-trip"]
     CI --> CD["CD: apply manifests to the target environment"]
-    CD --> STACK["Bot + MongoDB + Redis"]
+    CD --> BACKUP["Mandatory pre-deploy backup"]
+    BACKUP --> GATE["Post-deploy health gate"]
+    GATE -->|"healthy"| STACK["Bot + MongoDB + Redis"]
+    GATE -->|"unhealthy"| ROLLBACK["Automatic rollback"]
+    ROLLBACK --> STACK
 ```
 
 1. A change to `docker/`, `deploy/` or `scripts/` opens a PR; the
@@ -36,5 +40,8 @@ flowchart LR
 
 Because state is versioned, rollback is a git operation: revert the commit
 (or deploy a previous tag) and let the pipeline re-apply the previous
-manifest. Data-level rollback uses the database backups
-(`scripts/backup_db.sh`, `scripts/restore_db.sh`).
+manifest. Data-level rollback uses the database backups — every deployment
+produces one *before* touching the stack, and `scripts/rollback.sh` restores
+the latest one (or a given archive) as its recovery path. The CI job
+`Backup/restore round-trip test` continuously verifies that a backup can be
+restored byte-for-byte.

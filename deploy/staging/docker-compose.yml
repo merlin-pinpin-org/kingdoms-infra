@@ -3,9 +3,8 @@
 
 services:
   kingdoms-bot:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: ghcr.io/merlin-pinpin/kingdoms-services:main
+    pull_policy: always
     env_file:
       - .env
     environment:

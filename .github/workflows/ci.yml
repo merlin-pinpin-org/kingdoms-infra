@@ -95,3 +95,77 @@ jobs:
         if: always()
         working-directory: deploy/dev
         run: docker compose down -v || true
+
+  backup-restore:
+    name: Backup/restore round-trip test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the dev stack (bot service excluded)
+        working-directory: deploy/dev
+        run: |
+          cp .env.example .env
+          docker compose up -d kingdoms-mongo kingdoms-redis
+
+      - name: Wait for MongoDB healthcheck
+        working-directory: deploy/dev
+        run: |
+          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
+
+      - name: Seed reference data
+        working-directory: deploy/dev
+        run: |
+          docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms <<'JS'
+          db.users.insertMany([
+            { _id: "user-1", platform: "discord", display_name: "PlayerOne", rating: 1200 },
+            { _id: "user-2", platform: "discord", display_name: "PlayerTwo", rating: 980 },
+            { _id: "user-3", platform: "discord", display_name: "PlayerThree", rating: 1050 }
+          ])
+          db.guilds.insertOne({ _id: "guild-1", locale: "fr", channel_categories: { admin: "123" } })
+          JS
+
+      - name: Capture reference counts and checksum
+        working-directory: deploy/dev
+        run: |
+          echo "COUNT=$(docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.countDocuments({})')" >> "$GITHUB_ENV"
+          docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/reference.json
+
+      - name: Run backup
+        run: ./scripts/backup_db.sh dev /tmp/kingdoms-backups
+
+      - name: Wipe the database (simulate data loss)
+        working-directory: deploy/dev
+        run: docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.dropDatabase()'
+
+      - name: Restore the backup
+        run: ./scripts/restore_db.sh dev "$(ls -1t /tmp/kingdoms-backups/dev-*.archive.gz | head -n 1)" --yes
+
+      - name: Verify the restored data matches the reference
+        working-directory: deploy/dev
+        run: |
+          RESTORED_COUNT="$(docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.countDocuments({})')"
+          echo "Reference count: ${COUNT}, restored count: ${RESTORED_COUNT}"
+          test "${RESTORED_COUNT}" = "${COUNT}"
+          docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/restored.json
+          diff /tmp/reference.json /tmp/restored.json
+          echo "BACKUP/RESTORE ROUND-TRIP OK"
+
+      - name: Verify rollback script restores the latest backup
+        working-directory: deploy/dev
+        run: |
+          docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.deleteOne({_id: "user-3"})'
+          ./scripts/rollback.sh dev "" --auto
+          docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/after-rollback.json
+          diff /tmp/reference.json /tmp/after-rollback.json
+          echo "ROLLBACK RESTORE OK"
+
+      - name: Show stack logs on failure
+        if: failure()
+        working-directory: deploy/dev
+        run: docker compose logs || true
+
+      - name: Tear down the stack
+        if: always()
+        working-directory: deploy/dev
+        run: docker compose down -v || true
