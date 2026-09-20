@@ -30,7 +30,7 @@ flowchart LR
     ROLLBACK --> STACK
 ```
 
-1. A change to `docker/`, `deploy/` or `scripts/` opens a PR; the
+1. A change to `deploy/` or `scripts/` opens a PR; the
    `Check infra` and `CI` workflows validate it.
 2. After merge to `main`, `CD` applies the new state.
 3. Secrets are injected from the host `.env` (provisioned once) or GitHub

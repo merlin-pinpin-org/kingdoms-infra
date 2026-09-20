@@ -14,7 +14,7 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: ShellCheck
-        run: shellcheck --severity=warning scripts/*.sh docker/entrypoint.sh
+        run: shellcheck --severity=warning scripts/*.sh
 
   compose:
     name: Validate compose manifests
@@ -27,13 +27,12 @@ jobs:
           docker compose -f deploy/dev/docker-compose.yml config --quiet
       - name: Validate staging manifest
         run: |
-          cp deploy/dev/.env.example deploy/staging/.env
+          cp deploy/staging/.env.example deploy/staging/.env
           docker compose -f deploy/staging/docker-compose.yml config --quiet
       - name: Validate prod manifest
         run: |
-          cp deploy/dev/.env.example deploy/prod/.env
-          KINGDOMS_BOT_IMAGE=ghcr.io/merlin-pinpin/kingdoms-services:v0.0.0-ci \
-            docker compose -f deploy/prod/docker-compose.yml config --quiet
+          cp deploy/prod/.env.example deploy/prod/.env
+          docker compose -f deploy/prod/docker-compose.yml config --quiet
 
   smoke:
     name: Smoke test (dev stack boot)
