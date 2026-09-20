@@ -9,8 +9,7 @@ ENVIRONMENTS=(dev staging prod)
 ENVIRONMENT="${1:-dev}"
 ARCHIVE="${2:-}"
 CONFIRM="${3:-}"
-ENV_DIR="${REPO_ROOT}/deploy/${ENVIRONMENT}"
-COMPOSE_FILE="${ENV_DIR}/docker-compose.yml"
+COMPOSE_FILE="${REPO_ROOT}/deploy/${ENVIRONMENT}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"
 
 usage() {
@@ -35,6 +34,6 @@ if [[ "${CONFIRM}" != "--yes" ]]; then
 fi
 
 log "restoring ${ARCHIVE}"
-cd "${ENV_DIR}"
+cd "$(dirname "${COMPOSE_FILE}")"
 docker compose exec -T "${MONGO_SERVICE}" mongorestore --archive --gzip --drop <"${ARCHIVE}"
 log "restore complete"
