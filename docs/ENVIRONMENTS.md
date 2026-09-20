@@ -17,6 +17,8 @@ is the environment matrix; the deployment procedure lives in
 | Bot memory limit | — | — | 512M |
 | Deploy trigger | manual (`scripts/deploy.sh`) | CD pipeline | CD pipeline (tag) |
 | Pre-deploy backup | mandatory | mandatory | mandatory |
+| Env template | `deploy/dev/.env.example` | `deploy/staging/.env.example` | `deploy/prod/.env.example` |
+| Bot healthcheck | `/healthz` (compose + image) | `/healthz` (compose + image) | `/healthz` (compose + image) |
 
 ## Configuration variables
 

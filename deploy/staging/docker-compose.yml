@@ -10,6 +10,15 @@ services:
     environment:
       MONGO_URI: mongodb://kingdoms-mongo:27017
       REDIS_URI: redis://kingdoms-redis:6379
+    healthcheck:
+      # The image HEALTHCHECK also probes /healthz; the explicit compose
+      # healthcheck makes the deployment health gate (scripts/deploy.sh)
+      # observable: a crash-looping bot is reported unhealthy here.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       kingdoms-mongo:
         condition: service_healthy

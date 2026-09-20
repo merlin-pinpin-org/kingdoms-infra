@@ -12,13 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check Dockerfiles
-        run: |
-          for f in docker/Dockerfile docker/Dockerfile.test; do
-            echo "Checking $f"
-            grep -q "^FROM" "$f"
-          done
-      - name: Check entrypoint is executable
-        run: test -x docker/entrypoint.sh
       - name: Check env templates exist
-        run: test -f deploy/dev/.env.example
+        run: |
+          for env in dev staging prod; do
+            echo "Checking deploy/${env}/.env.example"
+            test -f "deploy/${env}/.env.example"
+          done
+      - name: Check deploy scripts are executable
+        run: |
+          for script in scripts/*.sh; do
+            echo "Checking ${script}"
+            test -x "${script}"
+          done
+      - name: Check bot services declare a healthcheck
+        run: |
+          for env in dev staging prod; do
+            echo "Checking kingdoms-bot healthcheck in deploy/${env}"
+            grep -q "healthcheck:" "deploy/${env}/docker-compose.yml"
+            grep -q "healthz" "deploy/${env}/docker-compose.yml"
+          done
