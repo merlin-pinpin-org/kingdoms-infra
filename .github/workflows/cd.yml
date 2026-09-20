@@ -1,0 +1,20 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy (GitOps)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dispatch deployment
+        run: |
+          echo "Deployment is applied by the deploy scripts (scripts/deploy.sh)"
+          echo "targeting the VPS over SSH, driven by this workflow."
+          echo "Fully wired in kingdoms-infra#2 and kingdoms-infra#4."

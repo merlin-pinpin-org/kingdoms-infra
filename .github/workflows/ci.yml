@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint scripts and shell files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+
+  compose:
+    name: Validate compose manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dev manifest
+        run: docker compose -f deploy/dev/docker-compose.yml config --quiet
+      - name: Validate staging manifest
+        run: docker compose -f deploy/staging/docker-compose.yml config --quiet
+      - name: Validate prod manifest
+        run: docker compose -f deploy/prod/docker-compose.yml config --quiet
+
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build bot image
+        run: docker build -f docker/Dockerfile .

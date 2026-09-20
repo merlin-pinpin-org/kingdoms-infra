@@ -1,0 +1,50 @@
+# Production environment. Secrets are injected via the .env file provisioned
+# on the host (never committed) or by the CD pipeline (kingdoms-infra#2).
+
+services:
+  kingdoms-bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      REDIS_URI: redis://kingdoms-redis:6379
+    depends_on:
+      kingdoms-mongo:
+        condition: service_healthy
+      kingdoms-redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  kingdoms-mongo:
+    image: mongo:7.0
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  kingdoms-redis:
+    image: redis:7.2
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:
