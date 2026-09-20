@@ -17,7 +17,8 @@ for the Kingdoms Discord bot platform.
 
 - **Read first:** [kingdoms/docs/VIBEWORKFLOW.md](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/VIBEWORKFLOW.md)
   describes the operating model (roles, session loop, approvals).
-- All code and comments are written in **English**.
+- All code, comments, documentation, commit messages, PR titles and PR
+  descriptions are written in **English**.
 - Never merge to `main`, tag, or release without explicit developer approval.
 - Never commit secrets: use `.env.example` templates; real credentials live
   only on the VPS or in GitHub secrets.
