@@ -19,6 +19,13 @@ for the Kingdoms Discord bot platform.
   describes the operating model (roles, session loop, approvals).
 - All code and comments are written in **English**.
 - Never merge to `main`, tag, or release without explicit developer approval.
+
+- **Never commit secrets** (tokens, passwords, API keys, private keys,
+  `.env` values): real credentials live only in GitHub secrets or in
+  host-provisioned `.env` files (never committed; `deploy/*/.env.example`
+  placeholders only). Before making any repository public, scan the full
+  git history for leaked secrets (`git log -p | grep -E "ghp_|github_pat_|AKIA|PRIVATE KEY"`)
+  and get merlin-pinpin's approval.
 - Keep the documentation in `kingdoms` in sync: a change without its doc
   update is incomplete. Reference issues fully qualified
   (e.g. `kingdoms-infra#2`) since cross-repo references are common.
