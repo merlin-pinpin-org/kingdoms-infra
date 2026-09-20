@@ -24,9 +24,11 @@ die() { echo "[deploy:${ENVIRONMENT}] ERROR: $*" >&2; exit 1; }
 [[ " ${ENVIRONMENTS[*]} " == *" ${ENVIRONMENT} "* ]] || usage
 [[ -f "${COMPOSE_FILE}" ]] || die "missing compose file: ${COMPOSE_FILE}"
 
-if [[ ! -f "${ENV_DIR}/.env" ]]; then
-    die "missing ${ENV_DIR}/.env (copy it from .env.example and fill in secrets)"
-fi
+# Secrets come from the CD pipeline environment (GitHub environment
+# secrets); nothing secret is stored on the VPS. Compose substitution
+# fails closed on a missing DISCORD_TOKEN.
+[[ -n "${DISCORD_TOKEN:-}" ]] \
+    || die "DISCORD_TOKEN is not set (provide it via the GitHub environment secrets)"
 
 cd "${ENV_DIR}"
 

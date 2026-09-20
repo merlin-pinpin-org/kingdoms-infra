@@ -25,8 +25,7 @@ deployment scripts.
 Prerequisites: Docker and Docker Compose.
 
 ```bash
-cp deploy/test/.env.example deploy/test/.env
-docker compose -f deploy/test/docker-compose.yml up -d
+DISCORD_TOKEN=... docker compose -f deploy/test/docker-compose.yml up -d
 ```
 
 This starts the bot (serving `/healthz`), MongoDB and Redis. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)

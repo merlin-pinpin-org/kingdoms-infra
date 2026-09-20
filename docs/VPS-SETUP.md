@@ -19,8 +19,10 @@ By the end of this guide the VPS will:
 - keep database backups in a persistent directory that survives every
   deployment.
 
-The other environments (`staging`, `prod`) reuse the same runner and are
-enabled later by provisioning their `.env` file — nothing else to install.
+Secrets (the Discord bot token) are **not stored on the VPS at all**:
+they live in GitHub *environment secrets* and the runner injects them
+into each deployment. The other environments (`staging`, `prod`) reuse
+the same runner — enabling one is just adding its secrets in GitHub.
 
 ## 0. Prerequisites
 
@@ -127,21 +129,19 @@ Clone the infrastructure repository (the runner deploys from it):
 git clone https://github.com/merlin-pinpin/kingdoms-infra /opt/kingdoms/kingdoms-infra
 ```
 
-Provision the `test` environment secrets — one-time manual step. Create
-`/opt/kingdoms/kingdoms-infra/deploy/test/.env` by copying the template
-and filling in the real values:
+The `test` environment needs its `DISCORD_TOKEN` — a one-time manual
+step, done **on GitHub, not on the VPS**:
 
-```bash
-cd /opt/kingdoms/kingdoms-infra/deploy/test
-cp .env.example .env
-nano .env
-```
+1. Open the `kingdoms-infra` repository on GitHub:
+   **Settings → Environments → test** (create the environment if it does
+   not exist yet).
+2. Click **Add environment secret**, name it exactly `DISCORD_TOKEN` and
+   paste the bot token from the
+   [Discord developer portal](https://discord.com/developers/applications).
+3. Done — the runner picks it up automatically at the next deployment
+   ([GitHub environment secrets docs](https://docs.github.com/en/actions/reference/environments#environment-secrets)).
 
-Fill in at minimum `DISCORD_TOKEN` (the bot token from the
-[Discord developer portal](https://discord.com/developers/applications));
-`MONGO_URI`, `REDIS_URI` are already correct for the stack. Save with
-`Ctrl+O`, exit with `Ctrl+X`. This file must never be committed
-(it is git-ignored).
+Nothing secret is ever written to the server.
 
 ## 4. Install the GitHub Actions self-hosted runner
 
@@ -196,7 +196,9 @@ require manual approval). Open **Settings → Environments** on the
   ([docs](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)).
 
 These names must match the `environment:` values in
-`.github/workflows/cd.yml`.
+`.github/workflows/cd.yml`. Note that step 3 already had you create the
+`test` environment with its `DISCORD_TOKEN` secret — creating an
+environment with one secret is a single operation in that screen.
 
 ## 6. First deployment
 
@@ -236,8 +238,9 @@ every merge to `main`.
 - **The CD job stays queued**: the runner is offline — check it with
   `sudo ./svc.sh status` in `/opt/kingdoms/actions-runner`, restart
   with `sudo ./svc.sh start`.
-- **`deploy.sh` says `.env` missing**: step 3 was skipped or the file
-  was removed — re-create it from `.env.example`.
+- **`deploy.sh` says `DISCORD_TOKEN is not set`**: the GitHub
+  environment `test` has no `DISCORD_TOKEN` secret (step 3) — add it and
+  re-run the CD workflow.
 - **The health gate fails and rolls back**: inspect
   `docker compose logs kingdoms-bot`; the most common causes are an
   invalid `DISCORD_TOKEN` or a GitHub package rate limit on image pull.
@@ -246,9 +249,8 @@ every merge to `main`.
 
 ## 9. What comes next
 
-- `staging` and `prod`: provision
-  `deploy/staging/.env` / `deploy/prod/.env` the same way (step 3);
-  the runner already covers them.
+- `staging` and `prod`: add their `DISCORD_TOKEN` secret in the matching
+  GitHub environment (same as step 3); the runner already covers them.
 - Production pins the bot image to a released tag (`vX.Y.Z`) at deploy
   time — see the `deploy-prod` job in `cd.yml` and
   [DEPLOYMENT.md](DEPLOYMENT.md).

@@ -21,8 +21,9 @@ for the Kingdoms Discord bot platform.
   descriptions are written in **English**.
 - Merges to `main`, tags and releases are gated by the repository rulesets
   and required checks (enforced by GitHub, not by this document).
-- Never commit secrets: use `.env.example` templates; real credentials live
-  only on the VPS or in GitHub secrets.
+- Never commit secrets: credentials live only in GitHub **environment
+  secrets** (injected by the CD runner at deploy time); nothing secret is
+  stored on the VPS or in the repository.
 - Deployment is **GitOps-driven**: changes to `deploy/` are applied by
   CI/CD, never by hand on the VPS.
 - Deployment scripts must be **idempotent** and support rollback

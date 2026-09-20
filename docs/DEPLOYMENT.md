@@ -22,9 +22,11 @@ Each environment runs the same services:
 ## Prerequisites
 
 - Docker and Docker Compose on the host
-- A `.env` file in the environment directory (copy from `.env.example`,
-  fill in real credentials). Real credentials live only on the VPS or in
-  GitHub secrets — never in the repository.
+- GitHub **environment secrets** for the target environment (Settings →
+  Environments): `DISCORD_TOKEN` at minimum; `MONGO_DB`, `LOG_LEVEL`,
+  `KINGDOMS_BOT_IMAGE` (prod) are optional. The runner injects them at
+  deploy time — no secret is ever stored on the VPS or in the repository
+  ([GitHub environment secrets docs](https://docs.github.com/en/actions/reference/environments#environment-secrets)).
 
 ## Deploying
 
@@ -50,8 +52,7 @@ Every deployment enforces two safety gates:
 For a manual, reproducible deployment (test only, e.g. on the VPS):
 
 ```bash
-cp deploy/test/.env.example deploy/test/.env
-./scripts/deploy.sh test
+DISCORD_TOKEN=... ./scripts/deploy.sh test
 ```
 
 `scripts/deploy.sh` is idempotent: re-running it on a deployed environment
