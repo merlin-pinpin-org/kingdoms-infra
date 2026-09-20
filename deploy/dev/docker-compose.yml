@@ -1,0 +1,45 @@
+services:
+  kingdoms-bot:
+    image: ghcr.io/merlin-pinpin/kingdoms-services:main
+    pull_policy: missing
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      REDIS_URI: redis://kingdoms-redis:6379
+    depends_on:
+      kingdoms-mongo:
+        condition: service_healthy
+      kingdoms-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kingdoms-mongo:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  kingdoms-redis:
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:

@@ -19,6 +19,21 @@ for the Kingdoms Discord bot platform.
   describes the operating model (roles, session loop, approvals).
 - All code and comments are written in **English**.
 - Never merge to `main`, tag, or release without explicit developer approval.
+- Never commit secrets: use `.env.example` templates; real credentials live
+  only on the VPS or in GitHub secrets.
+- Deployment is **GitOps-driven**: changes to `deploy/` are applied by
+  CI/CD, never by hand on the VPS.
+- Deployment scripts must be **idempotent** and support rollback
+  (`scripts/deploy.sh`, database restore via `scripts/restore_db.sh`).
+- Any infrastructure change must be reflected in `kingdoms` documentation
+  (source of truth) before merge.
+- Verify all shell scripts with `bash -n` and shellcheck (if available)
+  before pushing.
+- **Sandbox limits are covered by GitHub Actions**: anything that cannot run
+  in the dev sandbox (Docker Compose boot, `compose config`, stack
+  healthchecks, backup/restore round-trips, entrypoint runs) must be
+  exercised by a CI workflow instead. When a check cannot run locally, add
+  or extend the workflow that validates it — never leave it unverified.
 - Keep the documentation in `kingdoms` in sync: a change without its doc
   update is incomplete. Reference issues fully qualified
   (e.g. `kingdoms-infra#2`) since cross-repo references are common.

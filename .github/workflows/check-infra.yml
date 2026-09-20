@@ -1,0 +1,25 @@
+name: Check infra
+
+on:
+  pull_request:
+    paths:
+      - "docker/**"
+      - "deploy/**"
+      - "scripts/**"
+
+jobs:
+  check:
+    name: Validate infrastructure files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Dockerfiles
+        run: |
+          for f in docker/Dockerfile docker/Dockerfile.test; do
+            echo "Checking $f"
+            grep -q "^FROM" "$f"
+          done
+      - name: Check entrypoint is executable
+        run: test -x docker/entrypoint.sh
+      - name: Check env templates exist
+        run: test -f deploy/dev/.env.example
