@@ -28,10 +28,64 @@ jobs:
       - name: Validate prod manifest
         run: docker compose -f deploy/prod/docker-compose.yml config --quiet
 
-  build:
-    name: Build Docker image
+  smoke:
+    name: Smoke test (dev stack boot)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build bot image
-        run: docker build -f docker/Dockerfile .
+
+      - name: Start the dev stack (bot service excluded)
+        working-directory: deploy/dev
+        run: |
+          cp .env.example .env
+          docker compose up -d kingdoms-mongo kingdoms-redis
+
+      - name: Wait for MongoDB and Redis healthchecks
+        working-directory: deploy/dev
+        run: |
+          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
+          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-redis)")" = "healthy" ]; do sleep 3; done'
+
+      - name: Smoke check from a bot-like container
+        working-directory: deploy/dev
+        run: |
+          mkdir -p /tmp/kingdoms-smoke
+          cat > /tmp/kingdoms-smoke/smoke.py <<'PY'
+          import os
+
+          import pymongo
+          import redis
+
+          mongo_uri = os.environ["MONGO_URI"]
+          redis_uri = os.environ["REDIS_URI"]
+
+          client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+          ping = client.admin.command("ping")
+          assert ping["ok"] == 1, f"MongoDB ping failed: {ping}"
+          print(f"MongoDB ping OK: {mongo_uri}")
+
+          r = redis.Redis.from_url(redis_uri, socket_connect_timeout=5)
+          assert r.ping() is True, "Redis ping failed"
+          print(f"Redis ping OK: {redis_uri}")
+
+          print("SMOKE TEST PASSED")
+          PY
+
+          NETWORK="$(docker inspect --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' "$(docker compose ps -q kingdoms-mongo)")"
+          echo "Stack network: ${NETWORK}"
+          docker run --rm --network "${NETWORK}" \
+            -e MONGO_URI=mongodb://kingdoms-mongo:27017 \
+            -e REDIS_URI=redis://kingdoms-redis:6379 \
+            -v /tmp/kingdoms-smoke/smoke.py:/smoke.py:ro \
+            --entrypoint /bin/bash \
+            python:3.12-slim -c 'pip install --quiet --no-input pymongo redis >/dev/null && python /smoke.py'
+
+      - name: Show stack logs on failure
+        if: failure()
+        working-directory: deploy/dev
+        run: docker compose logs || true
+
+      - name: Tear down the stack
+        if: always()
+        working-directory: deploy/dev
+        run: docker compose down -v || true
