@@ -22,11 +22,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate dev manifest
-        run: docker compose -f deploy/dev/docker-compose.yml config --quiet
+        run: |
+          cp deploy/dev/.env.example deploy/dev/.env
+          docker compose -f deploy/dev/docker-compose.yml config --quiet
       - name: Validate staging manifest
-        run: docker compose -f deploy/staging/docker-compose.yml config --quiet
+        run: |
+          cp deploy/dev/.env.example deploy/staging/.env
+          docker compose -f deploy/staging/docker-compose.yml config --quiet
       - name: Validate prod manifest
-        run: docker compose -f deploy/prod/docker-compose.yml config --quiet
+        run: |
+          cp deploy/dev/.env.example deploy/prod/.env
+          docker compose -f deploy/prod/docker-compose.yml config --quiet
 
   smoke:
     name: Smoke test (dev stack boot)
