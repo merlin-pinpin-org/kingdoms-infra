@@ -15,7 +15,6 @@ deployment scripts.
 
 | Path | Content |
 | ---- | ------- |
-| `docker/` | Dockerfile (bot image), test image, entrypoint |
 | `deploy/` | Docker Compose manifests per environment (`dev`, `staging`, `prod`) |
 | `.github/workflows/` | CI/CD pipelines (lint, test, build, deploy, infra checks) |
 | `scripts/` | Deployment and database backup/restore scripts |
@@ -30,7 +29,7 @@ cp deploy/dev/.env.example deploy/dev/.env
 docker compose -f deploy/dev/docker-compose.yml up -d
 ```
 
-This starts the bot, MongoDB and Redis. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+This starts the bot (serving `/healthz`), MongoDB and Redis. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 for the full deployment guide and [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md)
 for the environment matrix.
 

@@ -39,6 +39,9 @@ Every deployment enforces two safety gates:
 2. **Post-deploy health gate**: after `docker compose up`, the script waits
    for every service to report `healthy`; if a service fails the gate, the
    script triggers an automatic rollback (`scripts/rollback.sh --auto`).
+   The bot serves a liveness endpoint (`GET /healthz`, port 8000) for the
+   whole lifetime of the process; the compose healthcheck probes it and the
+   gate reports a crash-looping bot as `unhealthy`.
 
 For a manual, reproducible local deployment (dev only):
 
