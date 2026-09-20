@@ -10,11 +10,11 @@ ENVIRONMENTS=(dev staging prod)
 ENVIRONMENT="${1:-dev}"
 ARCHIVE="${2:-}"
 MODE="${3:-}"
-ENV_DIR="${REPO_ROOT}/deploy/${ENVIRONMENT}"
-BACKUP_DIR="${REPO_ROOT}/backups"
+BACKUP_DIR="${BACKUP_DIR:-${REPO_ROOT}/backups}"
 
 usage() {
     echo "Usage: $0 <${ENVIRONMENTS[*]}> [archive.gz] [--auto]"
+    echo "  BACKUP_DIR=<dir> overrides the backup directory (default: <repo>/backups)."
     echo "  Without an archive, restores the most recent backup of the environment."
     echo "  --auto skips confirmation (used by deploy.sh after a failed health gate)."
     exit 1
