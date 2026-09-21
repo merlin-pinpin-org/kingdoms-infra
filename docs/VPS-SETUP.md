@@ -102,20 +102,30 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-Allow the `kingdoms` user to run Docker without sudo, then verify both
-tools as that user (switch with `sudo -iu kingdoms` — its group
-memberships are re-read on each switch):
+Allow the `kingdoms` user to run Docker without sudo:
 
 ```bash
 sudo usermod -aG docker kingdoms
+```
+
+Switch to that user to verify both tools (its group memberships are
+re-read on each switch):
+
+```bash
 sudo -iu kingdoms
+```
+
+```bash
 newgrp docker
 docker run hello-world
 docker compose version
 ```
 
-Type `exit` (or `sudo -iu kingdoms` again) whenever a later step needs
-your admin login back.
+Go back to your admin login when a later step needs it:
+
+```bash
+exit
+```
 
 ## 3. Prepare the Kingdoms directory
 
@@ -156,12 +166,16 @@ this guide only prepares the ground so theirs work as-is.
 - Use the **`kingdoms`** user for everything runner-related. It owns
   `/opt/kingdoms`, it is in the `docker` group (so deployments work
   without sudo), and the runner service will run as that user.
-- Switch to it and move to `/opt/kingdoms` — a user switch resets the
-  current directory, and GitHub's commands create the runner folder
-  wherever you stand:
+- Switch to it — a user switch resets the current directory:
 
   ```bash
   sudo -iu kingdoms
+  ```
+
+- Then move to `/opt/kingdoms`; GitHub's commands create the runner
+  folder wherever you stand:
+
+  ```bash
   cd /opt/kingdoms
   ```
 
@@ -190,8 +204,13 @@ The labels tell the CD workflow which runner may run which job:
 
 When GitHub has you run `./svc.sh` (its **Install the runner as a
 systemd service** instructions), run it from your admin login instead —
-the `kingdoms` user cannot run sudo. `exit` the `kingdoms` shell first,
-then:
+the `kingdoms` user cannot run sudo. Go back to your admin login:
+
+```bash
+exit
+```
+
+Then:
 
 ```bash
 cd /opt/kingdoms/actions-runner
