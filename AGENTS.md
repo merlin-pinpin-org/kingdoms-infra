@@ -46,6 +46,11 @@ for the Kingdoms Discord bot platform.
   (e.g. `kingdoms-infra#2`) since cross-repo references are common.
 - Link PRs to their issue with a closing keyword in the description
   (`Closes #N`).
+- **PR draft status is the merge-readiness signal** (see
+  `kingdoms/docs/VIBEWORKFLOW.md`): always open PRs as drafts; mark a PR
+  ready for review only when, from your point of view, it can be merged
+  (checks green, implementation complete, self-review done, docs updated);
+  keep or return it to draft (`gh pr ready --undo`) while work remains.
 - **Anyone can run the local checks** (`bash -n`, shellcheck on scripts,
   `docker compose config`): they require public clones only, no
   credentials.
