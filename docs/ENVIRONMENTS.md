@@ -1,29 +1,29 @@
 # Environments
 
-The Kingdoms platform runs the same stack in three environments. This page
+The Kingdoms platform runs the same stack in two environments. This page
 is the environment matrix; the deployment procedure lives in
 [DEPLOYMENT.md](DEPLOYMENT.md).
 
-| | test | staging | prod |
-| --- | --- | --- | --- |
-| Manifest | `deploy/test/docker-compose.yml` | `deploy/staging/docker-compose.yml` | `deploy/prod/docker-compose.yml` |
-| Bot image | `ghcr.io/...:main` | `ghcr.io/...:main` | `ghcr.io/...` tag pinned via `KINGDOMS_BOT_IMAGE` |
-| Image pull policy | `missing` | `always` | `always` |
-| Host | VPS (runner) | VPS (runner) | VPS (runner) |
-| Secrets | GitHub environment secrets (injected by the runner) | GitHub environment secrets | GitHub environment secrets |
-| MongoDB exposed ports | 27017 | — | — |
-| Redis exposed ports | 6379 | — | — |
-| Redis persistence | volume | volume | volume + AOF |
-| Bot memory limit | — | — | 512M |
-| Deploy trigger | CD auto (merge to main) | CD manual (workflow_dispatch) | CD on tags (pinned image) |
-| Pre-deploy backup | mandatory | mandatory | mandatory |
-| Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `staging`) | — (GitHub environment `prod`) |
-| Bot healthcheck | `/healthz` (compose + image) | `/healthz` (compose + image) | `/healthz` (compose + image) |
+| | test | prod |
+| --- | --- | --- |
+| Manifest | `deploy/test/docker-compose.yml` | `deploy/prod/docker-compose.yml` |
+| Bot image | `ghcr.io/...` commit-SHA tagged (`pr-<n>-sha-<sha>` for `/deploy-test`, `sha-<sha>` for main) | `ghcr.io/...` released tag `vX.Y.Z` via `KINGDOMS_BOT_IMAGE` |
+| Image pull policy | `missing` | `always` |
+| Host | VPS (runner) | VPS (runner) |
+| Secrets | GitHub environment secrets (injected by the runner) | GitHub environment secrets |
+| MongoDB exposed ports | 27017 | — |
+| Redis exposed ports | 6379 | — |
+| Redis persistence | volume | volume + AOF |
+| Bot memory limit | — | 512M |
+| Deploy trigger | Deploy test: on demand (`/deploy-test` PR comment, vibe-coding session, or test-config change on main) | Deploy prod: released tag `vX.Y.Z` or manual by identified production deployers (not implemented yet) |
+| Pre-deploy backup | mandatory | mandatory |
+| Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `prod`) |
+| Bot healthcheck | `/healthz` (compose + image) | `/healthz` (compose + image) |
 
 ## Configuration variables
 
 Secrets are **never stored on the VPS**. They live in GitHub
-*environment secrets* (Settings → Environments → `test` / `staging` /
+*environment secrets* (Settings → Environments → `test` /
 `prod` → Add environment secret) and the self-hosted runner injects them
 into `docker compose` at deploy time. The manifests read them by name
 and fail closed when one is missing.
