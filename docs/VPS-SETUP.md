@@ -45,10 +45,14 @@ address; on Windows, use the built-in
 ssh root@YOUR_SERVER_IP
 ```
 
-Update the system (answer `y` if asked):
+Every command below starts with `sudo`, so it works the same whether you
+log in as `root` or as any user with sudo rights (some providers only
+give you the latter).
+
+Update the system:
 
 ```bash
-apt update && apt upgrade -y
+sudo apt update && sudo apt upgrade -y
 ```
 
 Create a dedicated user for the Kingdoms deployment (never run services
@@ -56,15 +60,15 @@ as root — see the
 [Ubuntu Server security guide](https://documentation.ubuntu.com/server/how-to/security/introduction/)):
 
 ```bash
-adduser --disabled-password --gecos "" kingdoms
-usermod -aG sudo kingdoms
+sudo adduser --disabled-password --gecos "" kingdoms
+sudo usermod -aG sudo kingdoms
 ```
 
 Copy your SSH login to the new user, then log in as it for the rest of
 the guide:
 
 ```bash
-rsync --archive --chown=kingdoms:kingdoms ~/.ssh /home/kingdoms
+sudo rsync --archive --chown=kingdoms:kingdoms ~/.ssh /home/kingdoms
 exit
 ssh kingdoms@YOUR_SERVER_IP
 ```
