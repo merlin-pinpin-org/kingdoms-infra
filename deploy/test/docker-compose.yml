@@ -1,6 +1,7 @@
 services:
   kingdoms-bot:
-    image: ghcr.io/merlin-pinpin/kingdoms-services:main
+    # Overridable so /deploy-test can pin a PR image; main is the default.
+    image: ${KINGDOMS_BOT_IMAGE:-ghcr.io/merlin-pinpin/kingdoms-services:main}
     pull_policy: missing
     environment:
       # Secrets are injected at deploy time by the CD pipeline from the

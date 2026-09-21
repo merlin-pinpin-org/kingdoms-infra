@@ -1,8 +1,10 @@
 # Deploy the `test` environment (ADR-0007).
-# Auto-deploys on every successful CI run of main (merge to main), and can
-# be dispatched manually: Actions -> Deploy test -> Run workflow. A
-# dedicated workflow (one per environment) so GitHub policies can gate who
-# may dispatch it independently of the other environments.
+# Triggered by:
+# - any change to the test configuration on main (deploy/test/*), and
+# - the `/deploy-test` PR comment in kingdoms-services (the image built
+#   from that PR is deployed via KINGDOMS_BOT_IMAGE).
+# One dedicated workflow per environment so GitHub policies can gate who
+# may trigger it independently of the other environments.
 # Jobs run on the self-hosted runner installed on the test VPS
 # (docs/VPS-SETUP.md): it checks out the repo and applies the manifests
 # locally — no secrets ever leave the VPS.
@@ -10,32 +12,33 @@
 name: Deploy test
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
+  push:
     branches: [main]
+    paths:
+      - "deploy/test/**"
+      - ".github/workflows/deploy-test.yml"
   workflow_dispatch:
+    inputs:
+      bot_image:
+        description: "Bot image to deploy (optional; defaults to the manifest)"
+        required: false
+        default: ""
 
 concurrency:
-  group: deploy-test-${{ github.ref }}
+  group: deploy-test
   cancel-in-progress: false
 
 jobs:
   deploy-test:
-    name: Deploy test (auto on merge, or manual)
-    # Auto only on a successful CI run of main; workflow_dispatch is always
-    # manual by definition.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-    # env-test: one runner (VPS) per environment; this job deploys
-    # on the test VPS.
+    name: Deploy test (config change on main, or /deploy-test)
     runs-on: [self-hosted, kingdoms, env-test]
     environment: test
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Apply the optional image override from /deploy-test
+        if: github.event_name == 'workflow_dispatch' && inputs.bot_image != ''
+        run: |
+          echo "KINGDOMS_BOT_IMAGE=${{ inputs.bot_image }}" >> "${GITHUB_ENV}"
       - name: Deploy the test stack
         run: ./scripts/deploy.sh test
         env:

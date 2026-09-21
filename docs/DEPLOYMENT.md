@@ -8,9 +8,8 @@ Three environments, each defined by a Docker Compose manifest in `deploy/`:
 
 | Environment | Manifest | Purpose |
 | ----------- | -------- | ------- |
-| `test` | `deploy/test/docker-compose.yml` | VPS auto-deploy on merge (validation environment) |
-| `staging` | `deploy/staging/docker-compose.yml` | VPS, manual deploy (workflow_dispatch) |
-| `prod` | `deploy/prod/docker-compose.yml` | VPS, deploy on version tags, pinned image |
+| `test` | `deploy/test/docker-compose.yml` | VPS; auto-deploys on test-config change on main, `/deploy-test` PR comment, or manual dispatch (validation environment) |
+| `prod` | `deploy/prod/docker-compose.yml` | VPS; deploys on prod-config change on main — **not implemented yet** (the workflow fails with the setup instructions) |
 
 Each environment runs the same services:
 
@@ -35,10 +34,12 @@ CD pipelines running on a **self-hosted runner installed on the VPS** —
 see [VPS-SETUP.md](VPS-SETUP.md) for the step-by-step server installation.
 There is **one workflow per environment**
 (`.github/workflows/deploy-<env>.yml`), so GitHub policies can gate who
-may deploy each environment independently. `test` auto-deploys on every
-merge to `main` (and can be dispatched manually); `staging` deploys
-manually (workflow_dispatch); `prod` deploys on version tags with a pinned
-image.
+may deploy each environment independently. `test` deploys on every test
+configuration change on `main`, on a `/deploy-test` PR comment in
+`kingdoms-services` (which builds and deploys the PR image), or manually;
+`prod` deploys on prod configuration changes on `main` and is **not
+implemented yet** — the workflow fails with the list of GitHub environment
+variables to create first.
 
 Every deployment enforces two safety gates:
 

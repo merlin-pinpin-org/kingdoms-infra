@@ -21,8 +21,8 @@ By the end of this guide the VPS will:
 
 Secrets (the Discord bot token) are **not stored on the VPS at all**:
 they live in GitHub *environment secrets* and the runner injects them
-into each deployment. The other environments (`staging`, `prod`) reuse
-the same runner — enabling one is just adding its secrets in GitHub.
+into each deployment. The `prod` environment reuses the same
+runner — enabling it is just adding its secrets in GitHub.
 
 ## 0. Prerequisites
 
@@ -198,8 +198,8 @@ The labels tell the deploy workflows which runner may run which job:
 
 - `kingdoms` — member of the Kingdoms fleet,
 - `env-test` — this VPS hosts the `test` environment. One runner (one
-  VPS) per environment: a future staging or prod VPS uses
-  `env-staging`, `env-prod`, and so on.
+  VPS) per environment: a future prod VPS uses
+  `env-prod`, and so on.
 
 When GitHub has you run `./svc.sh` (its **Install the runner as a
 systemd service** instructions), run it from your admin login instead —
@@ -232,9 +232,10 @@ GitHub "environments" gate deployments (protected environments can
 require manual approval). Open **Settings → Environments** on the
 `kingdoms-infra` repository and create:
 
-- `test` — no protection (auto-deployed on merge),
-- `staging` — add reviewers when the environment is first used,
+- `test` — no protection (deploys on config change and `/deploy-test`),
 - `prod` — **required reviewers** only, protection rules recommended
+  (the prod deployment is not implemented yet; the deploy-prod workflow
+  fails with the setup instructions)
   ([docs](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)).
 
 These names must match the `environment:` values in the deploy workflows
@@ -303,8 +304,10 @@ every merge to `main`.
 
 ## 9. What comes next
 
-- `staging` and `prod`: add their `DISCORD_TOKEN` secret in the matching
-  GitHub environment (same as step 3); the runner already covers them.
+- `prod`: add its `DISCORD_TOKEN` secret in the matching GitHub
+  environment (same as step 3); the runner already covers it. The prod
+  deployment is not implemented yet — see the **Deploy prod** workflow
+  log for the list of variables to create first.
 - Production pins the bot image to a released tag (`vX.Y.Z`) at deploy
   time — see the **Deploy prod** workflow
   (`.github/workflows/deploy-prod.yml`) and

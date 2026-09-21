@@ -1,34 +1,45 @@
-# Deploy the `prod` environment (ADR-0007). Triggered by pushing a version
-# tag (vX.Y.Z); the bot image is pinned to the released tag. A dedicated
-# workflow (one per environment) so GitHub policies can gate the
-# environments and their deployers independently.
-# Jobs run on the self-hosted runner installed on the VPS
-# (docs/VPS-SETUP.md): it checks out the repo and applies the manifests
-# locally — no secrets ever leave the VPS.
+# Deploy the `prod` environment (ADR-0007).
+# Triggered by any change to the prod configuration on main (deploy/prod/*).
+# One dedicated workflow per environment so GitHub policies can gate who
+# may trigger it independently of the other environments.
 
 name: Deploy prod
 
 on:
   push:
-    tags: ["v*.*.*"]
+    branches: [main]
+    paths:
+      - "deploy/prod/**"
+      - ".github/workflows/deploy-prod.yml"
+  workflow_dispatch:
 
 concurrency:
-  group: deploy-prod-${{ github.ref }}
+  group: deploy-prod
   cancel-in-progress: false
 
 jobs:
   deploy-prod:
-    name: Deploy prod (tag)
-    runs-on: [self-hosted, kingdoms]
+    name: Deploy prod (config change on main)
+    runs-on: [self-hosted, kingdoms, env-prod]
     environment: prod
     steps:
-      - uses: actions/checkout@v4
-      - name: Pin the bot image to the released tag
+      - name: Not implemented yet — create the prod GitHub environment first
         run: |
-          TAG="${GITHUB_REF_NAME}"
-          echo "KINGDOMS_BOT_IMAGE=ghcr.io/merlin-pinpin/kingdoms-services:${TAG}" \
-            >> "${GITHUB_ENV}"
-      - name: Deploy the prod stack
-        run: ./scripts/deploy.sh prod
-        env:
-          BACKUP_DIR: /opt/kingdoms/backups
+          echo "::error::The prod deployment is not implemented yet."
+          echo ""
+          echo "To enable it, create the 'prod' GitHub environment on this"
+          echo "repository (Settings → Environments → New environment → prod)"
+          echo "and configure the following environment variables/secrets:"
+          echo ""
+          echo "  Secret:            DISCORD_TOKEN"
+          echo "                     → the bot token from the Discord developer portal"
+          echo "  Variable:          KINGDOMS_BOT_IMAGE (optional)"
+          echo "                     → pinned release image, e.g. ghcr.io/merlin-pinpin/kingdoms-services:v0.1.0"
+          echo "                     (deploy/prod/docker-compose.yml also fails closed if unset)"
+          echo "  Variable:          MONGO_DB (optional, default: kingdoms)"
+          echo "  Variable:          LOG_LEVEL (optional, default: INFO)"
+          echo ""
+          echo "Deployment to prod also requires the GitHub environment"
+          echo "protection rules (required reviewers) and a self-hosted runner"
+          echo "carrying the 'env-prod' label."
+          exit 1

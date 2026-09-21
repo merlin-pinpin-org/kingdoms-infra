@@ -25,10 +25,6 @@ jobs:
         run: |
           DISCORD_TOKEN=ci-placeholder \
             docker compose -f deploy/test/docker-compose.yml config --quiet
-      - name: Validate staging manifest
-        run: |
-          DISCORD_TOKEN=ci-placeholder \
-            docker compose -f deploy/staging/docker-compose.yml config --quiet
       - name: Validate prod manifest
         run: |
           DISCORD_TOKEN=ci-placeholder \
