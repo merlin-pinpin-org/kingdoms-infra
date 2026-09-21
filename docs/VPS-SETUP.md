@@ -39,15 +39,18 @@ Why Ubuntu 26.04 LTS: it is the current long-term support release
 
 Connect to the server from your terminal (the provider shows the IP
 address; on Windows, use the built-in
-[PowerShell SSH client](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview)):
+[PowerShell SSH client](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview)).
+The default login depends on the provider: it is often `root`, but on
+Ubuntu images you usually get a sudo user named after the distribution
+(e.g. `ubuntu`) — use whichever you were given:
 
 ```bash
-ssh root@YOUR_SERVER_IP
+ssh ubuntu@YOUR_SERVER_IP
 ```
 
-Every command below starts with `sudo`, so it works the same whether you
-log in as `root` or as any user with sudo rights (some providers only
-give you the latter).
+Every privileged command in this guide starts with `sudo` and is run
+from that first login — it works the same whether your login is `root`
+or a sudo user.
 
 Update the system:
 
@@ -57,20 +60,13 @@ sudo apt update && sudo apt upgrade -y
 
 Create a dedicated user for the Kingdoms deployment (never run services
 as root — see the
-[Ubuntu Server security guide](https://documentation.ubuntu.com/server/how-to/security/introduction/)):
+[Ubuntu Server security guide](https://documentation.ubuntu.com/server/how-to/security/introduction/)).
+The `kingdoms` user has **no password**: it never logs in over SSH and
+cannot run `sudo` — every privileged step of this guide is run from
+your admin login instead:
 
 ```bash
 sudo adduser --disabled-password --gecos "" kingdoms
-sudo usermod -aG sudo kingdoms
-```
-
-Copy your SSH login to the new user, then log in as it for the rest of
-the guide:
-
-```bash
-sudo rsync --archive --chown=kingdoms:kingdoms ~/.ssh /home/kingdoms
-exit
-ssh kingdoms@YOUR_SERVER_IP
 ```
 
 Install the firewall and allow only SSH (the stack does not expose any
@@ -107,14 +103,19 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 ```
 
 Allow the `kingdoms` user to run Docker without sudo, then verify both
-tools:
+tools as that user (switch with `sudo -iu kingdoms` — its group
+memberships are re-read on each switch):
 
 ```bash
 sudo usermod -aG docker kingdoms
+sudo -iu kingdoms
 newgrp docker
 docker run hello-world
 docker compose version
 ```
+
+Type `exit` (or `sudo -iu kingdoms` again) whenever a later step needs
+your admin login back.
 
 ## 3. Prepare the Kingdoms directory
 
@@ -127,9 +128,12 @@ sudo mkdir -p /opt/kingdoms/backups
 sudo chown -R kingdoms:kingdoms /opt/kingdoms
 ```
 
-Clone the infrastructure repository (the runner deploys from it):
+Clone the infrastructure repository (the runner deploys from it; run
+this as the `kingdoms` user, in `/opt/kingdoms`):
 
 ```bash
+sudo -iu kingdoms
+cd /opt/kingdoms
 git clone https://github.com/merlin-pinpin/kingdoms-infra /opt/kingdoms/kingdoms-infra
 ```
 
@@ -159,7 +163,8 @@ commands on the server.
    this (run them on the VPS, from `/opt/kingdoms`):
 
    ```bash
-   mkdir /opt/kingdoms/actions-runner && cd /opt/kingdoms/actions-runner
+   cd /opt/kingdoms
+   mkdir actions-runner && cd actions-runner
    curl -o actions-runner-linux-x64-2.xxx.tar.gz -L https://github.com/actions/runner/releases/download/v2.xxx/...
    tar xzf actions-runner-linux-x64-*.tar.gz
    ```
@@ -249,7 +254,9 @@ every merge to `main`.
   `docker compose logs kingdoms-bot`; the most common causes are an
   invalid `DISCORD_TOKEN` or a GitHub package rate limit on image pull.
 - **Permission denied from Docker**: you skipped
-  `sudo usermod -aG docker kingdoms` or did not reconnect since.
+  `sudo usermod -aG docker kingdoms`, or the shell was opened before
+  that command was run — switch to the user again with
+  `sudo -iu kingdoms` so the group membership is re-read.
 
 ## 9. What comes next
 
