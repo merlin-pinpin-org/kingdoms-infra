@@ -8,9 +8,8 @@ Three environments, each defined by a Docker Compose manifest in `deploy/`:
 
 | Environment | Manifest | Purpose |
 | ----------- | -------- | ------- |
-| `test` | `deploy/test/docker-compose.yml` | VPS auto-deploy on merge (validation environment) |
-| `staging` | `deploy/staging/docker-compose.yml` | VPS, manual deploy (workflow_dispatch) |
-| `prod` | `deploy/prod/docker-compose.yml` | VPS, deploy on version tags, pinned image |
+| `test` | `deploy/test/docker-compose.yml` | VPS; deployed on demand (`/deploy-test`, session dispatch, or test-config change on main). Commit-SHA-tagged images | validation environment |
+| `prod` | `deploy/prod/docker-compose.yml` | VPS; released tags only (`vX.Y.Z`), run by identified production deployers — **not implemented yet** (the workflow fails with the setup instructions) |
 
 Each environment runs the same services:
 
@@ -31,11 +30,22 @@ Each environment runs the same services:
 ## Deploying
 
 Deployment is **GitOps-driven**: changes to `deploy/` are applied by the
-CD pipeline (`.github/workflows/cd.yml`) running on a **self-hosted
-runner installed on the VPS** — see [VPS-SETUP.md](VPS-SETUP.md) for the
-step-by-step server installation. `test` auto-deploys on every merge to
-`main`; `staging` deploys manually (workflow_dispatch); `prod` deploys on
-version tags with a pinned image.
+CD pipelines running on a **self-hosted runner installed on the VPS** —
+see [VPS-SETUP.md](VPS-SETUP.md) for the step-by-step server installation.
+There is **one workflow per environment**
+(`.github/workflows/deploy-<env>.yml`), so GitHub policies can gate who
+may deploy each environment independently:
+
+- `test` — **deployed on demand**: `/deploy-test` PR comment in
+  `kingdoms-services` (builds the PR image, tagged with the commit SHA),
+  a vibe-coding session dispatch, or a test-config change on `main`.
+  Test images always carry their commit SHA tag (`pr-<n>-sha-<sha>` or
+  `sha-<sha>`).
+- `prod` — **released only**: the workflow is triggered by a `vX.Y.Z` tag
+  or manually by an identified production deployer (a repository ruleset
+  restricts who may run it), and the bot image must be a released
+  `vX.Y.Z` image. **Not implemented yet** — the workflow fails with the
+  list of GitHub environment variables to create first.
 
 Every deployment enforces two safety gates:
 

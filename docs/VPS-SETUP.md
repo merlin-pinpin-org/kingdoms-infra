@@ -21,8 +21,8 @@ By the end of this guide the VPS will:
 
 Secrets (the Discord bot token) are **not stored on the VPS at all**:
 they live in GitHub *environment secrets* and the runner injects them
-into each deployment. The other environments (`staging`, `prod`) reuse
-the same runner — enabling one is just adding its secrets in GitHub.
+into each deployment. The `prod` environment reuses the same
+runner — enabling it is just adding its secrets in GitHub.
 
 ## 0. Prerequisites
 
@@ -194,12 +194,12 @@ run `./config.sh`, pass the runner labels explicitly:
 ./config.sh ... --labels kingdoms,env-test
 ```
 
-The labels tell the CD workflow which runner may run which job:
+The labels tell the deploy workflows which runner may run which job:
 
 - `kingdoms` — member of the Kingdoms fleet,
 - `env-test` — this VPS hosts the `test` environment. One runner (one
-  VPS) per environment: a future staging or prod VPS uses
-  `env-staging`, `env-prod`, and so on.
+  VPS) per environment: a future prod VPS uses
+  `env-prod`, and so on.
 
 When GitHub has you run `./svc.sh` (its **Install the runner as a
 systemd service** instructions), run it from your admin login instead —
@@ -232,23 +232,24 @@ GitHub "environments" gate deployments (protected environments can
 require manual approval). Open **Settings → Environments** on the
 `kingdoms-infra` repository and create:
 
-- `test` — no protection (auto-deployed on merge),
-- `staging` — add reviewers when the environment is first used,
+- `test` — no protection (deploys on config change and `/deploy-test`),
 - `prod` — **required reviewers** only, protection rules recommended
+  (the prod deployment is not implemented yet; the deploy-prod workflow
+  fails with the setup instructions)
   ([docs](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)).
 
-These names must match the `environment:` values in
-`.github/workflows/cd.yml`. Note that step 3 already had you create the
-`test` environment with its `DISCORD_TOKEN` secret — creating an
-environment with one secret is a single operation in that screen.
+These names must match the `environment:` values in the deploy workflows
+(`.github/workflows/deploy-<env>.yml`). Note that step 3 already had you
+create the `test` environment with its `DISCORD_TOKEN` secret — creating
+an environment with one secret is a single operation in that screen.
 
 ## 6. First deployment
 
 Everything is in place. Trigger the first deployment from GitHub:
 
 1. Open the **Actions** tab of `kingdoms-infra`.
-2. Select the **CD** workflow, click **Run workflow**, choose the `test`
-   environment, run it.
+2. Select the **Deploy test** workflow, click **Run workflow**, run it
+   on `main`.
 3. Watch the job: it checks out the repository on the VPS, runs
    `scripts/deploy.sh test` (backup → apply → wait for the health
    gate → rollback on failure).
@@ -269,16 +270,16 @@ every merge to `main`.
 | Task | How |
 | ---- | --- |
 | Deploy a change | Merge a PR to `main` — the `test` stack updates automatically |
-| Watch a deployment | Actions tab → **CD** workflow runs |
+| Watch a deployment | Actions tab → **Deploy test** workflow runs |
 | Check the bot | `docker ps --filter name=kingdoms` (above) must show `(healthy)` |
 | Read the bot logs | `docker logs -f kingdoms-bot` |
-| Roll back | automatic on a failed health gate; to go back further, revert the merge and let CD re-apply |
+| Roll back | automatic on a failed health gate; to go back further, revert the merge and let the deploy workflow re-apply |
 | Restore data | handled by the pipeline's backup/restore scripts (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
 | Backups | `/opt/kingdoms/backups` — one per deployment, produced automatically |
 
 ## 8. Troubleshooting
 
-- **The CD job stays queued**: the runner is offline — check it with
+- **The deploy job stays queued**: the runner is offline — check it with
   `sudo ./svc.sh status` in `/opt/kingdoms/actions-runner`, restart
   with `sudo ./svc.sh start`.
 - **The runner never goes Idle / the service fails to start**: the most
@@ -292,7 +293,7 @@ every merge to `main`.
   error.
 - **`deploy.sh` says `DISCORD_TOKEN is not set`**: the GitHub
   environment `test` has no `DISCORD_TOKEN` secret (step 3) — add it and
-  re-run the CD workflow.
+  re-run the **Deploy test** workflow.
 - **The health gate fails and rolls back**: inspect
   `docker logs kingdoms-bot`; the most common causes are an
   invalid `DISCORD_TOKEN` or a GitHub package rate limit on image pull.
@@ -303,10 +304,13 @@ every merge to `main`.
 
 ## 9. What comes next
 
-- `staging` and `prod`: add their `DISCORD_TOKEN` secret in the matching
-  GitHub environment (same as step 3); the runner already covers them.
-- Production pins the bot image to a released tag (`vX.Y.Z`) at deploy
-  time — see the `deploy-prod` job in `cd.yml` and
+- `prod`: add its `DISCORD_TOKEN` secret in the matching GitHub
+  environment (same as step 3); the runner already covers it. The prod
+  deployment is not implemented yet — see the **Deploy prod** workflow
+  log for the list of variables to create first.
+- Production deploys only released tags (`vX.Y.Z`), manually by identified
+  production deployers — see the **Deploy prod** workflow
+  (`.github/workflows/deploy-prod.yml`) and
   [DEPLOYMENT.md](DEPLOYMENT.md).
 - Monitoring (resource usage, alerts) is tracked in
   [kingdoms-infra#5](https://github.com/merlin-pinpin/kingdoms-infra/issues/5).

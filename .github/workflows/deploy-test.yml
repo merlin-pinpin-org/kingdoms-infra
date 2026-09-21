@@ -1,0 +1,46 @@
+# Deploy the `test` environment (ADR-0007).
+# Triggered by:
+# - any change to the test configuration on main (deploy/test/*), and
+# - the `/deploy-test` PR comment in kingdoms-services, which builds the
+#   PR image (tagged with the commit SHA) and dispatches this workflow
+#   with it via KINGDOMS_BOT_IMAGE.
+# One dedicated workflow per environment so GitHub policies can gate who
+# may trigger it independently of the other environments.
+# Jobs run on the self-hosted runner installed on the test VPS
+# (docs/VPS-SETUP.md): it checks out the repo and applies the manifests
+# locally — no secrets ever leave the VPS.
+
+name: Deploy test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "deploy/test/**"
+      - ".github/workflows/deploy-test.yml"
+  workflow_dispatch:
+    inputs:
+      bot_image:
+        description: "Bot image to deploy (commit-SHA tagged; defaults to the manifest)"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  deploy-test:
+    name: Deploy test (config change on main, or /deploy-test)
+    runs-on: [self-hosted, kingdoms, env-test]
+    environment: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply the optional image override from /deploy-test
+        if: github.event_name == 'workflow_dispatch' && inputs.bot_image != ''
+        run: |
+          echo "KINGDOMS_BOT_IMAGE=${{ inputs.bot_image }}" >> "${GITHUB_ENV}"
+      - name: Deploy the test stack
+        run: ./scripts/deploy.sh test
+        env:
+          BACKUP_DIR: /opt/kingdoms/backups
