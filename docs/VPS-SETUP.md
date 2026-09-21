@@ -233,8 +233,8 @@ every merge to `main`.
 | Watch a deployment | Actions tab → **CD** workflow runs |
 | Check the bot | `docker ps --filter name=kingdoms` (above) must show `(healthy)` |
 | Read the bot logs | `docker logs -f kingdoms-bot` |
-| Roll back | revert the merge and let CD re-apply the last known-good state |
-| Restore data | re-run the CD workflow after restoring, or ask for a dedicated workflow (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
+| Roll back | automatic on a failed health gate; to go back further, revert the merge and let CD re-apply |
+| Restore data | handled by the pipeline's backup/restore scripts (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
 | Backups | `/opt/kingdoms/backups` — one per deployment, produced automatically |
 
 ## 8. Troubleshooting
