@@ -119,22 +119,16 @@ your admin login back.
 
 ## 3. Prepare the Kingdoms directory
 
-All repos and backups live under `/opt/kingdoms`. The **backups**
-directory is the critical one: it must never be deleted by a deployment,
-which is why it lives outside any git checkout.
+The `/opt/kingdoms` directory holds the persistent data: the database
+**backups** (the critical one: it must never be deleted by a deployment,
+which is why it lives outside the runner's work directory) and the
+GitHub runner itself (next step). No repository is ever cloned manually
+on the VPS — every deployment is performed by the runner, which checks
+the repository out in its own work directory.
 
 ```bash
 sudo mkdir -p /opt/kingdoms/backups
 sudo chown -R kingdoms:kingdoms /opt/kingdoms
-```
-
-Clone the infrastructure repository (the runner deploys from it; run
-this as the `kingdoms` user, in `/opt/kingdoms`):
-
-```bash
-sudo -iu kingdoms
-cd /opt/kingdoms
-git clone https://github.com/merlin-pinpin/kingdoms-infra /opt/kingdoms/kingdoms-infra
 ```
 
 The `test` environment needs its `DISCORD_TOKEN` — a one-time manual
@@ -223,7 +217,8 @@ Everything is in place. Trigger the first deployment from GitHub:
 Verify on the VPS that the three services are healthy:
 
 ```bash
-docker compose -f /opt/kingdoms/kingdoms-infra/deploy/test/docker-compose.yml ps
+docker compose ls
+docker ps --filter name=kingdoms
 ```
 
 All three lines (`kingdoms-bot`, `kingdoms-mongo`, `kingdoms-redis`)
@@ -236,10 +231,10 @@ every merge to `main`.
 | ---- | --- |
 | Deploy a change | Merge a PR to `main` — the `test` stack updates automatically |
 | Watch a deployment | Actions tab → **CD** workflow runs |
-| Check the bot | `docker compose ... ps` (above) must show `(healthy)` |
-| Read the bot logs | `docker compose -f .../deploy/test/docker-compose.yml logs -f kingdoms-bot` |
-| Roll back | `./scripts/rollback.sh test` on the VPS, or revert the merge and let CD re-apply |
-| Restore data | `./scripts/restore_db.sh test <archive> --yes` (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
+| Check the bot | `docker ps --filter name=kingdoms` (above) must show `(healthy)` |
+| Read the bot logs | `docker logs -f kingdoms-bot` |
+| Roll back | revert the merge and let CD re-apply the last known-good state |
+| Restore data | re-run the CD workflow after restoring, or ask for a dedicated workflow (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
 | Backups | `/opt/kingdoms/backups` — one per deployment, produced automatically |
 
 ## 8. Troubleshooting
@@ -251,7 +246,7 @@ every merge to `main`.
   environment `test` has no `DISCORD_TOKEN` secret (step 3) — add it and
   re-run the CD workflow.
 - **The health gate fails and rolls back**: inspect
-  `docker compose logs kingdoms-bot`; the most common causes are an
+  `docker logs kingdoms-bot`; the most common causes are an
   invalid `DISCORD_TOKEN` or a GitHub package rate limit on image pull.
 - **Permission denied from Docker**: you skipped
   `sudo usermod -aG docker kingdoms`, or the shell was opened before
