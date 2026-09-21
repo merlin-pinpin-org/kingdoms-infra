@@ -51,6 +51,13 @@ for the Kingdoms Discord bot platform.
   ready for review only when, from your point of view, it can be merged
   (checks green, implementation complete, self-review done, docs updated);
   keep or return it to draft (`gh pr ready --undo`) while work remains.
+- **Issue templates are mandatory**: blank issues are disabled on this
+  repository. Create every issue from the template matching its kind
+  (`gh issue create --template Feature|Bug|Sub-task|Task|Documentation`) and
+  keep the required sections (`## Objective`, `## Context`,
+  `## Specifications`, `## Acceptance criteria`, `## Dependencies`). The
+  "Validate issue" workflow flags non-compliant issues `invalid` —
+  recreate them properly rather than editing around the flag.
 - **Anyone can run the local checks** (`bash -n`, shellcheck on scripts,
   `docker compose config`): they require public clones only, no
   credentials.
