@@ -164,9 +164,11 @@ this guide only prepares the ground so theirs work as-is.
 - Stay in that shell as `kingdoms` for the whole GitHub install: every
   command GitHub gives you (including the directory creation) must run
   as `kingdoms`. The one thing to watch in their **Configure** command:
-  it must carry the `--labels kingdoms` flag — it is what `cd.yml`
-  targets. The registration token on that page is short-lived: if it
-  expired, reload the page for a fresh one.
+  it must carry the `--labels kingdoms,env-test` flags — they are what
+  `cd.yml` targets (`kingdoms` = the Kingdoms fleet, `env-test` = this
+  VPS hosts the `test` environment; each future environment VPS gets
+  its own `env-*` runner). The registration token on that page is
+  short-lived: if it expired, reload the page for a fresh one.
 
 **Then follow GitHub's instructions.** Open
 **[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
@@ -187,7 +189,7 @@ sudo ./svc.sh start
 ```
 
 Verify: the runner must appear **Idle** (green) on the GitHub
-Runners page, with the `kingdoms` and `self-hosted` labels.
+Runners page, with the `self-hosted`, `kingdoms` and `env-test` labels.
 
 Security note (important): this runner executes the deployment jobs of a
 **private-to-you** repository. Only repository administrators can add
