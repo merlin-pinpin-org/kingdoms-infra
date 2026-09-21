@@ -15,7 +15,7 @@ is the environment matrix; the deployment procedure lives in
 | Redis exposed ports | 6379 | — | — |
 | Redis persistence | volume | volume | volume + AOF |
 | Bot memory limit | — | — | 512M |
-| Deploy trigger | CD auto (merge to main) | CD manual (workflow_dispatch) | CD on tags (pinned image) |
+| Deploy trigger | Deploy test: auto (merge to main) or manual | Deploy staging: manual (workflow_dispatch) | Deploy prod: on tags (pinned image) |
 | Pre-deploy backup | mandatory | mandatory | mandatory |
 | Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `staging`) | — (GitHub environment `prod`) |
 | Bot healthcheck | `/healthz` (compose + image) | `/healthz` (compose + image) | `/healthz` (compose + image) |

@@ -31,11 +31,14 @@ Each environment runs the same services:
 ## Deploying
 
 Deployment is **GitOps-driven**: changes to `deploy/` are applied by the
-CD pipeline (`.github/workflows/cd.yml`) running on a **self-hosted
-runner installed on the VPS** — see [VPS-SETUP.md](VPS-SETUP.md) for the
-step-by-step server installation. `test` auto-deploys on every merge to
-`main`; `staging` deploys manually (workflow_dispatch); `prod` deploys on
-version tags with a pinned image.
+CD pipelines running on a **self-hosted runner installed on the VPS** —
+see [VPS-SETUP.md](VPS-SETUP.md) for the step-by-step server installation.
+There is **one workflow per environment**
+(`.github/workflows/deploy-<env>.yml`), so GitHub policies can gate who
+may deploy each environment independently. `test` auto-deploys on every
+merge to `main` (and can be dispatched manually); `staging` deploys
+manually (workflow_dispatch); `prod` deploys on version tags with a pinned
+image.
 
 Every deployment enforces two safety gates:
 
