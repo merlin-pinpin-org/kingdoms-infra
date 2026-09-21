@@ -156,19 +156,16 @@ this guide only prepares the ground so theirs work as-is.
 - Use the **`kingdoms`** user for everything runner-related. It owns
   `/opt/kingdoms`, it is in the `docker` group (so deployments work
   without sudo), and the runner service will run as that user.
+- Switch to it and move to `/opt/kingdoms` — a user switch resets the
+  current directory, and GitHub's commands create the runner folder
+  wherever you stand:
 
   ```bash
   sudo -iu kingdoms
+  cd /opt/kingdoms
   ```
 
-- Stay in that shell as `kingdoms` for the whole GitHub install: every
-  command GitHub gives you (including the directory creation) must run
-  as `kingdoms`. The one thing to watch in their **Configure** command:
-  it must carry the `--labels kingdoms,env-test` flags — they are what
-  `cd.yml` targets (`kingdoms` = the Kingdoms fleet, `env-test` = this
-  VPS hosts the `test` environment; each future environment VPS gets
-  its own `env-*` runner). The registration token on that page is
-  short-lived: if it expired, reload the page for a fresh one.
+- Stay in that shell as `kingdoms` for the whole GitHub install.
 
 **Then follow GitHub's instructions.** Open
 **[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
@@ -176,6 +173,20 @@ on the `merlin-pinpin/kingdoms-infra` repository, choose **Linux /
 x64**, and run the **Download** and **Configure** commands it displays.
 Do not copy them here — the page always shows the current runner
 version.
+
+One thing GitHub does not pre-fill: when their Configure step has you
+run `./config.sh`, pass the runner labels explicitly:
+
+```bash
+./config.sh ... --labels kingdoms,env-test
+```
+
+The labels tell the CD workflow which runner may run which job:
+
+- `kingdoms` — member of the Kingdoms fleet,
+- `env-test` — this VPS hosts the `test` environment. One runner (one
+  VPS) per environment: a future staging or prod VPS uses
+  `env-staging`, `env-prod`, and so on.
 
 When GitHub has you run `./svc.sh` (its **Install the runner as a
 systemd service** instructions), run it from your admin login instead —
