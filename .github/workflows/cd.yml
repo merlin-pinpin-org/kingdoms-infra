@@ -31,7 +31,9 @@ jobs:
   deploy-test:
     name: Deploy test (auto on merge)
     if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
-    runs-on: [self-hosted, kingdoms]
+    # env-test: one runner (VPS) per environment; this job deploys
+    # on the test VPS.
+    runs-on: [self-hosted, kingdoms, env-test]
     environment: test
     steps:
       - uses: actions/checkout@v4

@@ -39,34 +39,34 @@ Why Ubuntu 26.04 LTS: it is the current long-term support release
 
 Connect to the server from your terminal (the provider shows the IP
 address; on Windows, use the built-in
-[PowerShell SSH client](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview)):
+[PowerShell SSH client](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview)).
+The default login depends on the provider: it is often `root`, but on
+Ubuntu images you usually get a sudo user named after the distribution
+(e.g. `ubuntu`) — use whichever you were given:
 
 ```bash
-ssh root@YOUR_SERVER_IP
+ssh ubuntu@YOUR_SERVER_IP
 ```
 
-Update the system (answer `y` if asked):
+Every privileged command in this guide starts with `sudo` and is run
+from that first login — it works the same whether your login is `root`
+or a sudo user.
+
+Update the system:
 
 ```bash
-apt update && apt upgrade -y
+sudo apt update && sudo apt upgrade -y
 ```
 
 Create a dedicated user for the Kingdoms deployment (never run services
 as root — see the
-[Ubuntu Server security guide](https://documentation.ubuntu.com/server/how-to/security/introduction/)):
+[Ubuntu Server security guide](https://documentation.ubuntu.com/server/how-to/security/introduction/)).
+The `kingdoms` user has **no password**: it never logs in over SSH and
+cannot run `sudo` — every privileged step of this guide is run from
+your admin login instead:
 
 ```bash
-adduser --disabled-password --gecos "" kingdoms
-usermod -aG sudo kingdoms
-```
-
-Copy your SSH login to the new user, then log in as it for the rest of
-the guide:
-
-```bash
-rsync --archive --chown=kingdoms:kingdoms ~/.ssh /home/kingdoms
-exit
-ssh kingdoms@YOUR_SERVER_IP
+sudo adduser --disabled-password --gecos "" kingdoms
 ```
 
 Install the firewall and allow only SSH (the stack does not expose any
@@ -102,31 +102,42 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-Allow the `kingdoms` user to run Docker without sudo, then verify both
-tools:
+Allow the `kingdoms` user to run Docker without sudo:
 
 ```bash
 sudo usermod -aG docker kingdoms
-newgrp docker
+```
+
+Switch to that user to verify both tools — the switch re-reads its group
+memberships, so no `newgrp` is needed:
+
+```bash
+sudo -iu kingdoms
+```
+
+```bash
 docker run hello-world
 docker compose version
 ```
 
+Go back to your admin login when a later step needs it:
+
+```bash
+exit
+```
+
 ## 3. Prepare the Kingdoms directory
 
-All repos and backups live under `/opt/kingdoms`. The **backups**
-directory is the critical one: it must never be deleted by a deployment,
-which is why it lives outside any git checkout.
+The `/opt/kingdoms` directory holds the persistent data: the database
+**backups** (the critical one: it must never be deleted by a deployment,
+which is why it lives outside the runner's work directory) and the
+GitHub runner itself (next step). No repository is ever cloned manually
+on the VPS — every deployment is performed by the runner, which checks
+the repository out in its own work directory.
 
 ```bash
 sudo mkdir -p /opt/kingdoms/backups
 sudo chown -R kingdoms:kingdoms /opt/kingdoms
-```
-
-Clone the infrastructure repository (the runner deploys from it):
-
-```bash
-git clone https://github.com/merlin-pinpin/kingdoms-infra /opt/kingdoms/kingdoms-infra
 ```
 
 The `test` environment needs its `DISCORD_TOKEN` — a one-time manual
@@ -146,37 +157,68 @@ Nothing secret is ever written to the server.
 ## 4. Install the GitHub Actions self-hosted runner
 
 The runner is the piece that receives deployment jobs from GitHub and
-runs them on this server. Installation is point-and-click on GitHub,
-commands on the server.
+runs them on this server. GitHub gives you the exact install commands;
+this guide only prepares the ground so theirs work as-is.
 
-1. On GitHub, open **Settings → Actions → Runners → New self-hosted
-   runner** on the `merlin-pinpin/kingdoms-infra` repository, choose
-   **Linux / x64**, and follow the displayed commands. They look like
-   this (run them on the VPS, from `/opt/kingdoms`):
+**Preparation (run once, on the VPS):**
 
-   ```bash
-   mkdir /opt/kingdoms/actions-runner && cd /opt/kingdoms/actions-runner
-   curl -o actions-runner-linux-x64-2.xxx.tar.gz -L https://github.com/actions/runner/releases/download/v2.xxx/...
-   tar xzf actions-runner-linux-x64-*.tar.gz
-   ```
+- Use the **`kingdoms`** user for everything runner-related. It owns
+  `/opt/kingdoms`, it is in the `docker` group (so deployments work
+  without sudo), and the runner service will run as that user.
+- Switch to it — a user switch resets the current directory:
 
-2. **Add the labels**: when configuring, make sure the runner carries
-   the `kingdoms` label (it is what `cd.yml` targets):
+  ```bash
+  sudo -iu kingdoms
+  ```
 
-   ```bash
-   ./config.sh --url https://github.com/merlin-pinpin/kingdoms-infra --token <TOKEN_FROM_GITHUB> --labels kingdoms
-   ```
+- Then move to `/opt/kingdoms`; GitHub's commands create the runner
+  folder wherever you stand:
 
-3. Install the runner as a **system service** so it starts on boot
-   ([docs](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/configuring-the-self-hosted-runner-application-as-a-service)):
+  ```bash
+  cd /opt/kingdoms
+  ```
 
-   ```bash
-   sudo ./svc.sh install kingdoms
-   sudo ./svc.sh start
-   ```
+- Stay in that shell as `kingdoms` for the whole GitHub install.
 
-4. Verify: the runner must appear **Idle** (green) on the GitHub
-   Runners page, with the `kingdoms` and `self-hosted` labels.
+**Then follow GitHub's instructions.** Open
+**[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
+on the `merlin-pinpin/kingdoms-infra` repository, choose **Linux /
+x64**, and run the **Download** and **Configure** commands it displays.
+Do not copy them here — the page always shows the current runner
+version.
+
+One thing GitHub does not pre-fill: when their Configure step has you
+run `./config.sh`, pass the runner labels explicitly:
+
+```bash
+./config.sh ... --labels kingdoms,env-test
+```
+
+The labels tell the CD workflow which runner may run which job:
+
+- `kingdoms` — member of the Kingdoms fleet,
+- `env-test` — this VPS hosts the `test` environment. One runner (one
+  VPS) per environment: a future staging or prod VPS uses
+  `env-staging`, `env-prod`, and so on.
+
+When GitHub has you run `./svc.sh` (its **Install the runner as a
+systemd service** instructions), run it from your admin login instead —
+the `kingdoms` user cannot run sudo. Go back to your admin login:
+
+```bash
+exit
+```
+
+Then:
+
+```bash
+cd /opt/kingdoms/actions-runner
+sudo ./svc.sh install kingdoms
+sudo ./svc.sh start
+```
+
+Verify: the runner must appear **Idle** (green) on the GitHub
+Runners page, with the `self-hosted`, `kingdoms` and `env-test` labels.
 
 Security note (important): this runner executes the deployment jobs of a
 **private-to-you** repository. Only repository administrators can add
@@ -214,7 +256,8 @@ Everything is in place. Trigger the first deployment from GitHub:
 Verify on the VPS that the three services are healthy:
 
 ```bash
-docker compose -f /opt/kingdoms/kingdoms-infra/deploy/test/docker-compose.yml ps
+docker compose ls
+docker ps --filter name=kingdoms
 ```
 
 All three lines (`kingdoms-bot`, `kingdoms-mongo`, `kingdoms-redis`)
@@ -227,10 +270,10 @@ every merge to `main`.
 | ---- | --- |
 | Deploy a change | Merge a PR to `main` — the `test` stack updates automatically |
 | Watch a deployment | Actions tab → **CD** workflow runs |
-| Check the bot | `docker compose ... ps` (above) must show `(healthy)` |
-| Read the bot logs | `docker compose -f .../deploy/test/docker-compose.yml logs -f kingdoms-bot` |
-| Roll back | `./scripts/rollback.sh test` on the VPS, or revert the merge and let CD re-apply |
-| Restore data | `./scripts/restore_db.sh test <archive> --yes` (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
+| Check the bot | `docker ps --filter name=kingdoms` (above) must show `(healthy)` |
+| Read the bot logs | `docker logs -f kingdoms-bot` |
+| Roll back | automatic on a failed health gate; to go back further, revert the merge and let CD re-apply |
+| Restore data | handled by the pipeline's backup/restore scripts (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
 | Backups | `/opt/kingdoms/backups` — one per deployment, produced automatically |
 
 ## 8. Troubleshooting
@@ -238,14 +281,25 @@ every merge to `main`.
 - **The CD job stays queued**: the runner is offline — check it with
   `sudo ./svc.sh status` in `/opt/kingdoms/actions-runner`, restart
   with `sudo ./svc.sh start`.
+- **The runner never goes Idle / the service fails to start**: the most
+  common cause is a wrong file owner — the download and `config.sh`
+  steps must be run **as the `kingdoms` user** (`sudo -iu kingdoms`),
+  because the service runs as that user. If the runner directory was
+  created by another user, fix it with
+  `sudo chown -R kingdoms:kingdoms /opt/kingdoms/actions-runner`, then
+  `sudo ./svc.sh start` again. Also check
+  `sudo journalctl -u actions.runner.kingdoms-... -e` for the service
+  error.
 - **`deploy.sh` says `DISCORD_TOKEN is not set`**: the GitHub
   environment `test` has no `DISCORD_TOKEN` secret (step 3) — add it and
   re-run the CD workflow.
 - **The health gate fails and rolls back**: inspect
-  `docker compose logs kingdoms-bot`; the most common causes are an
+  `docker logs kingdoms-bot`; the most common causes are an
   invalid `DISCORD_TOKEN` or a GitHub package rate limit on image pull.
 - **Permission denied from Docker**: you skipped
-  `sudo usermod -aG docker kingdoms` or did not reconnect since.
+  `sudo usermod -aG docker kingdoms`, or the shell was opened before
+  that command was run — switch to the user again with
+  `sudo -iu kingdoms` so the group membership is re-read.
 
 ## 9. What comes next
 
