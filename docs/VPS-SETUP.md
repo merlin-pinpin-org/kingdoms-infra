@@ -245,6 +245,15 @@ every merge to `main`.
 - **The CD job stays queued**: the runner is offline — check it with
   `sudo ./svc.sh status` in `/opt/kingdoms/actions-runner`, restart
   with `sudo ./svc.sh start`.
+- **The runner never goes Idle / the service fails to start**: the most
+  common cause is a wrong file owner — the download and `config.sh`
+  steps must be run **as the `kingdoms` user** (`sudo -iu kingdoms`),
+  because the service runs as that user. If the runner directory was
+  created by another user, fix it with
+  `sudo chown -R kingdoms:kingdoms /opt/kingdoms/actions-runner`, then
+  `sudo ./svc.sh start` again. Also check
+  `sudo journalctl -u actions.runner.kingdoms-... -e` for the service
+  error.
 - **`deploy.sh` says `DISCORD_TOKEN is not set`**: the GitHub
   environment `test` has no `DISCORD_TOKEN` secret (step 3) — add it and
   re-run the CD workflow.
