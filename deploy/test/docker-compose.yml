@@ -1,6 +1,8 @@
 services:
   kingdoms-bot:
-    # Overridable so /deploy-test can pin a PR image; main is the default.
+    # Test images are tagged with the commit SHA (built by the kingdoms-services
+    # Docker workflow: sha-<sha>, or pr-<n>-sha-<sha> for /deploy-test).
+    # The default tracks main; KINGDOMS_BOT_IMAGE pins an exact commit.
     image: ${KINGDOMS_BOT_IMAGE:-ghcr.io/merlin-pinpin/kingdoms-services:main}
     pull_policy: missing
     environment:

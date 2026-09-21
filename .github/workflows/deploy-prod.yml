@@ -1,5 +1,8 @@
 # Deploy the `prod` environment (ADR-0007).
-# Triggered by any change to the prod configuration on main (deploy/prod/*).
+# Triggered by a version tag (vX.Y.Z) on kingdoms-infra main, or manually by
+# an identified production deployer (gated by GitHub rulesets targeting
+# this workflow). The bot image is a released image tagged vX.Y.Z
+# (KINGDOMS_BOT_IMAGE is required by deploy/prod/docker-compose.yml).
 # One dedicated workflow per environment so GitHub policies can gate who
 # may trigger it independently of the other environments.
 
@@ -7,10 +10,7 @@ name: Deploy prod
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "deploy/prod/**"
-      - ".github/workflows/deploy-prod.yml"
+    tags: ["v*.*.*"]
   workflow_dispatch:
 
 concurrency:
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   deploy-prod:
-    name: Deploy prod (config change on main)
+    name: Deploy prod (released tag, or manual by a production deployer)
     runs-on: [self-hosted, kingdoms, env-prod]
     environment: prod
     steps:
@@ -31,15 +31,18 @@ jobs:
           echo "repository (Settings → Environments → New environment → prod)"
           echo "and configure the following environment variables/secrets:"
           echo ""
-          echo "  Secret:            DISCORD_TOKEN"
-          echo "                     → the bot token from the Discord developer portal"
-          echo "  Variable:          KINGDOMS_BOT_IMAGE (optional)"
-          echo "                     → pinned release image, e.g. ghcr.io/merlin-pinpin/kingdoms-services:v0.1.0"
-          echo "                     (deploy/prod/docker-compose.yml also fails closed if unset)"
-          echo "  Variable:          MONGO_DB (optional, default: kingdoms)"
-          echo "  Variable:          LOG_LEVEL (optional, default: INFO)"
+          echo "  Secret:     DISCORD_TOKEN"
+          echo "              → production bot token from the Discord developer portal"
+          echo "  Variable:   KINGDOMS_BOT_IMAGE"
+          echo "              → released image tag, e.g. ghcr.io/merlin-pinpin/kingdoms-services:v0.1.0"
+          echo "              (must be a released vX.Y.Z tag; compose fails closed if unset)"
+          echo "  Variable:   MONGO_DB (optional, default: kingdoms)"
+          echo "  Variable:   LOG_LEVEL (optional, default: INFO)"
           echo ""
-          echo "Deployment to prod also requires the GitHub environment"
-          echo "protection rules (required reviewers) and a self-hosted runner"
-          echo "carrying the 'env-prod' label."
+          echo "Production deployments also require:"
+          echo "- GitHub environment protection rules (required reviewers),"
+          echo "- a repository ruleset restricting who may run this workflow"
+          echo "  (production deployers only),"
+          echo "- a self-hosted runner carrying the 'env-prod' label"
+          echo "  (one runner per VPS — the prod VPS is not provisioned yet)."
           exit 1

@@ -308,8 +308,8 @@ every merge to `main`.
   environment (same as step 3); the runner already covers it. The prod
   deployment is not implemented yet — see the **Deploy prod** workflow
   log for the list of variables to create first.
-- Production pins the bot image to a released tag (`vX.Y.Z`) at deploy
-  time — see the **Deploy prod** workflow
+- Production deploys only released tags (`vX.Y.Z`), manually by identified
+  production deployers — see the **Deploy prod** workflow
   (`.github/workflows/deploy-prod.yml`) and
   [DEPLOYMENT.md](DEPLOYMENT.md).
 - Monitoring (resource usage, alerts) is tracked in

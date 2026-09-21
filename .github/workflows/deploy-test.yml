@@ -1,8 +1,9 @@
 # Deploy the `test` environment (ADR-0007).
 # Triggered by:
 # - any change to the test configuration on main (deploy/test/*), and
-# - the `/deploy-test` PR comment in kingdoms-services (the image built
-#   from that PR is deployed via KINGDOMS_BOT_IMAGE).
+# - the `/deploy-test` PR comment in kingdoms-services, which builds the
+#   PR image (tagged with the commit SHA) and dispatches this workflow
+#   with it via KINGDOMS_BOT_IMAGE.
 # One dedicated workflow per environment so GitHub policies can gate who
 # may trigger it independently of the other environments.
 # Jobs run on the self-hosted runner installed on the test VPS
@@ -20,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       bot_image:
-        description: "Bot image to deploy (optional; defaults to the manifest)"
+        description: "Bot image to deploy (commit-SHA tagged; defaults to the manifest)"
         required: false
         default: ""
 

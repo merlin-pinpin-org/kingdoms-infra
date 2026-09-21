@@ -7,7 +7,7 @@ is the environment matrix; the deployment procedure lives in
 | | test | prod |
 | --- | --- | --- |
 | Manifest | `deploy/test/docker-compose.yml` | `deploy/prod/docker-compose.yml` |
-| Bot image | `ghcr.io/...:main` (overridable via `KINGDOMS_BOT_IMAGE` for `/deploy-test`) | `ghcr.io/...` tag pinned via `KINGDOMS_BOT_IMAGE` |
+| Bot image | `ghcr.io/...` commit-SHA tagged (`pr-<n>-sha-<sha>` for `/deploy-test`, `sha-<sha>` for main) | `ghcr.io/...` released tag `vX.Y.Z` via `KINGDOMS_BOT_IMAGE` |
 | Image pull policy | `missing` | `always` |
 | Host | VPS (runner) | VPS (runner) |
 | Secrets | GitHub environment secrets (injected by the runner) | GitHub environment secrets |
@@ -15,7 +15,7 @@ is the environment matrix; the deployment procedure lives in
 | Redis exposed ports | 6379 | — |
 | Redis persistence | volume | volume + AOF |
 | Bot memory limit | — | 512M |
-| Deploy trigger | Deploy test: test-config change on main, `/deploy-test` PR comment, or manual | Deploy prod: prod-config change on main (not implemented yet) |
+| Deploy trigger | Deploy test: on demand (`/deploy-test` PR comment, vibe-coding session, or test-config change on main) | Deploy prod: released tag `vX.Y.Z` or manual by identified production deployers (not implemented yet) |
 | Pre-deploy backup | mandatory | mandatory |
 | Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `prod`) |
 | Bot healthcheck | `/healthz` (compose + image) | `/healthz` (compose + image) |
