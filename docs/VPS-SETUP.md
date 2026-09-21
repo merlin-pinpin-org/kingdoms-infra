@@ -148,41 +148,50 @@ Nothing secret is ever written to the server.
 ## 4. Install the GitHub Actions self-hosted runner
 
 The runner is the piece that receives deployment jobs from GitHub and
-runs them on this server. Installation is point-and-click on GitHub,
-commands on the server.
+runs them on this server. GitHub gives you the exact install commands;
+this guide only prepares the ground so theirs work as-is.
 
-1. On GitHub, open
-   **[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
-   on the `merlin-pinpin/kingdoms-infra` repository and choose
-   **Linux / x64**: that page generates the exact download commands for
-   the current runner release (the version changes over time, so it is
-   not copied here). Run the **Download** and **Configure** commands it
-   displays, from `/opt/kingdoms` on the VPS — they look like this:
+**Preparation (run once, on the VPS):**
 
-   ```bash
-   cd /opt/kingdoms
-   mkdir actions-runner && cd actions-runner
-   # Download and extract commands from the GitHub page above
-   ```
+- Use the **`kingdoms`** user for everything runner-related. It owns
+  `/opt/kingdoms`, it is in the `docker` group (so deployments work
+  without sudo), and the runner service will run as that user.
+- Create the runner directory as that user and make it your working
+  directory:
 
-2. **Add the labels**: the Configure command shown by that page is the
-   one that registers the runner — make sure it carries the `kingdoms`
-   label (it is what `cd.yml` targets):
+  ```bash
+  sudo -iu kingdoms
+  mkdir /opt/kingdoms/actions-runner
+  cd /opt/kingdoms/actions-runner
+  ```
 
-   ```bash
-   ./config.sh --url https://github.com/merlin-pinpin/kingdoms-infra --token <TOKEN_FROM_GITHUB> --labels kingdoms
-   ```
+- Stay in that shell as `kingdoms` for the whole GitHub install: every
+  command GitHub gives you (download, extract, `./config.sh`) must run
+  as `kingdoms`, from this directory. The one thing to watch in their
+  **Configure** command: it must carry the `--labels kingdoms` flag —
+  it is what `cd.yml` targets. The registration token on that page is
+  short-lived: if it expired, reload the page for a fresh one.
 
-3. Install the runner as a **system service** so it starts on boot
-   ([docs](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/configuring-the-self-hosted-runner-application-as-a-service)):
+**Then follow GitHub's instructions.** Open
+**[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
+on the `merlin-pinpin/kingdoms-infra` repository, choose **Linux /
+x64**, and run the **Download**, **Configure** and **Using the
+self-hosted runner** commands it displays, in that order. Do not copy
+them here — the page always shows the current runner version.
 
-   ```bash
-   sudo ./svc.sh install kingdoms
-   sudo ./svc.sh start
-   ```
+When GitHub has you run `./svc.sh` (its **Install the runner as a
+systemd service** instructions), run it from your admin login instead —
+the `kingdoms` user cannot run sudo. `exit` the `kingdoms` shell first,
+then:
 
-4. Verify: the runner must appear **Idle** (green) on the GitHub
-   Runners page, with the `kingdoms` and `self-hosted` labels.
+```bash
+cd /opt/kingdoms/actions-runner
+sudo ./svc.sh install kingdoms
+sudo ./svc.sh start
+```
+
+Verify: the runner must appear **Idle** (green) on the GitHub
+Runners page, with the `kingdoms` and `self-hosted` labels.
 
 Security note (important): this runner executes the deployment jobs of a
 **private-to-you** repository. Only repository administrators can add
