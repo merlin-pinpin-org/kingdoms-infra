@@ -156,28 +156,24 @@ this guide only prepares the ground so theirs work as-is.
 - Use the **`kingdoms`** user for everything runner-related. It owns
   `/opt/kingdoms`, it is in the `docker` group (so deployments work
   without sudo), and the runner service will run as that user.
-- Create the runner directory as that user and make it your working
-  directory:
 
   ```bash
   sudo -iu kingdoms
-  mkdir /opt/kingdoms/actions-runner
-  cd /opt/kingdoms/actions-runner
   ```
 
 - Stay in that shell as `kingdoms` for the whole GitHub install: every
-  command GitHub gives you (download, extract, `./config.sh`) must run
-  as `kingdoms`, from this directory. The one thing to watch in their
-  **Configure** command: it must carry the `--labels kingdoms` flag —
-  it is what `cd.yml` targets. The registration token on that page is
-  short-lived: if it expired, reload the page for a fresh one.
+  command GitHub gives you (including the directory creation) must run
+  as `kingdoms`. The one thing to watch in their **Configure** command:
+  it must carry the `--labels kingdoms` flag — it is what `cd.yml`
+  targets. The registration token on that page is short-lived: if it
+  expired, reload the page for a fresh one.
 
 **Then follow GitHub's instructions.** Open
 **[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
 on the `merlin-pinpin/kingdoms-infra` repository, choose **Linux /
-x64**, and run the **Download**, **Configure** and **Using the
-self-hosted runner** commands it displays, in that order. Do not copy
-them here — the page always shows the current runner version.
+x64**, and run the **Download** and **Configure** commands it displays.
+Do not copy them here — the page always shows the current runner
+version.
 
 When GitHub has you run `./svc.sh` (its **Install the runner as a
 systemd service** instructions), run it from your admin login instead —
