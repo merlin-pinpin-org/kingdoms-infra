@@ -151,20 +151,23 @@ The runner is the piece that receives deployment jobs from GitHub and
 runs them on this server. Installation is point-and-click on GitHub,
 commands on the server.
 
-1. On GitHub, open **Settings → Actions → Runners → New self-hosted
-   runner** on the `merlin-pinpin/kingdoms-infra` repository, choose
-   **Linux / x64**, and follow the displayed commands. They look like
-   this (run them on the VPS, from `/opt/kingdoms`):
+1. On GitHub, open
+   **[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
+   on the `merlin-pinpin/kingdoms-infra` repository and choose
+   **Linux / x64**: that page generates the exact download commands for
+   the current runner release (the version changes over time, so it is
+   not copied here). Run the **Download** and **Configure** commands it
+   displays, from `/opt/kingdoms` on the VPS — they look like this:
 
    ```bash
    cd /opt/kingdoms
    mkdir actions-runner && cd actions-runner
-   curl -o actions-runner-linux-x64-2.xxx.tar.gz -L https://github.com/actions/runner/releases/download/v2.xxx/...
-   tar xzf actions-runner-linux-x64-*.tar.gz
+   # Download and extract commands from the GitHub page above
    ```
 
-2. **Add the labels**: when configuring, make sure the runner carries
-   the `kingdoms` label (it is what `cd.yml` targets):
+2. **Add the labels**: the Configure command shown by that page is the
+   one that registers the runner — make sure it carries the `kingdoms`
+   label (it is what `cd.yml` targets):
 
    ```bash
    ./config.sh --url https://github.com/merlin-pinpin/kingdoms-infra --token <TOKEN_FROM_GITHUB> --labels kingdoms
