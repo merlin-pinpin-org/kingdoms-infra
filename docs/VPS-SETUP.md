@@ -108,15 +108,14 @@ Allow the `kingdoms` user to run Docker without sudo:
 sudo usermod -aG docker kingdoms
 ```
 
-Switch to that user to verify both tools (its group memberships are
-re-read on each switch):
+Switch to that user to verify both tools — the switch re-reads its group
+memberships, so no `newgrp` is needed:
 
 ```bash
 sudo -iu kingdoms
 ```
 
 ```bash
-newgrp docker
 docker run hello-world
 docker compose version
 ```
