@@ -39,3 +39,53 @@ and fail closed when one is missing.
 
 The compose manifests override `MONGO_URI` and `REDIS_URI` so the bot always
 targets the in-stack services.
+
+## Access and trigger protections (as configured on GitHub, 2026-09)
+
+Who may deploy what is enforced by GitHub at three layers. The
+environments below gate **secret access and job execution**; the Actions
+policy gates **who may trigger the workflows** (see
+[DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md) §4).
+
+| Protection | test | prod |
+| --- | --- | --- |
+| Deployment branch policy | `main`, `vibe/**` | `main` only |
+| Required reviewers | — | `merlin-pinpin` (approval before any prod job consumes prod secrets) |
+| Wait timer | — | — |
+| Actions policy (who may trigger the workflow) | `deploy-test-dispatch`: `kingdoms-deployer[bot]` + admins (via REST API — the UI picker does not list third-party apps); events `workflow_dispatch`, `push` | not implemented yet (`deploy-prod.yml` exits early; the prod deploy path is designed for released tags and identified production deployers) |
+
+Reading the matrix:
+
+- **test** is open to feature branches (`vibe/**`) so the game designer can
+  validate a PR live in Discord via `/deploy-test` before it merges. The
+  dispatch always references `ref: main` on this repository, so the
+  `vibe/**` branch-policy entry is tolerance, not the actual gate — the
+  real gates are the Actions policy (who dispatches) and the
+  `KINGDOMS_BOT_IMAGE` input (what image runs).
+- **prod** deploys only from `main` (a released image, per ADR-0007) and
+  requires an explicit human approval before the job starts. Even an
+  accidental `workflow_dispatch` of `deploy-prod.yml` cannot consume prod
+  secrets without a reviewer's approval.
+
+## Deploying a test image from a services branch
+
+The flow for validating code changes on the test environment (no manual
+branch on this repository):
+
+1. The code change lives on a `vibe/<slug>` branch of **kingdoms-services**,
+   opened as a PR (draft while work remains).
+2. The **Docker** workflow of kingdoms-services already builds the image on
+   every PR push (`ghcr.io/merlin-pinpin-org/kingdoms-services:pr-<n>-sha-<sha>`).
+3. A `/deploy-test` comment on the PR builds/publishes that exact image and
+   dispatches this repository's **Deploy test** workflow with it via the
+   `kingdoms-deployer` GitHub App (ephemeral token, Actions: write only).
+4. **Deploy test** runs on the self-hosted runner (test VPS), pulls the
+   authenticated image (package access: kingdoms-infra has role Read on the
+   package — [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md) §5), and restarts the
+   bot with it. The health gate confirms the stack is healthy.
+
+So: the image under test is always a PR image tagged by PR number and
+commit SHA — never an untagged `latest`, never a hand-built local image on
+the VPS. Rolling back is re-running `/deploy-test` on the previous PR, or
+letting the next config-change deploy on `main` restore the default image
+(`:main`).

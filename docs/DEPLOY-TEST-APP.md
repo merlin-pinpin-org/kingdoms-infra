@@ -98,6 +98,35 @@ picker), then run a second `/deploy-test` to verify the flow still passes —
 the app is the actor of the dispatch, so an actor allow list without the
 app would break `/deploy-test` entirely.
 
+> **The actor picker may still not list the app.** The UI picker
+> (checked 2026-09, on an organization repository, with the app having
+> recorded dispatch activity) does not offer third-party GitHub Apps in
+> the allowed-actors list — only users, repository roles, and
+> GitHub-owned bots. If it does not list `kingdoms-deployer[bot]`, create
+> or edit the policy through the **REST API** instead of the UI, which
+> accepts bot identities by ID:
+>
+> ```bash
+> # Bot id: kingdoms-deployer[bot] = 332499271
+> gh api --method POST /repos/merlin-pinpin-org/kingdoms-infra/actions/policies \
+>   -f name=deploy-test-dispatch \
+>   -f enforcement=active \
+>   -f workflow_path=.github/workflows/deploy-test.yml \
+>   -F 'allowed_actors[][id]=332499271' -F 'allowed_actors[][type]=Bot' \
+>   -F 'allowed_events[]=workflow_dispatch' -F 'allowed_events[]=push'
+> ```
+>
+> Then verify with a `/deploy-test`: the run must still be created by
+> `kingdoms-deployer[bot]` — an actor list without the app breaks the
+> `/deploy-test` flow. To adjust the policy later, use
+> `gh api /repos/merlin-pinpin-org/kingdoms-infra/actions/policies` to list
+> the policy ids and the update endpoint on the same API.
+> The exact body-parameter names are documented in the
+> [Actions policies REST API](https://docs.github.com/en/rest/actions/policies)
+> — check them against the running `gh`/API version before running the
+> command, and fall back to the UI with the repository-admin role if a
+> parameter is rejected.
+
 ## 5. Grant kingdoms-infra access to the bot image package
 
 The bot image package `ghcr.io/merlin-pinpin-org/kingdoms-services` is
