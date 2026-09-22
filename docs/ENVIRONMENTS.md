@@ -15,7 +15,7 @@ is the environment matrix; the deployment procedure lives in
 | Redis exposed ports | 6379 | — |
 | Redis persistence | volume | volume + AOF |
 | Bot memory limit | — | 512M |
-| Deploy trigger | Deploy test: on demand (`/deploy-test` PR comment, vibe-coding session, or test-config change on main) | Deploy prod: released tag `vX.Y.Z` or manual by identified production deployers (not implemented yet) |
+| Deploy trigger | Deploy test: on demand (`/deploy-test` PR comment via the GitHub App, or test-config change on main) | Deploy prod: released tag `vX.Y.Z` or manual by identified production deployers (not implemented yet) |
 | Pre-deploy backup | mandatory | mandatory |
 | Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `prod`) |
 | Bot healthcheck | `/healthz` (compose + image) | `/healthz` (compose + image) |
