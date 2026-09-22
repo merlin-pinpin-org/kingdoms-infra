@@ -1,0 +1,30 @@
+# Diagnostic workflow: verify the self-hosted runner picks up jobs
+# after the organization transfer. Two jobs: one with the bare
+# self-hosted label, one with the full deploy-test label set.
+# Temporary — delete once the runner connectivity is confirmed.
+
+name: Runner diagnostic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bare-self-hosted:
+    name: Any self-hosted runner
+    runs-on: [self-hosted]
+    steps:
+      - name: Report the runner that picked this job
+        run: |
+          echo "Runner: ${RUNNER_NAME:-unknown}"
+          echo "Labels: ${RUNNER_LABELS:-unknown}"
+          hostname
+
+  deploy-labels:
+    name: Self-hosted with kingdoms env-test labels
+    runs-on: [self-hosted, kingdoms, env-test]
+    steps:
+      - name: Report the runner that picked this job
+        run: |
+          echo "Runner: ${RUNNER_NAME:-unknown}"
+          echo "Labels: ${RUNNER_LABELS:-unknown}"
+          hostname
