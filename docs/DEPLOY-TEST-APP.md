@@ -58,22 +58,35 @@ else uses them. Once the app is installed and the secrets set, `/deploy-test`
 comments on PRs of `kingdoms-services` dispatch this repository's
 **Deploy test** workflow and deploy the PR image to the test VPS.
 
-## 4. Restrict who may trigger Deploy test (workflow execution ruleset)
+## 4. Restrict who may trigger Deploy test (optional, GitHub UI only)
 
 GitHub [workflow execution protections](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/actions-policies/workflow-execution-protections)
 are built on the rulesets framework: they define, **before a run starts**,
-which actors may trigger which workflows. Create one on
-`merlin-pinpin/kingdoms-infra` (Settings → Rules → Rulesets → New ruleset →
-New workflow ruleset):
+which actors may trigger which workflows. This step is **defense-in-depth
+and optional**: the app already cannot do anything but dispatch
+`deploy-test.yml` (single permission, single repository, and the prod
+workflow is not dispatchable). Without a policy, repository admins can
+still trigger the workflow manually from the Actions tab — acceptable
+for the test environment.
+
+To add it, on `merlin-pinpin/kingdoms-infra` (Settings → Actions →
+Policies → New policy):
 
 - **Target**: the workflow `.github/workflows/deploy-test.yml`;
 - **Actor rule**: allow **`kingdoms-deployer[bot]`** (the app) — and the
-  repository admins if they should keep a manual fallback;
+  repository admins if they want a manual fallback;
 - **Event rule**: allow `workflow_dispatch` and `push`.
 
 Result: only the app can dispatch **Deploy test** on demand; the
 test-config-change deploys (push on `main`) keep working; no human and no
 other bot can trigger the workflow directly.
+
+> **The app may not appear in the actor picker yet.** The picker only
+> lists identities with recorded activity on the repository: before the
+> first `/deploy-test`, `kingdoms-deployer[bot]` has never run anything
+> here. Do this step **after** the first successful deployment (step
+> "Verify" below) — the app will then appear under its bot name,
+> `kingdoms-deployer[bot]`.
 
 ## Verify
 
