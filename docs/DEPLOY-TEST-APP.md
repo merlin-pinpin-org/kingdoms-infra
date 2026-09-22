@@ -58,7 +58,7 @@ else uses them. Once the app is installed and the secrets set, `/deploy-test`
 comments on PRs of `kingdoms-services` dispatch this repository's
 **Deploy test** workflow and deploy the PR image to the test VPS.
 
-## 4. Restrict who may trigger Deploy test (optional, GitHub UI only)
+## 4. Restrict who may trigger Deploy test (optional, deferred)
 
 GitHub [workflow execution protections](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/actions-policies/workflow-execution-protections)
 are built on the rulesets framework: they define, **before a run starts**,
@@ -81,12 +81,27 @@ Result: only the app can dispatch **Deploy test** on demand; the
 test-config-change deploys (push on `main`) keep working; no human and no
 other bot can trigger the workflow directly.
 
-> **The app may not appear in the actor picker yet.** The picker only
-> lists identities with recorded activity on the repository: before the
-> first `/deploy-test`, `kingdoms-deployer[bot]` has never run anything
-> here. Do this step **after** the first successful deployment (step
-> "Verify" below) — the app will then appear under its bot name,
-> `kingdoms-deployer[bot]`.
+> **Known limitation (checked 2026-09): the custom GitHub App does not
+> appear in the actor picker.** Even after the app has successfully
+> triggered runs on this repository, `kingdoms-deployer[bot]` is not
+> listed by the Actions policy "allowed actors" picker. The documented
+> rule from the older rulesets picker applies the same way here: third
+> party GitHub Apps can only be added to actor/bypass lists **when the
+> repository belongs to an organization** — and `merlin-pinpin` is a
+> personal account. Actor rules therefore work for users, repository
+> roles, and GitHub-owned identities (`dependabot[bot]`, Copilot), but
+> not for a user-created app on a personal-account repository.
+>
+> Consequence: **this policy is deferred.** Do not enable an actor rule
+> on `deploy-test.yml` for now — allowing only humans would block the
+> `/deploy-test` flow itself. The security properties hold without it:
+> the app has a single permission (Actions: read and write) on a single
+> repository (`kingdoms-infra`), the prod workflow is not dispatchable,
+> and the deploy step requires the `test` environment secrets.
+>
+> Revisit if: the repositories move to a GitHub organization (the
+> picker should then list the app), or GitHub ships UI support for
+> third-party app actors on personal repositories.
 
 ## Verify
 
