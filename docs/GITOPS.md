@@ -35,8 +35,9 @@ flowchart LR
 1. A change to `deploy/` or `scripts/` opens a PR; the
    `Check infra` and `CI` workflows validate it.
 2. After merge to `main`, `CD` applies the new state.
-3. Secrets are injected from the host `.env` (provisioned once) or GitHub
-   secrets; they never live in the repository.
+3. Secrets are injected at deploy time by the self-hosted runner from the
+   GitHub environment secrets; they never live in the repository or on
+   the VPS.
 
 ## Rollback
 
