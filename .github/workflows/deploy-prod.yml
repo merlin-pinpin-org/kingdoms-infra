@@ -34,7 +34,7 @@ jobs:
           echo "  Secret:     DISCORD_TOKEN"
           echo "              → production bot token from the Discord developer portal"
           echo "  Variable:   KINGDOMS_BOT_IMAGE"
-          echo "              → released image tag, e.g. ghcr.io/merlin-pinpin/kingdoms-services:v0.1.0"
+          echo "              → released image tag, e.g. ghcr.io/merlin-pinpin-org/kingdoms-services:v0.1.0"
           echo "              (must be a released vX.Y.Z tag; compose fails closed if unset)"
           echo "  Variable:   MONGO_DB (optional, default: kingdoms)"
           echo "  Variable:   LOG_LEVEL (optional, default: INFO)"
