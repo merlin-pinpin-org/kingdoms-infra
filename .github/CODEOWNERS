@@ -1,0 +1,16 @@
+# Code ownership (kingdoms-infra).
+# Combined with the "main" ruleset (require code owner review, 1
+# approval), no change to these paths merges without a maintainer.
+# Teams: @merlin-pinpin-org/maintainers (developer + ops) reviews
+# everything; ops additionally owns the production manifests.
+#
+# Default: a maintainer reviews everything
+*                       @merlin-pinpin-org/maintainers
+
+# Production manifests: ops must review (on top of the default)
+/deploy/prod/           @merlin-pinpin-org/ops
+
+# Environment configuration, deployment scripts and workflows
+/deploy/test/           @merlin-pinpin-org/maintainers
+/scripts/               @merlin-pinpin-org/maintainers
+/.github/workflows/     @merlin-pinpin-org/maintainers
