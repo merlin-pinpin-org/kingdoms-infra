@@ -29,6 +29,14 @@ concurrency:
   group: deploy-test
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  # Pull the bot image from ghcr.io/merlin-pinpin-org/kingdoms-services:
+  # the package is owned by the kingdoms-services repository, so the
+  # anonymous pull from the VPS is unauthorized (the package grants
+  # Actions access to this repository — see docs/DEPLOY-TEST-APP.md).
+  packages: read
+
 jobs:
   deploy-test:
     name: Deploy test (config change on main, or /deploy-test)
@@ -36,6 +44,12 @@ jobs:
     environment: test
     steps:
       - uses: actions/checkout@v4
+      - name: Log in to GHCR (the bot image package is not public)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Apply the optional image override from /deploy-test
         if: github.event_name == 'workflow_dispatch' && inputs.bot_image != ''
         run: |
