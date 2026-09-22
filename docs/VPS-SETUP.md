@@ -181,8 +181,8 @@ this guide only prepares the ground so theirs work as-is.
 - Stay in that shell as `kingdoms` for the whole GitHub install.
 
 **Then follow GitHub's instructions.** Open
-**[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin/kingdoms-infra/settings/actions/runners/new)**
-on the `merlin-pinpin/kingdoms-infra` repository, choose **Linux /
+**[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin-org/kingdoms-infra/settings/actions/runners/new)**
+on the `merlin-pinpin-org/kingdoms-infra` repository, choose **Linux /
 x64**, and run the **Download** and **Configure** commands it displays.
 Do not copy them here — the page always shows the current runner
 version.
@@ -321,4 +321,4 @@ every merge to `main`.
   (`.github/workflows/deploy-prod.yml`) and
   [DEPLOYMENT.md](DEPLOYMENT.md).
 - Monitoring (resource usage, alerts) is tracked in
-  [kingdoms-infra#5](https://github.com/merlin-pinpin/kingdoms-infra/issues/5).
+  [kingdoms-infra#5](https://github.com/merlin-pinpin-org/kingdoms-infra/issues/5).

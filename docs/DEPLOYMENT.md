@@ -13,7 +13,7 @@ Three environments, each defined by a Docker Compose manifest in `deploy/`:
 
 Each environment runs the same services:
 
-- `kingdoms-bot` — the Discord bot (image `ghcr.io/merlin-pinpin/kingdoms-services`,
+- `kingdoms-bot` — the Discord bot (image `ghcr.io/merlin-pinpin-org/kingdoms-services`,
   published by the `Docker` workflow of the `kingdoms-services` repo)
 - `kingdoms-mongo` — MongoDB 7.0 (persistence)
 - `kingdoms-redis` — Redis 7.2 (hot state)

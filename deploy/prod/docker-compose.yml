@@ -6,7 +6,7 @@
 
 services:
   kingdoms-bot:
-    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be set, e.g. ghcr.io/merlin-pinpin/kingdoms-services:v0.1.0}
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be set, e.g. ghcr.io/merlin-pinpin-org/kingdoms-services:v0.1.0}
     pull_policy: always
     environment:
       # Secrets are injected at deploy time by the CD pipeline from the
