@@ -44,3 +44,9 @@ jobs:
         run: ./scripts/deploy.sh test
         env:
           BACKUP_DIR: /opt/kingdoms/backups
+          # Environment secrets must be mapped explicitly into the step
+          # env: declaring `environment: test` alone does not inject them
+          # into the shell environment.
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
