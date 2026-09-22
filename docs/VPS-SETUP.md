@@ -258,7 +258,9 @@ Everything is in place. Trigger the first deployment from GitHub:
    on `main`.
 3. Watch the job: it checks out the repository on the VPS, runs
    `scripts/deploy.sh test` (backup → apply → wait for the health
-   gate → rollback on failure).
+   gate → rollback on failure). The backup step is skipped on the very
+   first deployment (an empty VPS has no stack to back up yet); every
+   later deployment backs up first, unconditionally.
 
 Verify on the VPS that the three services are healthy:
 
