@@ -15,7 +15,7 @@ for the Kingdoms Discord bot platform.
 
 ## Rules for AI agents
 
-- **Read first:** [kingdoms/docs/VIBEWORKFLOW.md](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/VIBEWORKFLOW.md)
+- **Read first:** [kingdoms/docs/VIBEWORKFLOW.md](https://github.com/merlin-pinpin-org/kingdoms/blob/main/docs/VIBEWORKFLOW.md)
   describes the operating model (roles, session loop, approvals).
 - All code, comments, documentation, commit messages, PR titles and PR
   descriptions are written in **English**.
@@ -76,7 +76,7 @@ At the end of every session:
 3. **Labels**: every issue you open must carry exactly one `size/*`
    (XS/S/M/L/XL), one `priority/P0-P3` and a `phase-N` label, plus a
    `## Dependencies` section (see
-   [kingdoms/docs/SKILLS/update-dependencies.md](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/SKILLS/update-dependencies.md)).
+   [kingdoms/docs/SKILLS/update-dependencies.md](https://github.com/merlin-pinpin-org/kingdoms/blob/main/docs/SKILLS/update-dependencies.md)).
 4. **Dependency graph**: `kingdoms/docs/DEPENDENCIES.md` regenerates from
    issue `## Dependencies` sections via
    `kingdoms/scripts/sync_dependencies.py`; verify after issue edits that
@@ -86,9 +86,9 @@ At the end of every session:
 
 `ROADMAP.md` and `docs/DEPENDENCIES.md` live in the `kingdoms` repo and are
 synced by the skills
-[Update roadmap](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/SKILLS/update-roadmap.md)
+[Update roadmap](https://github.com/merlin-pinpin-org/kingdoms/blob/main/docs/SKILLS/update-roadmap.md)
 and
-[Update dependencies](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/SKILLS/update-dependencies.md):
+[Update dependencies](https://github.com/merlin-pinpin-org/kingdoms/blob/main/docs/SKILLS/update-dependencies.md):
 the sync scripts (`scripts/sync_roadmap.py`,
 `scripts/sync_dependencies.py`) run locally against the GitHub issues and
 the regenerated files are committed to a `kingdoms` PR branch. Do not edit
@@ -99,7 +99,7 @@ unless the analysis is wrong.
 
 ## See also
 
-- [kingdoms/AGENTS.md](https://github.com/merlin-pinpin/kingdoms/blob/main/AGENTS.md)
-- [kingdoms/docs/ARCHITECTURE.md](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/ARCHITECTURE.md)
-- [kingdoms/ROADMAP.md](https://github.com/merlin-pinpin/kingdoms/blob/main/ROADMAP.md)
-- [kingdoms/docs/DEPENDENCIES.md](https://github.com/merlin-pinpin/kingdoms/blob/main/docs/DEPENDENCIES.md) — dependency graph, critical path, priorities
+- [kingdoms/AGENTS.md](https://github.com/merlin-pinpin-org/kingdoms/blob/main/AGENTS.md)
+- [kingdoms/docs/ARCHITECTURE.md](https://github.com/merlin-pinpin-org/kingdoms/blob/main/docs/ARCHITECTURE.md)
+- [kingdoms/ROADMAP.md](https://github.com/merlin-pinpin-org/kingdoms/blob/main/ROADMAP.md)
+- [kingdoms/docs/DEPENDENCIES.md](https://github.com/merlin-pinpin-org/kingdoms/blob/main/docs/DEPENDENCIES.md) — dependency graph, critical path, priorities

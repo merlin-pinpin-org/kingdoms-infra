@@ -6,9 +6,9 @@ deployment scripts.
 
 ## Related repositories
 
-- [kingdoms](https://github.com/merlin-pinpin/kingdoms) — source of truth:
+- [kingdoms](https://github.com/merlin-pinpin-org/kingdoms) — source of truth:
   architecture, ADRs, roadmap, mods documentation
-- [kingdoms-services](https://github.com/merlin-pinpin/kingdoms-services) —
+- [kingdoms-services](https://github.com/merlin-pinpin-org/kingdoms-services) —
   all Python code (generic core, Discord platform, mods, YAML configs)
 
 ## Layout

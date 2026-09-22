@@ -35,7 +35,7 @@ and fail closed when one is missing.
 | `MONGO_DB` | MongoDB database name |
 | `REDIS_URI` | Redis connection string (overridden by compose inside the stack) |
 | `LOG_LEVEL` | Python logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
-| `KINGDOMS_BOT_IMAGE` | **Prod only**: full bot image reference, e.g. `ghcr.io/merlin-pinpin/kingdoms-services:v0.1.0` |
+| `KINGDOMS_BOT_IMAGE` | **Prod only**: full bot image reference, e.g. `ghcr.io/merlin-pinpin-org/kingdoms-services:v0.1.0` |
 
 The compose manifests override `MONGO_URI` and `REDIS_URI` so the bot always
 targets the in-stack services.
