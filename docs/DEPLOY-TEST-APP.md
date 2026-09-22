@@ -30,6 +30,13 @@ As the developer (Settings → Developer settings → [New GitHub App](https://g
 
 No webhook, no user permissions, no other repository permission.
 
+On the app page, scroll down to the **Private keys** section and click
+**Generate a private key**: a `.pem` file downloads immediately. GitHub
+keeps only the public half — the private key **cannot be downloaded again**;
+if you lose it, generate a new one (and update the secret below). Do not
+confuse it with the *client secret*, which serves the OAuth user flow and
+is not used here.
+
 ## 2. Install it on kingdoms-infra only
 
 Install the app (`kingdoms-deployer`) on `merlin-pinpin/kingdoms-infra`
