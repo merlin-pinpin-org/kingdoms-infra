@@ -243,6 +243,12 @@ These names must match the `environment:` values in the deploy workflows
 create the `test` environment with its `DISCORD_TOKEN` secret — creating
 an environment with one secret is a single operation in that screen.
 
+One optional step remains to enable on-demand deployments of a pull
+request (`/deploy-test` comment on a `kingdoms-services` PR): creating the
+**kingdoms-deployer GitHub App** and its workflow execution ruleset — see
+[DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md). Without it, the test stack still
+deploys on every test-config change on `main`.
+
 ## 6. First deployment
 
 Everything is in place. Trigger the first deployment from GitHub:
