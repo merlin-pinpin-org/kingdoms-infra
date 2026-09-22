@@ -38,10 +38,18 @@ cd "${ENV_DIR}"
 log "pulling images"
 docker compose pull --quiet
 
-# Mandatory backup before any deployment
-log "running mandatory pre-deploy backup"
-"${REPO_ROOT}/scripts/backup_db.sh" "${ENVIRONMENT}" \
-    || die "pre-deploy backup failed: aborting deployment"
+# Mandatory backup before any deployment — except the very first one:
+# on a fresh VPS the stack does not exist yet, so there is nothing to
+# back up (backup_db.sh fails closed on a non-running MongoDB).
+if docker compose config --services >/dev/null 2>&1 \
+    && docker compose ps --status running --format json 2>/dev/null \
+        | grep -q "${MONGO_SERVICE}"; then
+    log "running mandatory pre-deploy backup"
+    "${REPO_ROOT}/scripts/backup_db.sh" "${ENVIRONMENT}" \
+        || die "pre-deploy backup failed: aborting deployment"
+else
+    log "stack not running yet (first deployment?): skipping the backup"
+fi
 
 log "applying the stack"
 docker compose up -d --remove-orphans
