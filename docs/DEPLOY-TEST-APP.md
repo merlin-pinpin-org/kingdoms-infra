@@ -98,6 +98,32 @@ picker), then run a second `/deploy-test` to verify the flow still passes —
 the app is the actor of the dispatch, so an actor allow list without the
 app would break `/deploy-test` entirely.
 
+## 5. Grant kingdoms-infra access to the bot image package
+
+The bot image package `ghcr.io/merlin-pinpin-org/kingdoms-services` is
+owned by the **kingdoms-services** repository (its Docker workflow
+publishes it). It is not public, and after the organization transfer a
+package's access no longer extends to the other repositories: the
+Deploy test job pulling it from the test VPS fails with
+`error from registry: unauthorized`.
+
+Two halves, both required:
+
+- **Package side (GitHub UI, org owner):** on
+  [the package settings](https://github.com/orgs/merlin-pinpin-org/packages/container/package/kingdoms-services/settings),
+  **Manage Actions access** → *Add repository* → `kingdoms-infra` → role
+  **Read** (pull only; the repo never pushes to this package). Do the
+  same for the `kingdoms` repo only if a workflow there ever needs to
+  pull the image.
+- **Workflow side (in this repository):** `deploy-test.yml` (and
+  `deploy-prod.yml`) log in to ghcr.io with the job's `GITHUB_TOKEN`
+  (`permissions: packages: read`) before running `scripts/deploy.sh`,
+  so the pull from the VPS is authenticated as this repository.
+
+Without the package-side grant the token is not enough: GHCR checks
+repository access on the package. Without the login step the pull is
+anonymous and fails closed.
+
 ## Verify
 
 1. Comment `/deploy-test` on any PR of `kingdoms-services`.

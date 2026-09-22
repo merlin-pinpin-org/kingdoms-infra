@@ -17,6 +17,12 @@ concurrency:
   group: deploy-prod
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  # Same as deploy-test.yml: the bot image package is owned by the
+  # kingdoms-services repository; the pull must be authenticated.
+  packages: read
+
 jobs:
   deploy-prod:
     name: Deploy prod (released tag, or manual by a production deployer)
