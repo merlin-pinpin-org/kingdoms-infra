@@ -8,7 +8,7 @@ Three environments, each defined by a Docker Compose manifest in `deploy/`:
 
 | Environment | Manifest | Purpose |
 | ----------- | -------- | ------- |
-| `test` | `deploy/test/docker-compose.yml` | VPS; deployed on demand (`/deploy-test`, session dispatch, or test-config change on main). Commit-SHA-tagged images | validation environment |
+| `test` | `deploy/test/docker-compose.yml` | VPS; deployed on demand (`/deploy-test` PR comment via the kingdoms-deployer GitHub App, or test-config change on main). Commit-SHA-tagged images | validation environment |
 | `prod` | `deploy/prod/docker-compose.yml` | VPS; released tags only (`vX.Y.Z`), run by identified production deployers — **not implemented yet** (the workflow fails with the setup instructions) |
 
 Each environment runs the same services:
@@ -38,7 +38,9 @@ may deploy each environment independently:
 
 - `test` — **deployed on demand**: `/deploy-test` PR comment in
   `kingdoms-services` (builds the PR image, tagged with the commit SHA),
-  a vibe-coding session dispatch, or a test-config change on `main`.
+  or a test-config change on `main`. The cross-repo trigger uses a
+  **GitHub App** with an ephemeral token — full setup and ruleset
+  hardening in [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md).
   Test images always carry their commit SHA tag (`pr-<n>-sha-<sha>` or
   `sha-<sha>`).
 - `prod` — **released only**: the workflow is triggered by a `vX.Y.Z` tag
