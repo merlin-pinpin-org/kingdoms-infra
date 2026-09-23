@@ -21,14 +21,13 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: sync-state-${{ matrix.env }}
-  cancel-in-progress: false
-
 jobs:
   sync:
     name: Sync deploy/${{ matrix.env }} with main
     runs-on: ubuntu-latest
+    concurrency:
+      group: sync-state-${{ matrix.env }}
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
