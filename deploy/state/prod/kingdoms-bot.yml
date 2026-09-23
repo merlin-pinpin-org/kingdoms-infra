@@ -1,0 +1,9 @@
+# Desired state of kingdoms-bot on the prod environment (ADR-0018).
+# Written by the release pipeline only (released vX.Y.Z image); the
+# branch ruleset requires a PR, so approving a prod deployment is
+# merging the state PR. Prod is not deployed yet.
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:v0.0.0-not-released-yet
+deploy_url: ""
+deployed_by: ""
+deployed_at: ""
+source: placeholder until the first release (ADR-0018, kingdoms-infra#41)
