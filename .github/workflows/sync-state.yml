@@ -52,6 +52,7 @@ jobs:
         with:
           ref: deploy/${{ matrix.env }}
           fetch-depth: 0
+          persist-credentials: false
       - name: Merge origin/main into the state branch
         run: |
           set -euo pipefail
