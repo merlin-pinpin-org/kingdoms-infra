@@ -32,7 +32,7 @@ and fail closed when one is missing.
 | Variable | Description |
 | -------- | ----------- |
 | `DISCORD_TOKEN` | Discord bot token (required) |
-| `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35). Provision it as an environment **secret** or **variable** — the deploy workflow accepts either; empty means `/status` reports no operator |
+| `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35), provisioned as an environment **variable**; empty means `/status` reports no operator |
 | `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Deploy field: the PR's `/deploy-test` comment permalink, a commit link for main, the release URL for prod (empty → `n/a`) |
 | `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Version field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
@@ -61,6 +61,31 @@ no script change:
    `deploy-<name>.yml` workflow from the same template as `deploy-test.yml`
    (trigger: push on `deploy/<name>` paths `deploy/state/**`; runner label
    `env-<name>`; GitHub environment `<name>` with its secrets).
+
+## Keeping the state branches current (pipeline propagation)
+
+The state branches are cut from `main` once, then evolve on their own:
+the pipelines only ever touch `deploy/state/<env>/kingdoms-bot.yml`, so
+any change to a **deploy workflow, manifest or script merged on `main`
+keeps running in its old revision on the state branch** until it is
+propagated. A missed propagation is invisible — the deploy succeeds with
+stale pipeline code (this is how `BOT_ADMINS` once read `secrets.*` on
+`deploy/test` while `main` had moved to `vars.*` — `/status` showed no
+admin).
+
+Therefore, whenever a PR changes a deploy workflow, a `deploy/<env>/`
+manifest or `scripts/deploy.sh`, the merge must be propagated to every
+state branch with a fast-forward update:
+
+```
+git fetch origin && git checkout deploy/<env>
+git merge --ff-only origin/main
+git push origin deploy/<env>
+```
+
+The push deploys with the unchanged pinned state — safe by design. The
+rulesets (no force-push) keep the history auditable: `git log main..deploy/<env>`
+shows exactly which state commits exist beyond `main`.
 
 ## Access and trigger protections (as configured on GitHub, 2026-09)
 
@@ -96,8 +121,9 @@ branch on this repository):
 
 1. The code change lives on a `vibe/<slug>` branch of **kingdoms-services**,
    opened as a PR (draft while work remains).
-2. The **Docker** workflow of kingdoms-services already builds the image on
-   every PR push (`ghcr.io/merlin-pinpin-org/kingdoms-services:pr-<n>-sha-<sha>`).
+2. The **Docker** workflow of kingdoms-services builds the image on
+   every PR push; `/deploy-test` publishes a timestamped tag
+   (`pr-<id>-<timestamp>-<sha>`) from the PR head.
 3. A `/deploy-test` comment on the PR builds/publishes that exact image and
    dispatches this repository's **Deploy test** workflow with it via the
    `kingdoms-deployer` GitHub App (ephemeral token, Actions: write only).
@@ -106,13 +132,15 @@ branch on this repository):
    package — [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md) §5), and restarts the
    bot with it. The health gate confirms the stack is healthy.
 
-So: the image under test is always a PR image tagged by PR number and
-commit SHA — never an untagged `latest`, never a hand-built local image on
-the VPS. Rolling back is re-running `/deploy-test` on the previous PR, or
-letting the next config-change deploy on `main` restore the default image
-(`:main`).
+So: the image under test is always a PR image tagged by PR number,
+timestamp and commit SHA — never an untagged `latest`, never a hand-built
+local image on the VPS. Rolling back is re-running `/deploy-test` on the
+previous PR, or letting the next config-change deploy on `main` restore the
+default image (`sha-<sha>` of main).
 
-The `/deploy-test` dispatch also carries the **deploy URL** (the PR link) so
-the bot's `/status` shows what is running (kingdoms-infra#37): a deploy from
-`/deploy-test` points at the PR, a config-change deploy on `main` points at
-the deployed commit, and a prod deploy points at the released `vX.Y.Z` tag.
+The `/deploy-test` dispatch also carries the **deploy URL** and the
+**version label** so the bot's `/status` shows what is running
+(kingdoms-infra#37): a PR deploy's URL is the permalink of the deployment
+comment (label `pr-<id>-<timestamp>-<sha>`), a config-change deploy on
+`main` points at the deployed commit (label `main@<sha>`), and a prod
+deploy points at the released `vX.Y.Z` GitHub release (label `vX.Y.Z`).

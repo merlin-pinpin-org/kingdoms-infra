@@ -43,7 +43,7 @@ jobs:
           echo ""
           echo "  Secret:     DISCORD_TOKEN"
           echo "              → production bot token from the Discord developer portal"
-          echo "  Secret:     BOT_ADMINS"
+          echo "  Variable:   BOT_ADMINS"
           echo "              → comma-separated Discord user IDs of the bot operators"
           echo "                (kingdoms-services#35; empty means /status shows none)"
           echo "  Variable:   KINGDOMS_BOT_IMAGE"
