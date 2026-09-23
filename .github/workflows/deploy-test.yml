@@ -3,7 +3,8 @@
 # - any change to the test configuration on main (deploy/test/*), and
 # - the `/deploy-test` PR comment in kingdoms-services, which builds the
 #   PR image (tagged with the commit SHA) and dispatches this workflow
-#   with it via KINGDOMS_BOT_IMAGE.
+#   with it via KINGDOMS_BOT_IMAGE (and the PR link via
+#   KINGDOMS_DEPLOY_URL, shown by the bot's /status).
 # One dedicated workflow per environment so GitHub policies can gate who
 # may trigger it independently of the other environments.
 # Jobs run on the self-hosted runner installed on the test VPS
@@ -22,6 +23,10 @@ on:
     inputs:
       bot_image:
         description: "Bot image to deploy (commit-SHA tagged; defaults to the manifest)"
+        required: false
+        default: ""
+      deploy_url:
+        description: "Deployed artifact URL shown by /status (PR link for a /deploy-test, commit link for main)"
         required: false
         default: ""
 
@@ -50,10 +55,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Apply the optional image override from /deploy-test
-        if: github.event_name == 'workflow_dispatch' && inputs.bot_image != ''
+      - name: Apply the optional image and deploy-URL overrides from /deploy-test
+        if: github.event_name == 'workflow_dispatch' && (inputs.bot_image != '' || inputs.deploy_url != '')
         run: |
-          echo "KINGDOMS_BOT_IMAGE=${{ inputs.bot_image }}" >> "${GITHUB_ENV}"
+          if [ -n "${{ inputs.bot_image }}" ]; then
+            echo "KINGDOMS_BOT_IMAGE=${{ inputs.bot_image }}" >> "${GITHUB_ENV}"
+          fi
+          if [ -n "${{ inputs.deploy_url }}" ]; then
+            echo "KINGDOMS_DEPLOY_URL=${{ inputs.deploy_url }}" >> "${GITHUB_ENV}"
+          fi
       - name: Deploy the test stack
         run: ./scripts/deploy.sh test
         env:
@@ -62,5 +72,6 @@ jobs:
           # env: declaring `environment: test` alone does not inject them
           # into the shell environment.
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          BOT_ADMINS: ${{ secrets.BOT_ADMINS }}
           MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}

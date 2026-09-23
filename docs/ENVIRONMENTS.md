@@ -31,6 +31,8 @@ and fail closed when one is missing.
 | Variable | Description |
 | -------- | ----------- |
 | `DISCORD_TOKEN` | Discord bot token (required) |
+| `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35; secret — empty means `/status` reports no operator) |
+| `KINGDOMS_DEPLOY_URL` | URL of the deployed artifact shown by `/status`: PR link for a `/deploy-test` deploy, commit link for a main deploy, release link for prod (empty → `n/a`) |
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
 | `REDIS_URI` | Redis connection string (overridden by compose inside the stack) |
@@ -89,3 +91,8 @@ commit SHA — never an untagged `latest`, never a hand-built local image on
 the VPS. Rolling back is re-running `/deploy-test` on the previous PR, or
 letting the next config-change deploy on `main` restore the default image
 (`:main`).
+
+The `/deploy-test` dispatch also carries the **deploy URL** (the PR link) so
+the bot's `/status` shows what is running (kingdoms-infra#37): a deploy from
+`/deploy-test` points at the PR, a config-change deploy on `main` points at
+the deployed commit, and a prod deploy points at the released `vX.Y.Z` tag.
