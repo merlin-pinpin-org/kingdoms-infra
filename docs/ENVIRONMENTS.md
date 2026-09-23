@@ -7,7 +7,7 @@ is the environment matrix; the deployment procedure lives in
 | | test | prod |
 | --- | --- | --- |
 | Manifest | `deploy/test/docker-compose.yml` | `deploy/prod/docker-compose.yml` |
-| Bot image | `ghcr.io/...` commit-SHA tagged (`pr-<n>-sha-<sha>` for `/deploy-test`, `sha-<sha>` for main) | `ghcr.io/...` released tag `vX.Y.Z` via `KINGDOMS_BOT_IMAGE` |
+| Bot image | `ghcr.io/...` pinned by the state branch: `pr-<id>-<timestamp>-<sha>` for `/deploy-test`, `sha-<sha>` for main | `ghcr.io/...` released tag `vX.Y.Z` via `KINGDOMS_BOT_IMAGE` |
 | Image pull policy | `missing` | `always` |
 | Host | VPS (runner) | VPS (runner) |
 | Secrets | GitHub environment secrets (injected by the runner) | GitHub environment secrets |
@@ -32,8 +32,9 @@ and fail closed when one is missing.
 | Variable | Description |
 | -------- | ----------- |
 | `DISCORD_TOKEN` | Discord bot token (required) |
-| `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35; secret — empty means `/status` reports no operator) |
-| `KINGDOMS_DEPLOY_URL` | URL of the deployed artifact shown by `/status`: PR link for a `/deploy-test` deploy, commit link for a main deploy, release link for prod (empty → `n/a`) |
+| `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35). Provision it as an environment **secret** or **variable** — the deploy workflow accepts either; empty means `/status` reports no operator |
+| `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Deploy field: the PR's `/deploy-test` comment permalink, a commit link for main, the release URL for prod (empty → `n/a`) |
+| `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Version field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
 | `REDIS_URI` | Redis connection string (overridden by compose inside the stack) |
