@@ -131,3 +131,6 @@ jobs:
           BOT_ADMINS: ${{ vars.BOT_ADMINS }}
           MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
+          # The deploy run links itself in /status (Deploy field) so the
+          # running bot can point at the exact job that deployed it.
+          KINGDOMS_DEPLOY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
