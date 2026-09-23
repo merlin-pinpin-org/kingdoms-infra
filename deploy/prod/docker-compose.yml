@@ -15,6 +15,8 @@ services:
       DISCORD_TOKEN: ${DISCORD_TOKEN:?DISCORD_TOKEN is required}
       BOT_ADMINS: ${BOT_ADMINS:-}
       KINGDOMS_DEPLOY_URL: ${KINGDOMS_DEPLOY_URL:-}
+      KINGDOMS_DEPLOY_LABEL: ${KINGDOMS_DEPLOY_LABEL:-}
+      KINGDOMS_DEPLOY_RUN_URL: ${KINGDOMS_DEPLOY_RUN_URL:-}
       MONGO_URI: mongodb://kingdoms-mongo:27017
       REDIS_URI: redis://kingdoms-redis:6379
       MONGO_DB: ${MONGO_DB:-kingdoms}

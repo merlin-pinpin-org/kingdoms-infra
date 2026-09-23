@@ -24,6 +24,7 @@ jobs:
       - name: Validate test manifest
         run: |
           DISCORD_TOKEN=ci-placeholder \
+          KINGDOMS_BOT_IMAGE=ghcr.io/merlin-pinpin-org/kingdoms-services:sha-ci \
             docker compose -f deploy/test/docker-compose.yml config --quiet
       - name: Validate prod manifest
         run: |
@@ -36,6 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DISCORD_TOKEN: ci-placeholder
+      # The test manifest fails closed without a pinned image (ADR-0018):
+      # CI boots only mongo/redis, but compose interpolation needs it.
+      KINGDOMS_BOT_IMAGE: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-ci
     steps:
       - uses: actions/checkout@v4
 
@@ -99,6 +103,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DISCORD_TOKEN: ci-placeholder
+      # Same as the smoke job: the manifest fails closed without a pinned
+      # image (ADR-0018); the round-trip boots mongo/redis only.
+      KINGDOMS_BOT_IMAGE: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-ci
     steps:
       - uses: actions/checkout@v4
 
