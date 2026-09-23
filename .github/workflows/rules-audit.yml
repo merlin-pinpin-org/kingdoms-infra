@@ -110,12 +110,21 @@ jobs:
             for (const [repo, wantRules] of Object.entries(expectedTags)) {
               const rulesets = await github.paginate(
                 github.rest.repos.getRepoRulesets,
-                { owner: org, repo, target: "tag", per_page: 100 },
+                { owner: org, repo, per_page: 100 },
               );
-              const tagSets = rulesets.filter((r) => {
-                const inc = r.conditions?.ref_name?.include || [];
-                return inc.some((pattern) => pattern.includes("v*.*.*"));
-              });
+              // The list endpoint omits conditions (null) — fetch each ruleset
+              // individually to read its ref_name patterns.
+              const tagSets = [];
+              for (const r of rulesets.filter((x) => x.target === "tag")) {
+                const full = (await github.rest.repos.getRepoRuleset({
+                  owner: org, repo, ruleset_id: r.id,
+                  include_parents: false,
+                })).data;
+                const inc = full.conditions?.ref_name?.include || [];
+                if (inc.some((pattern) => pattern.replace("refs/tags/", "").includes("v*.*.*"))) {
+                  tagSets.push(full);
+                }
+              }
               if (tagSets.length === 0) {
                 problems.push(`${repo}: NO tag ruleset protects refs/tags/v*.*.*`);
                 continue;
