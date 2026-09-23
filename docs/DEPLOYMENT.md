@@ -21,10 +21,10 @@ Each environment runs the same services:
 ## Prerequisites
 
 - Docker and Docker Compose on the host
-- GitHub **environment secrets** for the target environment (Settings →
-  Environments): `DISCORD_TOKEN` at minimum; `BOT_ADMINS` (bot operators,
-  kingdoms-services#35) so `/status` can list them;
-  `MONGO_DB`, `LOG_LEVEL`, `KINGDOMS_BOT_IMAGE` (prod),
+- GitHub **environments** for the target environment (Settings →
+  Environments): the `DISCORD_TOKEN` **secret** at minimum; the `BOT_ADMINS`
+  **variable** (bot operators, kingdoms-services#35) so `/status` can list
+  them; `MONGO_DB`, `LOG_LEVEL`, `KINGDOMS_BOT_IMAGE` (prod),
   `KINGDOMS_DEPLOY_URL` (deployed-artifact link shown by `/status`,
   kingdoms-infra#37) are optional. The runner injects them at
   deploy time — no secret is ever stored on the VPS or in the repository
@@ -40,12 +40,14 @@ There is **one workflow per environment**
 may deploy each environment independently:
 
 - `test` — **deployed by state push** (ADR-0018): a `/deploy-test` PR
-  comment in `kingdoms-services` builds the PR image (`pr-<n>-sha-<sha>`)
-  and pins it in the `deploy/test` state branch via the **GitHub App**
-  (ephemeral token — setup in [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md));
+  comment in `kingdoms-services` builds the PR image
+  (`pr-<id>-<timestamp>-<sha>`) and pins it in the `deploy/test` state
+  branch via the **GitHub App** (ephemeral token — setup in
+  [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md));
   the push deploys the pinned image. A test-config change on `main`
   re-pins the latest `sha-<sha>` image first. The state file records the
-  image, deploy URL, deployer and time — Git history is the audit trail.
+  image, version label, deploy URL, deployer and time — Git history is
+  the audit trail.
 - `prod` — **deployed by state push** (ADR-0018): the release pipeline
   writes the released `vX.Y.Z` image to `deploy/prod`; the branch
   ruleset requires a PR, so approving a prod deployment is merging it.
