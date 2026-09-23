@@ -91,7 +91,10 @@ git push origin deploy/<env>
 ```
 
 The sync push deploys with the unchanged pinned state — safe by design.
-The rulesets (no force-push) keep the history auditable:
+The `sync-state` workflow pushes with the `kingdoms-deployer` App token —
+the same actor the deploy pipelines use to write the pinned state, and the
+only non-admin actor in the `deploy/*` ruleset bypass lists. The rulesets
+(no force-push) keep the history auditable:
 `git log main..deploy/<env>` shows exactly which state commits exist
 beyond `main`. The [Branch and tag rules audit](#branch-and-tag-rules-audit)
 workflow fails when a state branch drifts from `main`.

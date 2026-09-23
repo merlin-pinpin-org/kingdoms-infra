@@ -59,7 +59,7 @@ jobs:
               },
               "kingdoms-services": {
                 "main": { rules: ["deletion", "non_fast_forward", "required_linear_history", "pull_request", "required_status_checks"], checks: servicesChecks },
-                "v0.0.0-audit": { rules: ["deletion", "non_fast_forward"], checks: [] },
+                
               },
               "kingdoms": {
                 "main": { rules: ["deletion", "non_fast_forward", "required_linear_history", "pull_request", "required_status_checks"], checks: kingdomsChecks },
@@ -99,6 +99,33 @@ jobs:
                     problems.push(`${repo}: ${ref} is missing required status checks: ${missingChecks.join(", ")}`);
                   }
                 }
+              }
+            }
+
+            // Tag rulesets (release tags) are not returned by getBranchRules —
+            // audit them through the repo rulesets API instead.
+            const expectedTags = {
+              "kingdoms-services": ["deletion", "non_fast_forward"],
+            };
+            for (const [repo, wantRules] of Object.entries(expectedTags)) {
+              const rulesets = await github.paginate(
+                github.rest.repos.getRepoRulesets,
+                { owner: org, repo, target: "tag", per_page: 100 },
+              );
+              const tagSets = rulesets.filter((r) => {
+                const inc = r.conditions?.ref_name?.include || [];
+                return inc.some((pattern) => pattern.includes("v*.*.*"));
+              });
+              if (tagSets.length === 0) {
+                problems.push(`${repo}: NO tag ruleset protects refs/tags/v*.*.*`);
+                continue;
+              }
+              const types = tagSets.flatMap((r) => r.rules.map((x) => x.type)).sort();
+              const missing = wantRules.filter((t) => !types.includes(t));
+              if (missing.length > 0) {
+                problems.push(`${repo}: the v*.*.* tag ruleset is missing rules: ${missing.join(", ")}`);
+              } else {
+                core.info(`${repo}: the v*.*.* tag ruleset is in place`);
               }
             }
 
