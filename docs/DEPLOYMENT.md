@@ -22,8 +22,11 @@ Each environment runs the same services:
 
 - Docker and Docker Compose on the host
 - GitHub **environment secrets** for the target environment (Settings →
-  Environments): `DISCORD_TOKEN` at minimum; `MONGO_DB`, `LOG_LEVEL`,
-  `KINGDOMS_BOT_IMAGE` (prod) are optional. The runner injects them at
+  Environments): `DISCORD_TOKEN` at minimum; `BOT_ADMINS` (bot operators,
+  kingdoms-services#35) so `/status` can list them;
+  `MONGO_DB`, `LOG_LEVEL`, `KINGDOMS_BOT_IMAGE` (prod),
+  `KINGDOMS_DEPLOY_URL` (deployed-artifact link shown by `/status`,
+  kingdoms-infra#37) are optional. The runner injects them at
   deploy time — no secret is ever stored on the VPS or in the repository
   ([GitHub environment secrets docs](https://docs.github.com/en/actions/reference/environments#environment-secrets)).
 
