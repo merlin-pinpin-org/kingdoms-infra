@@ -1,0 +1,8 @@
+# Desired state of kingdoms-bot on the test environment (ADR-0018).
+# Written by the deploy pipelines only (kingdoms-deployer GitHub App);
+# a push to this branch deploys this exact image.
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-c06736d0e827495f241ca7603e32f0aed623c770
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/c06736d0e827495f241ca7603e32f0aed623c770
+deployed_by: merlin-pinpin
+deployed_at: "2026-09-23T13:32:33Z"
+source: bootstrap (kingdoms-infra#41) — pinned the main image running before the state-branch model
