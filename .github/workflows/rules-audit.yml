@@ -1,0 +1,132 @@
+# Branch and tag rules audit (docs/ENVIRONMENTS.md § "Branch and tag
+# rules"). The expected rulesets and required status checks are documented
+# as the source of truth; this workflow compares the live GitHub
+# configuration against it and fails on any drift — run it on demand, after
+# any ruleset change, or weekly to catch silent regressions (e.g. a ruleset
+# bound to `~DEFAULT_BRANCH` silently following a default-branch change).
+#
+# It also fails when a deploy/* state branch drifts from main (missed
+# propagation — see "Keeping the state branches current").
+
+name: Branch and tag rules audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Compare live rulesets with the documented expectations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Audit the three repositories
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const org = "merlin-pinpin-org";
+            const infraChecks = [
+              "Lint scripts and shell files",
+              "Validate compose manifests",
+              "Validate infrastructure files",
+              "Backup/restore round-trip test",
+              "Smoke test (test stack boot)",
+              "cla",
+            ];
+            const servicesChecks = [
+              "Lint (ruff)",
+              "Typecheck (mypy strict)",
+              "Unit tests (pytest)",
+              "Validate and boot docker-compose.yml",
+              "Smoke test (bot image + MongoDB + Redis)",
+              "Discord smoke (real gateway via the CI/CD bot)",
+              "Build and test the image",
+              "Generate and check pydoc freshness",
+              "cla",
+            ];
+            const kingdomsChecks = ["cla", "check"];
+
+            const expected = {
+              "kingdoms-infra": {
+                "main": { rules: ["deletion", "non_fast_forward", "required_linear_history", "pull_request", "required_status_checks"], checks: infraChecks },
+                "deploy/test": { rules: ["deletion", "non_fast_forward", "required_linear_history", "required_status_checks"], checks: infraChecks },
+                "deploy/prod": { rules: ["deletion", "non_fast_forward", "required_linear_history", "pull_request", "required_status_checks"], checks: infraChecks },
+              },
+              "kingdoms-services": {
+                "main": { rules: ["deletion", "non_fast_forward", "required_linear_history", "pull_request", "required_status_checks"], checks: servicesChecks },
+                "v0.0.0-audit": { rules: ["deletion", "non_fast_forward"], checks: [] },
+              },
+              "kingdoms": {
+                "main": { rules: ["deletion", "non_fast_forward", "required_linear_history", "pull_request", "required_status_checks"], checks: kingdomsChecks },
+              },
+            };
+
+            const problems = [];
+
+            for (const [repo, refs] of Object.entries(expected)) {
+              for (const [ref, want] of Object.entries(refs)) {
+                let rules;
+                try {
+                  rules = (await github.rest.repos.getBranchRules({
+                    owner: org,
+                    repo,
+                    branch: ref,
+                  })).data;
+                } catch (e) {
+                  problems.push(`${repo}: cannot read rules for ${ref} — ${e.message}`);
+                  continue;
+                }
+                if (rules.length === 0) {
+                  problems.push(`${repo}: NO ruleset protects ${ref}`);
+                  continue;
+                }
+                const types = rules.map((r) => r.type).sort();
+                const missing = want.rules.filter((t) => !types.includes(t));
+                if (missing.length > 0) {
+                  problems.push(`${repo}: ${ref} is missing rules: ${missing.join(", ")}`);
+                }
+                if (want.checks.length > 0) {
+                  const checks = rules.flatMap((r) =>
+                    r.type === "required_status_checks" ? r.parameters.required_status_checks.map((c) => c.context) : []
+                  );
+                  const missingChecks = want.checks.filter((c) => !checks.includes(c));
+                  if (missingChecks.length > 0) {
+                    problems.push(`${repo}: ${ref} is missing required status checks: ${missingChecks.join(", ")}`);
+                  }
+                }
+              }
+            }
+
+            // State branches must not drift from main (ADR-0018 propagation).
+            for (const env of ["test", "prod"]) {
+              const branch = `deploy/${env}`;
+              try {
+                const compare = await github.rest.repos.compareCommits({
+                  owner: org,
+                  repo: "kingdoms-infra",
+                  base: "main",
+                  head: branch,
+                });
+                const behind = compare.data.behind_by;
+                if (behind > 0) {
+                  problems.push(`kingdoms-infra: ${branch} is ${behind} commit(s) behind main — propagate the pipeline changes (docs/ENVIRONMENTS.md § "Keeping the state branches current")`);
+                } else {
+                  core.info(`kingdoms-infra: ${branch} is in sync with main`);
+                }
+              } catch (e) {
+                problems.push(`kingdoms-infra: cannot compare main..${branch} — ${e.message}`);
+              }
+            }
+
+            if (problems.length > 0) {
+              core.error("The live GitHub rules have drifted from the documented configuration:");
+              for (const p of problems) core.error(`- ${p}`);
+              core.setFailed(`${problems.length} rule problem(s) — see the errors above`);
+            } else {
+              core.info("All documented rulesets and required status checks are in place, and every state branch is in sync with main.");
+            }
