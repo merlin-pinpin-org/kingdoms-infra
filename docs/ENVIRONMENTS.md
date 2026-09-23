@@ -33,8 +33,9 @@ and fail closed when one is missing.
 | -------- | ----------- |
 | `DISCORD_TOKEN` | Discord bot token (required) |
 | `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35), provisioned as an environment **variable**; empty means `/status` reports no operator |
-| `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Deploy field: the PR's `/deploy-test` comment permalink, a commit link for main, the release URL for prod (empty → `n/a`) |
+| `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Deploy field: the `/deploy-test` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
 | `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Version field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
+| `KINGDOMS_DEPLOY_RUN_URL` | URL of the deploy job shown by the `/status` Deploy field — injected by the deploy workflow itself (`github.server_url/repository/actions/runs/<run_id>`), so the running bot links the exact job that deployed it |
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
 | `REDIS_URI` | Redis connection string (overridden by compose inside the stack) |
@@ -75,17 +76,64 @@ admin).
 
 Therefore, whenever a PR changes a deploy workflow, a `deploy/<env>/`
 manifest or `scripts/deploy.sh`, the merge must be propagated to every
-state branch with a fast-forward update:
+state branch. State branches carry their own state commits (and sync
+merges), so this is a merge, not a fast-forward:
 
 ```
 git fetch origin && git checkout deploy/<env>
-git merge --ff-only origin/main
+git merge origin/main -m "deploy(<env>): sync state branch with main"
 git push origin deploy/<env>
 ```
 
 The push deploys with the unchanged pinned state — safe by design. The
 rulesets (no force-push) keep the history auditable: `git log main..deploy/<env>`
-shows exactly which state commits exist beyond `main`.
+shows exactly which state commits exist beyond `main`. The
+[Branch and tag rules audit](#branch-and-tag-rules-audit) workflow fails
+when a state branch drifts from `main`.
+
+## Branch and tag rules (expected configuration)
+
+The authoritative configuration lives on GitHub (Settings → Rules → Rule
+sets); this table is the expected state, and the
+**Branch and tag rules audit** workflow (`.github/workflows/rules-audit.yml`)
+fails when reality drifts from it — run it on demand, or after every
+ruleset change.
+
+### kingdoms-infra
+
+| Ref / scope | Ruleset | Rules | Required status checks |
+| --- | --- | --- | --- |
+| `main` | `main` | deletion, non-fast-forward, linear history, PR required (1 approval), status checks | the 6 infra checks (below) |
+| `deploy/test` | `Deploy TEST` | deletion, non-fast-forward, linear history, status checks | the 6 infra checks (below) |
+| `deploy/prod` (+ default branch) | `Deploy PROD` | deletion, non-fast-forward, linear history, PR required, status checks | the 6 infra checks (below) |
+
+Infra required status checks (all three branch rulesets):
+
+1. `Lint scripts and shell files`
+2. `Validate compose manifests`
+3. `Validate infrastructure files`
+4. `Backup/restore round-trip test`
+5. `Smoke test (test stack boot)`
+6. `cla`
+
+### kingdoms-services
+
+| Ref / scope | Ruleset | Rules | Required status checks |
+| --- | --- | --- | --- |
+| `main` | `main` | deletion, non-fast-forward, linear history, PR required (1 approval), status checks | `Lint (ruff)`, `Typecheck (mypy strict)`, `Unit tests (pytest)`, `Validate and boot docker-compose.yml`, `Smoke test (bot image + MongoDB + Redis)`, `Discord smoke (real gateway via the CI/CD bot)`, `Build and test the image`, `Generate and check pydoc freshness`, `cla` |
+| tags `v*.*.*` | `release-tags` | deletion, non-fast-forward | — |
+
+The `release-tags` ruleset is **required for prod**: it lets anyone push a
+`vX.Y.Z` tag (rulesets cannot block tag *creation* by name for non-admins),
+but forbids deleting or force-updating one — a release is immutable once
+cut. The Docker workflow publishes the `vX.Y.Z` image only for the
+`v*.*.*` tag classifier.
+
+### kingdoms
+
+| Ref / scope | Ruleset | Rules | Required status checks |
+| --- | --- | --- | --- |
+| `main` | `main` | deletion, non-fast-forward, linear history, PR required (1 approval), status checks | `cla`, `check` (docs validation) |
 
 ## Access and trigger protections (as configured on GitHub, 2026-09)
 
@@ -142,5 +190,10 @@ The `/deploy-test` dispatch also carries the **deploy URL** and the
 **version label** so the bot's `/status` shows what is running
 (kingdoms-infra#37): a PR deploy's URL is the permalink of the deployment
 comment (label `pr-<id>-<timestamp>-<sha>`), a config-change deploy on
-`main` points at the deployed commit (label `main@<sha>`), and a prod
-deploy points at the released `vX.Y.Z` GitHub release (label `vX.Y.Z`).
+
+`main` points at the deployed source tree `/tree/<sha>` (label
+`main@<sha>`), and a prod deploy points at the released `vX.Y.Z` GitHub
+release (label `vX.Y.Z`).
+
+The Deploy field additionally links the kingdoms-infra deploy job itself
+(`KINGDOMS_DEPLOY_RUN_URL`).

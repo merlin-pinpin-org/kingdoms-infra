@@ -70,8 +70,11 @@ jobs:
               return;
             }
             const sha = runs.data.workflow_runs[0].head_sha;
-            const image = `ghcr.io/merlin-pinpin-org/kingdoms-services:sha-${sha}`;
-            const url = `https://github.com/merlin-pinpin-org/kingdoms-services/commit/${sha}`;
+            // docker/metadata-action publishes type=sha tags as sha-<short> (7
+            // chars by default) — pin the tag that exists on GHCR, not the full SHA.
+            const short = sha.slice(0, 7);
+            const image = `ghcr.io/merlin-pinpin-org/kingdoms-services:sha-${short}`;
+            const url = `https://github.com/merlin-pinpin-org/kingdoms-services/tree/${sha}`;
             const path = `deploy/state/test/${svc}.yml`;
             const branch = "deploy/test";
             let base;
@@ -87,7 +90,7 @@ jobs:
               "# Written by the deploy pipelines only (kingdoms-deployer GitHub App);",
               "# a push to this branch deploys this exact image.",
               `image: ${image}`,
-              `version_label: main@${sha.slice(0, 7)}`,
+              `version_label: main@${short}`,
               `deploy_url: ${url}`,
               `deployed_by: config-change-deploy (run ${context.runId})`,
               `deployed_at: "${now}"`,
@@ -128,3 +131,6 @@ jobs:
           BOT_ADMINS: ${{ vars.BOT_ADMINS }}
           MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
+          # The deploy run links itself in /status (Deploy field) so the
+          # running bot can point at the exact job that deployed it.
+          KINGDOMS_DEPLOY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
