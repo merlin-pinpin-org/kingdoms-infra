@@ -4,7 +4,10 @@ services:
     # Docker workflow: sha-<sha>, or pr-<n>-sha-<sha> for /deploy-test).
     # The default tracks main; KINGDOMS_BOT_IMAGE pins an exact commit.
     image: ${KINGDOMS_BOT_IMAGE:-ghcr.io/merlin-pinpin-org/kingdoms-services:main}
-    pull_policy: missing
+    # `always`: the deploy must run the image the pipeline just published,
+    # never a stale local copy of the same tag (a config-change deploy on
+    # main must pick up the freshly built :main image).
+    pull_policy: always
     environment:
       # Secrets are injected at deploy time by the CD pipeline from the
       # GitHub environment secrets (nothing secret is stored on the VPS);
