@@ -15,9 +15,10 @@ is the environment matrix; the deployment procedure lives in
 | Redis exposed ports | 6379 | — |
 | Redis persistence | volume | volume + AOF |
 | Bot memory limit | — | 512M |
-| Deploy trigger | Deploy test: on demand (`/deploy-test` PR comment via the GitHub App, or test-config change on main) | Deploy prod: released tag `vX.Y.Z` or manual by identified production deployers (not implemented yet) |
+| Deploy trigger | Push to the `deploy/test` state branch (written by the GitHub App from a `/deploy-test` PR comment, or re-pinned by a test-config change on main) | Push to the `deploy/prod` state branch (written by the release pipeline; the branch ruleset requires a PR — approving a prod deploy is merging it) |
 | Pre-deploy backup | mandatory | mandatory |
 | Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `prod`) |
+| State branch | `deploy/test` (ADR-0018) | `deploy/prod` (ADR-0018) |
 | Bot healthcheck | `/healthz` (compose + image) | `/healthz` (compose + image) |
 
 ## Configuration variables
@@ -41,6 +42,24 @@ and fail closed when one is missing.
 
 The compose manifests override `MONGO_URI` and `REDIS_URI` so the bot always
 targets the in-stack services.
+
+## Adding an environment (ADR-0018 checklist)
+
+A new environment `<name>` is a four-item checklist — no workflow fork,
+no script change:
+
+1. **Manifest**: `deploy/<name>/docker-compose.yml` on `main` (copy the
+   test one; the image is pinned by state, never a floating tag).
+2. **Runner label**: the environment VPS's self-hosted runner carries
+   `env-<name>` (see [VPS-SETUP.md](VPS-SETUP.md)) — one runner per VPS.
+3. **State branch**: `deploy/<name>` with the initial state commit
+   (`deploy/state/<name>/kingdoms-bot.yml`); the deploy workflow reads
+   the pinned image from it.
+4. **Branch ruleset + workflow**: protect `deploy/<name>` (no force-push,
+   no deletion; PR required for prod-like environments), and add a
+   `deploy-<name>.yml` workflow from the same template as `deploy-test.yml`
+   (trigger: push on `deploy/<name>` paths `deploy/state/**`; runner label
+   `env-<name>`; GitHub environment `<name>` with its secrets).
 
 ## Access and trigger protections (as configured on GitHub, 2026-09)
 

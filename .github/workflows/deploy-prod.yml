@@ -1,8 +1,9 @@
-# Deploy the `prod` environment (ADR-0007).
-# Triggered by a version tag (vX.Y.Z) on kingdoms-infra main, or manually by
-# an identified production deployer (gated by GitHub rulesets targeting
-# this workflow). The bot image is a released image tagged vX.Y.Z
-# (KINGDOMS_BOT_IMAGE is required by deploy/prod/docker-compose.yml).
+# Deploy the `prod` environment (ADR-0007, ADR-0018).
+# Triggered by a push to the `deploy/prod` state branch (deploy/state/**):
+# the release pipeline writes the released vX.Y.Z image there, and the
+# branch ruleset requires a pull request — approving a production
+# deployment is merging that PR. The bot image comes from the pinned
+# state file (KINGDOMS_BOT_IMAGE is required by deploy/prod/docker-compose.yml).
 # One dedicated workflow per environment so GitHub policies can gate who
 # may trigger it independently of the other environments.
 
@@ -10,7 +11,10 @@ name: Deploy prod
 
 on:
   push:
-    tags: ["v*.*.*"]
+    branches:
+      - deploy/prod
+    paths:
+      - "deploy/state/**"
   workflow_dispatch:
 
 concurrency:
@@ -25,7 +29,7 @@ permissions:
 
 jobs:
   deploy-prod:
-    name: Deploy prod (released tag, or manual by a production deployer)
+    name: Deploy prod (state-branch push, or manual by a production deployer)
     runs-on: [self-hosted, kingdoms, env-prod]
     environment: prod
     steps:

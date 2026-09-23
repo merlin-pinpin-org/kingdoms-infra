@@ -39,13 +39,18 @@ There is **one workflow per environment**
 (`.github/workflows/deploy-<env>.yml`), so GitHub policies can gate who
 may deploy each environment independently:
 
-- `test` — **deployed on demand**: `/deploy-test` PR comment in
-  `kingdoms-services` (builds the PR image, tagged with the commit SHA),
-  or a test-config change on `main`. The cross-repo trigger uses a
-  **GitHub App** with an ephemeral token — full setup and ruleset
-  hardening in [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md).
-  Test images always carry their commit SHA tag (`pr-<n>-sha-<sha>` or
-  `sha-<sha>`).
+- `test` — **deployed by state push** (ADR-0018): a `/deploy-test` PR
+  comment in `kingdoms-services` builds the PR image (`pr-<n>-sha-<sha>`)
+  and pins it in the `deploy/test` state branch via the **GitHub App**
+  (ephemeral token — setup in [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md));
+  the push deploys the pinned image. A test-config change on `main`
+  re-pins the latest `sha-<sha>` image first. The state file records the
+  image, deploy URL, deployer and time — Git history is the audit trail.
+- `prod` — **deployed by state push** (ADR-0018): the release pipeline
+  writes the released `vX.Y.Z` image to `deploy/prod`; the branch
+  ruleset requires a PR, so approving a prod deployment is merging it.
+  **Not implemented yet** — the workflow fails with the setup
+  instructions.
 - `prod` — **released only**: the workflow is triggered by a `vX.Y.Z` tag
   or manually by an identified production deployer (a repository ruleset
   restricts who may run it), and the bot image must be a released
