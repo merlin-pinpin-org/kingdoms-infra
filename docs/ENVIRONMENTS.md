@@ -36,6 +36,9 @@ and fail closed when one is missing.
 | `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Deploy field: the `/deploy-test` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
 | `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Version field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
 | `KINGDOMS_DEPLOY_RUN_URL` | URL of the deploy job shown by the `/status` Deploy field — injected by the deploy workflow itself (`github.server_url/repository/actions/runs/<run_id>`), so the running bot links the exact job that deployed it |
+| `KINGDOMS_DEPLOY_INFRA_LABEL` | Short label of the deployed infra state (`deploy/<env>@<sha>`), shown by the `/status` Deploy field — injected by the deploy workflow |
+| `KINGDOMS_DEPLOY_INFRA_URL` | Tree URL of the deployed infra state commit, the link behind `deploy/<env>@<sha>` |
+
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
 | `REDIS_URI` | Redis connection string (overridden by compose inside the stack) |
