@@ -74,7 +74,7 @@ jobs:
             // chars by default) — pin the tag that exists on GHCR, not the full SHA.
             const short = sha.slice(0, 7);
             const image = `ghcr.io/merlin-pinpin-org/kingdoms-services:sha-${short}`;
-            const url = `https://github.com/merlin-pinpin-org/kingdoms-services/commit/${sha}`;
+            const url = `https://github.com/merlin-pinpin-org/kingdoms-services/tree/${sha}`;
             const path = `deploy/state/test/${svc}.yml`;
             const branch = "deploy/test";
             let base;
