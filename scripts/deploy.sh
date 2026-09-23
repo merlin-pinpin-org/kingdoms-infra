@@ -38,11 +38,14 @@ STATE_FILE="${REPO_ROOT}/deploy/state/${ENVIRONMENT}/kingdoms-bot.yml"
 if [[ -f "${STATE_FILE}" ]]; then
     pinned_image="$(grep -E '^image:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
     pinned_url="$(grep -E '^deploy_url:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
+    pinned_label="$(grep -E '^version_label:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
     [[ -n "${pinned_image:-}" ]] || die "state file ${STATE_FILE} has no image"
     export KINGDOMS_BOT_IMAGE="${pinned_image}"
     [[ -n "${pinned_url:-}" ]] || pinned_url=""
     export KINGDOMS_DEPLOY_URL="${pinned_url}"
-    log "state: image=${KINGDOMS_BOT_IMAGE} deploy_url=${KINGDOMS_DEPLOY_URL:-<none>}"
+    [[ -n "${pinned_label:-}" ]] || pinned_label=""
+    export KINGDOMS_DEPLOY_LABEL="${pinned_label}"
+    log "state: image=${KINGDOMS_BOT_IMAGE} label=${KINGDOMS_DEPLOY_LABEL:-<none>} deploy_url=${KINGDOMS_DEPLOY_URL:-<none>}"
 fi
 
 cd "${ENV_DIR}"

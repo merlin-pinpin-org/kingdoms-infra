@@ -87,6 +87,7 @@ jobs:
               "# Written by the deploy pipelines only (kingdoms-deployer GitHub App);",
               "# a push to this branch deploys this exact image.",
               `image: ${image}`,
+              `version_label: main@${sha.slice(0, 7)}`,
               `deploy_url: ${url}`,
               `deployed_by: config-change-deploy (run ${context.runId})`,
               `deployed_at: "${now}"`,
@@ -124,6 +125,6 @@ jobs:
           # env: declaring `environment: test` alone does not inject them
           # into the shell environment.
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          BOT_ADMINS: ${{ secrets.BOT_ADMINS }}
+          BOT_ADMINS: ${{ vars.BOT_ADMINS }}
           MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
