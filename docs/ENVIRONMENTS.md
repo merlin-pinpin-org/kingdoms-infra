@@ -35,6 +35,7 @@ and fail closed when one is missing.
 | `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35), provisioned as an environment **variable**; empty means `/status` reports no operator |
 | `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Deploy field: the `/deploy-test` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
 | `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Version field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
+| `KINGDOMS_DEPLOY_RUN_URL` | URL of the deploy job shown by the `/status` Deploy field — injected by the deploy workflow itself (`github.server_url/repository/actions/runs/<run_id>`), so the running bot links the exact job that deployed it |
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
 | `REDIS_URI` | Redis connection string (overridden by compose inside the stack) |
@@ -189,6 +190,10 @@ The `/deploy-test` dispatch also carries the **deploy URL** and the
 **version label** so the bot's `/status` shows what is running
 (kingdoms-infra#37): a PR deploy's URL is the permalink of the deployment
 comment (label `pr-<id>-<timestamp>-<sha>`), a config-change deploy on
+
 `main` points at the deployed source tree `/tree/<sha>` (label
 `main@<sha>`), and a prod deploy points at the released `vX.Y.Z` GitHub
 release (label `vX.Y.Z`).
+
+The Deploy field additionally links the kingdoms-infra deploy job itself
+(`KINGDOMS_DEPLOY_RUN_URL`).
