@@ -30,6 +30,21 @@ die() { echo "[deploy:${ENVIRONMENT}] ERROR: $*" >&2; exit 1; }
 [[ -n "${DISCORD_TOKEN:-}" ]] \
     || die "DISCORD_TOKEN is not set (provide it via the GitHub environment secrets)"
 
+# Desired state (ADR-0018): when a state file exists in this checkout,
+# it is the source of truth for the deployed image and deploy URL —
+# the deploy workflow checks out the state branch commit, so the
+# pinned values cannot drift or be spoofed via workflow inputs.
+STATE_FILE="${REPO_ROOT}/deploy/state/${ENVIRONMENT}/kingdoms-bot.yml"
+if [[ -f "${STATE_FILE}" ]]; then
+    pinned_image="$(grep -E '^image:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
+    pinned_url="$(grep -E '^deploy_url:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
+    [[ -n "${pinned_image:-}" ]] || die "state file ${STATE_FILE} has no image"
+    export KINGDOMS_BOT_IMAGE="${pinned_image}"
+    [[ -n "${pinned_url:-}" ]] || pinned_url=""
+    export KINGDOMS_DEPLOY_URL="${pinned_url}"
+    log "state: image=${KINGDOMS_BOT_IMAGE} deploy_url=${KINGDOMS_DEPLOY_URL:-<none>}"
+fi
+
 cd "${ENV_DIR}"
 
 # Idempotence note: this script manages the full stack lifecycle. Running

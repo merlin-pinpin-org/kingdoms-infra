@@ -1,10 +1,11 @@
-# Deploy the `test` environment (ADR-0007).
+# Deploy the `test` environment (ADR-0007, ADR-0018).
 # Triggered by:
-# - any change to the test configuration on main (deploy/test/*), and
-# - the `/deploy-test` PR comment in kingdoms-services, which builds the
-#   PR image (tagged with the commit SHA) and dispatches this workflow
-#   with it via KINGDOMS_BOT_IMAGE (and the PR link via
-#   KINGDOMS_DEPLOY_URL, shown by the bot's /status).
+# - a push to the `deploy/test` state branch (deploy/state/**): the state
+#   file pins the exact image and deploy URL; the deploy reads them from
+#   the pushed commit (written by the kingdoms-deployer GitHub App from a
+#   /deploy-test PR comment, or by the config-change path below), and
+# - any change to the test configuration on main (deploy/test/**), which
+#   must also re-pin the state to the latest sha-<sha> image before deploying.
 # One dedicated workflow per environment so GitHub policies can gate who
 # may trigger it independently of the other environments.
 # Jobs run on the self-hosted runner installed on the test VPS
@@ -15,20 +16,14 @@ name: Deploy test
 
 on:
   push:
-    branches: [main]
+    branches:
+      - deploy/test
+      - main
     paths:
+      - "deploy/state/**"
       - "deploy/test/**"
       - ".github/workflows/deploy-test.yml"
   workflow_dispatch:
-    inputs:
-      bot_image:
-        description: "Bot image to deploy (commit-SHA tagged; defaults to the manifest)"
-        required: false
-        default: ""
-      deploy_url:
-        description: "Deployed artifact URL shown by /status (PR link for a /deploy-test, commit link for main)"
-        required: false
-        default: ""
 
 concurrency:
   group: deploy-test
@@ -43,28 +38,85 @@ permissions:
   packages: read
 
 jobs:
+  repin-state:
+    # A test-config change on main must also re-pin the state to the
+    # latest sha-<sha> image before deploying (ADR-0018): the pipeline
+    # writes the state, the state push triggers the deploy.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Mint the kingdoms-deployer App token (state-branch writer)
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.KINGDOMS_DEPLOYER_APP_ID }}
+          private-key: ${{ secrets.KINGDOMS_DEPLOYER_APP_PRIVATE_KEY }}
+          owner: merlin-pinpin-org
+          repositories: kingdoms-infra
+      - name: Pin the latest kingdoms-services image in deploy/test state
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const svc = "kingdoms-bot";
+            const repo = { owner: "merlin-pinpin-org", repo: "kingdoms-services" };
+            const runs = await github.rest.actions.listWorkflowRuns({
+              ...repo, workflow_id: "docker.yml", branch: "main", per_page: 1, status: "success",
+            });
+            if (runs.data.workflow_runs.length === 0) {
+              core.setFailed("no successful docker.yml run on main to pin");
+              return;
+            }
+            const sha = runs.data.workflow_runs[0].head_sha;
+            const image = `ghcr.io/merlin-pinpin-org/kingdoms-services:sha-${sha}`;
+            const url = `https://github.com/merlin-pinpin-org/kingdoms-services/commit/${sha}`;
+            const path = `deploy/state/test/${svc}.yml`;
+            const branch = "deploy/test";
+            let base;
+            try {
+              base = (await github.rest.repos.getContent({ owner: "merlin-pinpin-org", repo: "kingdoms-infra", path, ref: branch })).data;
+            } catch (e) {
+              core.setFailed(`state file ${path} missing on ${branch}`);
+              return;
+            }
+            const now = new Date().toISOString();
+            const state = [
+              "# Desired state of kingdoms-bot on the test environment (ADR-0018).",
+              "# Written by the deploy pipelines only (kingdoms-deployer GitHub App);",
+              "# a push to this branch deploys this exact image.",
+              `image: ${image}`,
+              `deploy_url: ${url}`,
+              `deployed_by: config-change-deploy (run ${context.runId})`,
+              `deployed_at: "${now}"`,
+              `source: test-config change on main (commit ${context.sha.slice(0, 7)})`,
+              ""].join("\n");
+            await github.rest.repos.createOrUpdateFileContents({
+              owner: "merlin-pinpin-org", repo: "kingdoms-infra",
+              path, branch,
+              message: `deploy(test): pin ${image.slice(image.lastIndexOf(":") + 1)} (config change on main)`,
+              content: Buffer.from(state).toString("base64"),
+              sha: base.sha,
+            });
+            core.notice(`state re-pinned on ${branch}: ${image}`);
   deploy-test:
-    name: Deploy test (config change on main, or /deploy-test)
+    name: Deploy test (state-branch push, or manual)
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: [self-hosted, kingdoms, env-test]
     environment: test
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the pushed state (or main manifests on dispatch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref || 'main' }}
       - name: Log in to GHCR (the bot image package is not public)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Apply the optional image and deploy-URL overrides from /deploy-test
-        if: github.event_name == 'workflow_dispatch' && (inputs.bot_image != '' || inputs.deploy_url != '')
-        run: |
-          if [ -n "${{ inputs.bot_image }}" ]; then
-            echo "KINGDOMS_BOT_IMAGE=${{ inputs.bot_image }}" >> "${GITHUB_ENV}"
-          fi
-          if [ -n "${{ inputs.deploy_url }}" ]; then
-            echo "KINGDOMS_DEPLOY_URL=${{ inputs.deploy_url }}" >> "${GITHUB_ENV}"
-          fi
-      - name: Deploy the test stack
+      - name: Deploy the test stack (image pinned by the state file)
         run: ./scripts/deploy.sh test
         env:
           BACKUP_DIR: /opt/kingdoms/backups
