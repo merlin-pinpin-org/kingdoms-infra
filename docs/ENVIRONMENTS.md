@@ -74,10 +74,15 @@ stale pipeline code (this is how `BOT_ADMINS` once read `secrets.*` on
 `deploy/test` while `main` had moved to `vars.*` — `/status` showed no
 admin).
 
-Therefore, whenever a PR changes a deploy workflow, a `deploy/<env>/`
-manifest or `scripts/deploy.sh`, the merge must be propagated to every
-state branch. State branches carry their own state commits (and sync
-merges), so this is a merge, not a fast-forward:
+Whenever a merge on `main` changes a deploy workflow, a `deploy/<env>/`
+manifest or `scripts/deploy.sh`, it must be propagated to every state
+branch. State branches carry their own state commits (and sync merges),
+so this is a merge, not a fast-forward. Propagation is **automated**: the
+[Sync state branches](.github/workflows/sync-state.yml) workflow merges
+`main` into each `deploy/<env>` on every push to `main` (no-op when the
+state branch already contains `main`). Adding an environment is adding
+it to the workflow's matrix. The manual equivalent, for reference or
+recovery:
 
 ```
 git fetch origin && git checkout deploy/<env>
@@ -85,11 +90,11 @@ git merge origin/main -m "deploy(<env>): sync state branch with main"
 git push origin deploy/<env>
 ```
 
-The push deploys with the unchanged pinned state — safe by design. The
-rulesets (no force-push) keep the history auditable: `git log main..deploy/<env>`
-shows exactly which state commits exist beyond `main`. The
-[Branch and tag rules audit](#branch-and-tag-rules-audit) workflow fails
-when a state branch drifts from `main`.
+The sync push deploys with the unchanged pinned state — safe by design.
+The rulesets (no force-push) keep the history auditable:
+`git log main..deploy/<env>` shows exactly which state commits exist
+beyond `main`. The [Branch and tag rules audit](#branch-and-tag-rules-audit)
+workflow fails when a state branch drifts from `main`.
 
 ## Branch and tag rules (expected configuration)
 
