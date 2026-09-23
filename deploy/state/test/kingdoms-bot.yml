@@ -1,8 +1,8 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-da4c3271da24df1e81016fdded6a5835d978adb0
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-da4c327
 deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/da4c3271da24df1e81016fdded6a5835d978adb0
 deployed_by: merlin-pinpin (nominal-path validation)
-deployed_at: "2026-09-23T14:20:00Z"
-source: kingdoms-infra#41 nominal-path test — pinned latest main image
+deployed_at: "2026-09-23T15:30:00Z"
+source: kingdoms-infra#41 nominal-path test — pinned latest main image (short sha tag)
