@@ -1,9 +1,9 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-e770da0
-version_label: main@e770da0
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/e770da085675b851353ca82cceff8cd53dbc3bf3
-deployed_by: vibe-session (state repair: full-sha tag does not exist on GHCR)
-deployed_at: "2026-09-23T17:05:00Z"
-source: kingdoms-services#76 merge deploy (main image sha-e770da0)
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-937baa4
+version_label: main@937baa4
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/937baa4cb46b2dcfc1122d8ee728317d1e61a1eb
+deployed_by: config-change-deploy (run 35934835583)
+deployed_at: "2026-09-23T23:41:34.152Z"
+source: test-config change on main (commit 98f720e)
