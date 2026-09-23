@@ -6,8 +6,9 @@ another repository's events, so the trigger crosses repositories; it does so
 with a **GitHub App** instead of a permanent personal access token:
 
 - the app is installed on **`merlin-pinpin-org/kingdoms-infra` only**;
-- it holds a single permission: **Actions: write** — it cannot read code,
-  comment, or push anything;
+- it holds two permissions: **Actions: write** and **Contents: write**
+  (ADR-0018: it pins the deployed image in the `deploy/test` state
+  branch; it still cannot read secrets, comment, or touch `main`);
 - the workflow in `kingdoms-services` mints an **ephemeral token** from it
   (valid for at most one hour, `actions/create-github-app-token@v3`), so no
   permanent credential ever leaves GitHub;
@@ -25,7 +26,7 @@ As the developer (Settings → Developer settings → [New GitHub App](https://g
 | --- | --- |
 | GitHub App name | `kingdoms-deployer` |
 | Homepage URL | `https://github.com/merlin-pinpin-org/kingdoms` |
-| **Repository permissions** | **Actions: Read and write** — and nothing else |
+| **Repository permissions** | **Actions: Read and write** + **Contents: Read and write** (state-branch commits, ADR-0018) |
 | Where can this app be installed | **Only on this account** |
 
 No webhook, no user permissions, no other repository permission.
@@ -53,10 +54,17 @@ Actions → New repository secret), add:
 | `KINGDOMS_DEPLOYER_APP_ID` | The App ID shown on the app's page |
 | `KINGDOMS_DEPLOYER_APP_PRIVATE_KEY` | The `.pem` private key (download it when generated; the full file content, including the BEGIN/END lines) |
 
-The `Deploy test (PR comment)` workflow reads these two secrets; nothing
-else uses them. Once the app is installed and the secrets set, `/deploy-test`
-comments on PRs of `kingdoms-services` dispatch this repository's
-**Deploy test** workflow and deploy the PR image to the test VPS.
+The `Deploy test (PR comment)` workflow of `kingdoms-services` reads these
+two secrets. The **re-pin job** of this repository's Deploy test workflow
+(a test-config change on `main` re-pins the state) needs the same
+credentials on `kingdoms-infra`: add `KINGDOMS_DEPLOYER_APP_ID` and
+`KINGDOMS_DEPLOYER_APP_PRIVATE_KEY` as repository secrets of
+`kingdoms-infra` too (Settings → Secrets and variables → Actions).
+
+Once the app is installed with Contents: write and the secrets set,
+`/deploy-test` comments on PRs of `kingdoms-services` pin the PR image
+in this repository's `deploy/test` state branch, and the state push
+deploys it to the test VPS.
 
 ## 4. Restrict who may trigger Deploy test (recommended)
 
