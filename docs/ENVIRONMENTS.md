@@ -45,6 +45,8 @@ and fail closed when one is missing.
 | `KINGDOMS_DEPLOY_RUN_NUMBER` | Number of the deploy job — renders as `Deployment #<n>` in the Deploy field |
 | `KINGDOMS_DEPLOY_RUN_TS` | Unix timestamp of the deploy job start (relative Discord time in the Infra field) |
 | `KINGDOMS_DEPLOY_IMAGE` | Pinned container image reference, exported by `scripts/deploy.sh` from the state file — rendered as the `Image` line of the `/status` Services field (links to the GHCR package page) |
+| `KINGDOMS_DEPLOY_BRANCH` | Source branch of the deployed services commit (e.g. the PR branch, `main`), written by the deploy pipelines in the pinned state — rendered as the `Branch` line of the `/status` Services field |
+| `KINGDOMS_DEPLOY_PR_TITLE` | Title of the pull request that triggered the deployment (empty for main/release deploys) — rendered in the `Pull-request #<n>` label of the `/status` Services field |
 
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
