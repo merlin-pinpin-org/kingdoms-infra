@@ -92,7 +92,16 @@ jobs:
           else
             git merge origin/main --no-edit -m "deploy(${env_name}): sync state branch with main"
           fi
-          state_file="deploy/state/${env_name}/kingdoms-bot.yml"
+          state_file="envs/${env_name}/state/kingdoms-bot.yml"
+          # One-time migration (envs/ layout): state branches created before
+          # the move still carry the file at deploy/state/<env>/. Move it
+          # in the same commit as the pin, so the merge from main (which no
+          # longer creates deploy/state/) cannot lose it.
+          if [[ ! -f "$state_file" && -f "deploy/state/${env_name}/kingdoms-bot.yml" ]]; then
+            mkdir -p "envs/${env_name}/state"
+            git mv "deploy/state/${env_name}/kingdoms-bot.yml" "$state_file"
+            rmdir "deploy/state/${env_name}" "deploy/state" 2>/dev/null || true
+          fi
           [[ -f "$state_file" ]] || { echo "::error::state file ${state_file} missing on deploy/${env_name}" >&2; exit 1; }
           field() { jq -r --arg f "$1" '.[$f] // ""' <<<"$PAYLOAD"; }
           message="$(field message)"

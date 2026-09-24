@@ -19,7 +19,7 @@ if [[ -n "${MONGO_ARCHIVE}" && ! -f "${MONGO_ARCHIVE}" && -f "${BACKUP_DIR:-${RE
     MONGO_ARCHIVE="${BACKUP_DIR:-${REPO_ROOT}/backups}/${MONGO_ARCHIVE}"
 fi
 CONFIRM="${3:-}"
-COMPOSE_FILE="${REPO_ROOT}/deploy/${ENVIRONMENT}/docker-compose.yml"
+COMPOSE_FILE="${REPO_ROOT}/envs/${ENVIRONMENT}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"
 REDIS_SERVICE="kingdoms-redis"
 
