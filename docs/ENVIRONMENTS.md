@@ -86,12 +86,17 @@ admin).
 Whenever a merge on `main` changes a deploy workflow, a `deploy/<env>/`
 manifest or `scripts/deploy.sh`, it must be propagated to every state
 branch. State branches carry their own state commits (and sync merges),
-so this is a merge, not a fast-forward. Propagation is **automated**: the
-[Sync state branches](.github/workflows/sync-state.yml) workflow merges
-`main` into each `deploy/<env>` on every push to `main` (no-op when the
-state branch already contains `main`). Adding an environment is adding
-it to the workflow's matrix. The manual equivalent, for reference or
-recovery:
+so this is a merge, not a fast-forward. Propagation is **automated**:
+
+- the [Sync state branches](.github/workflows/sync-state.yml) workflow
+  merges `main` into each `deploy/<env>` on every push to `main` (no-op
+  when the state branch already contains `main`);
+- the [Pin state](.github/workflows/pin-state.yml) workflow (the
+  `/deploy-test` path) merges `main` in the same commit as the image pin,
+  so a deployment can never run stale manifests either.
+
+Adding an environment is adding it to both matrices. The manual
+equivalent, for reference or recovery:
 
 ```
 git fetch origin && git checkout deploy/<env>
@@ -102,8 +107,19 @@ git push origin deploy/<env>
 The sync push deploys with the unchanged pinned state — safe by design.
 The `sync-state` workflow pushes with the `kingdoms-deployer` App token —
 the same actor the deploy pipelines use to write the pinned state, and the
-only non-admin actor in the `deploy/*` ruleset bypass lists. The rulesets
-(no force-push) keep the history auditable:
+only non-admin actor in the `deploy/*` ruleset bypass lists.
+
+**Single-writer design:** every writer to a `deploy/<env>` state branch
+lives in this repository and shares one concurrency group,
+`deploy-state-<env>` — pin-state.yml (image pins dispatched by the deploy
+pipelines), sync-state.yml and the re-pin job of deploy-test.yml. GitHub
+serializes them, so a pin can never race a sync (the historical "cannot
+lock ref" failure); a pin also merges `main` into the state branch, so
+deployments cannot run stale pipeline code. Known limit: only the latest
+queued run of a group survives; a superseded sync is harmless — the next
+push to `main` re-triggers it.
+
+The rulesets (no force-push) keep the history auditable:
 `git log main..deploy/<env>` shows exactly which state commits exist
 beyond `main`. The [Branch and tag rules audit](#branch-and-tag-rules-audit)
 workflow fails when a state branch drifts from `main`.
