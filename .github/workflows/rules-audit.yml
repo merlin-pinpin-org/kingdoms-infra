@@ -139,7 +139,17 @@ jobs:
             }
 
             // State branches must not drift from main (ADR-0018 propagation).
-            for (const env of ["test", "prod"]) {
+            // Environments are data: the branches are the deploy/ refs that
+            // exist on kingdoms-infra.
+            const infraBranches = await github.paginate(
+              github.rest.repos.listBranches,
+              { owner: org, repo: "kingdoms-infra", per_page: 100 },
+            );
+            const envNames = infraBranches
+              .map((b) => b.name)
+              .filter((n) => n.startsWith("deploy/"))
+              .map((n) => n.slice("deploy/".length));
+            for (const env of envNames) {
               const branch = `deploy/${env}`;
               try {
                 const compare = await github.rest.repos.compareCommits({
