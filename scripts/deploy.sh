@@ -45,7 +45,13 @@ if [[ -f "${STATE_FILE}" ]]; then
     export KINGDOMS_DEPLOY_URL="${pinned_url}"
     [[ -n "${pinned_label:-}" ]] || pinned_label=""
     export KINGDOMS_DEPLOY_LABEL="${pinned_label}"
-    log "state: image=${KINGDOMS_BOT_IMAGE} label=${KINGDOMS_DEPLOY_LABEL:-<none>} deploy_url=${KINGDOMS_DEPLOY_URL:-<none>}"
+    # Typed /status links (kingdoms-services#81): deploy kind, ref, tree and
+    # timestamp, written by the pipelines alongside the pinned image.
+    for field in kind ref tree_url ts; do
+        value="$(grep -E "^deploy_${field}:" "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
+        export "KINGDOMS_DEPLOY_${field^^}"="${value}"
+    done
+    log "state: image=${KINGDOMS_BOT_IMAGE} label=${KINGDOMS_DEPLOY_LABEL:-<none>} deploy_url=${KINGDOMS_DEPLOY_URL:-<none>} kind=${KINGDOMS_DEPLOY_KIND:-<none>} ref=${KINGDOMS_DEPLOY_REF:-<none>}"
 fi
 
 cd "${ENV_DIR}"
