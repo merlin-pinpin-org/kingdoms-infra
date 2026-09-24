@@ -46,7 +46,7 @@ jobs:
           PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
           set -euo pipefail
-          for field in image version_label deploy_kind deploy_ref deploy_tree_url deploy_ts; do
+          for field in image version_label deploy_kind deploy_ref deploy_tree_url; do
             value="$(jq -r --arg f "$field" '.[$f] // empty' <<<"$PAYLOAD")"
             if [[ -z "$value" ]]; then
               echo "::error::the pin-state dispatch payload is missing the '$field' field"
@@ -99,7 +99,7 @@ jobs:
             echo "deploy_kind: $(field deploy_kind)"
             echo "deploy_ref: $(field deploy_ref)"
             echo "deploy_tree_url: $(field deploy_tree_url)"
-            echo "deploy_ts: $(field deploy_ts)"
+            echo "deploy_ts: $(date -u +%s)"
             echo "deployed_by: $(field deployed_by)"
             echo "deployed_at: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
             echo "source: $(field source)"
