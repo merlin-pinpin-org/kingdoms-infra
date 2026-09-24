@@ -54,7 +54,7 @@ jobs:
               ;;
           esac
           echo "env_name=$env_name" >> "$GITHUB_ENV"
-          for field in image version_label deploy_kind deploy_ref deploy_tree_url; do
+          for field in image version_label deploy_kind deploy_ref deploy_tree_url deploy_branch; do
             value="$(jq -r --arg f "$field" '.[$f] // empty' <<<"$PAYLOAD")"
             if [[ -z "$value" ]]; then
               echo "::error::the pin-state dispatch payload is missing the '$field' field"
@@ -104,6 +104,9 @@ jobs:
           fi
           [[ -f "$state_file" ]] || { echo "::error::state file ${state_file} missing on deploy/${env_name}" >&2; exit 1; }
           field() { jq -r --arg f "$1" '.[$f] // ""' <<<"$PAYLOAD"; }
+          # message and source are composed here (not passed in the dispatch
+          # payload, capped at 10 properties by the GitHub API).
+          branch="$(field deploy_branch)"
           message="$(field message)"
           [[ -n "$message" ]] || message="deploy(${env_name}): pin $(field version_label)"
           {
@@ -120,6 +123,8 @@ jobs:
             echo "deployed_by: $(field deployed_by)"
             echo "deployed_at: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
             echo "source: $(field source)"
+            echo "deploy_branch: ${branch}"
+            echo "deploy_pr_title: $(field deploy_pr_title)"
           } > "$state_file"
           git add "$state_file"
           git commit -m "$message"
