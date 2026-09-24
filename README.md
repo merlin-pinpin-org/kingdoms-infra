@@ -58,7 +58,9 @@ sessions get the same via `scripts/diagnose_deploy.sh <env> --json`.
 
 ## Contributing
 
-See [docs/DEVELOPER.md](docs/DEVELOPER.md) for the developer guide
+You do not need an AI agent to contribute: see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the human path (clone, checks,
+PR), [docs/DEVELOPER.md](docs/DEVELOPER.md) for the developer guide
 (environment model, checks, deploy chain) and [AGENTS.md](AGENTS.md) for
 the agent entry points. Every infrastructure change must be reflected in
 the `kingdoms` documentation before merge.
