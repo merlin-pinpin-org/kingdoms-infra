@@ -15,14 +15,16 @@ deployment scripts.
 
 | Path | Content |
 | ---- | ------- |
-| `deploy/` | Docker Compose manifests per environment (`test`, `staging`, `prod`) |
-| `.github/workflows/` | CI/CD pipelines (lint, test, build, deploy, infra checks) |
-| `scripts/` | Deployment and database backup/restore scripts |
+| `envs/<env>/` | One directory per environment: `docker-compose.yml` + `state/` (the pinned state files synced to the `deploy/<env>` branch) |
+| `deploy/<env>/` | Protected state branches (one per environment) pinning the image and deploy metadata — the GitOps source of truth (ADR-0018) |
+| `.github/workflows/` | CI checks + the deploy chain (`deploy.yml` routing, `deploy-env.yml` reusable per-env deploy, `pin-state.yml`, `sync-state.yml`) |
+| `scripts/` | `deploy.sh` (idempotent, health-gated), backup/restore scripts, `diagnose_deploy.sh` (stuck-deploy diagnosis) |
+| `Makefile` | `make check` (script syntax + compose config), `make doctor` (deploy health per env), `make diagnose-deploy-<env>` |
 | `docs/` | Deployment, environments, GitOps and VPS setup guides |
 
 ## Local development
 
-Prerequisites: Docker and Docker Compose.
+Prerequisites: Docker and Docker Compose, and `gh` for the diagnose targets.
 
 ```bash
 DISCORD_TOKEN=... docker compose -f envs/test/docker-compose.yml up -d
@@ -34,13 +36,25 @@ for the environment matrix.
 
 ## Deployment overview
 
-Deployment is GitOps-driven: environments are defined by the versioned
-manifests in `deploy/`, and changes are applied by the CD pipeline
-(`.github/workflows/cd.yml`) executed by a **self-hosted runner installed
-on the VPS** — never applied by hand. The `test` environment auto-deploys
-on every merge to `main`. See [docs/GITOPS.md](docs/GITOPS.md) for the
-model and [docs/VPS-SETUP.md](docs/VPS-SETUP.md) for the complete
-server installation guide (step by step, no Linux knowledge required).
+Deployment is GitOps-driven: environments are data — a directory under
+`envs/`, a `deploy/<env>` state branch, a runner labeled `env-<env>` and
+a GitHub environment with its reviewers. One reusable workflow deploys
+every environment: a push to a `deploy/<env>` state branch (the pinned
+image) triggers the deploy, executed by the environment's **self-hosted
+runner installed on the VPS** — never applied by hand. `test` is deployed
+by PR comments (`/deploy`) and release validation pins; `prod` runs
+released `vX.Y.Z` images only and waits for the environment's required
+reviewers. See [docs/GITOPS.md](docs/GITOPS.md) for the model and
+[docs/VPS-SETUP.md](docs/VPS-SETUP.md) for the complete server
+installation guide (step by step, no Linux knowledge required).
+
+### A deploy is stuck?
+
+Run `make doctor` (or `make diagnose-deploy-<env>`) **before checking the
+runner**: it walks the blocking causes in order — stale runs holding the
+`deploy-<env>` concurrency group, pending environment approval, broken
+`runs-on` labels — and prints the exact fix with links. Read-only; agent
+sessions get the same via `scripts/diagnose_deploy.sh <env> --json`.
 
 ## Contributing
 
