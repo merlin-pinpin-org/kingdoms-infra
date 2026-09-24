@@ -91,7 +91,11 @@ jobs:
               "# a push to this branch deploys this exact image.",
               `image: ${image}`,
               `version_label: main@${short}`,
-              `deploy_url: ${url}`,
+              `deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/${sha}`,
+              `deploy_kind: main`,
+              `deploy_ref: ${short}`,
+              `deploy_tree_url: ${url}`,
+              `deploy_ts: ${Math.floor(Date.now() / 1000)}`,
               `deployed_by: config-change-deploy (run ${context.runId})`,
               `deployed_at: "${now}"`,
               `source: test-config change on main (commit ${context.sha.slice(0, 7)})`,
@@ -116,7 +120,9 @@ jobs:
           ref: ${{ github.event_name == 'push' && github.ref || 'main' }}
       - name: Compute the deployed infra identity (short sha label)
         id: infra-id
-        run: echo "label=deploy/test@${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "label=deploy/test@${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "run_ts=$(date -u +%s)" >> "$GITHUB_OUTPUT"
       - name: Log in to GHCR (the bot image package is not public)
         uses: docker/login-action@v3
         with:
@@ -137,6 +143,8 @@ jobs:
           # The deploy run links itself in /status (Deploy field) so the
           # running bot can point at the exact job that deployed it.
           KINGDOMS_DEPLOY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          KINGDOMS_DEPLOY_RUN_NUMBER: ${{ github.run_number }}
+          KINGDOMS_DEPLOY_RUN_TS: ${{ steps.infra-id.outputs.run_ts }}
           # The deployed infra state identity (branch@sha -> tree), shown as
           # the first labeled link of the /status Deploy field.
           KINGDOMS_DEPLOY_INFRA_LABEL: ${{ steps.infra-id.outputs.label }}
