@@ -6,7 +6,7 @@ is the environment matrix; the deployment procedure lives in
 
 | | test | prod |
 | --- | --- | --- |
-| Manifest | `deploy/test/docker-compose.yml` | `deploy/prod/docker-compose.yml` |
+| Manifest | `envs/test/docker-compose.yml` | `envs/prod/docker-compose.yml` |
 | Bot image | `ghcr.io/...` pinned by the state branch: `pr-<id>-<timestamp>-<sha>` for `/deploy-test`, `sha-<sha>` for main | `ghcr.io/...` released tag `vX.Y.Z` via `KINGDOMS_BOT_IMAGE` |
 | Image pull policy | `missing` | `always` |
 | Host | VPS (runner) | VPS (runner) |
@@ -60,23 +60,23 @@ targets the in-stack services.
 A new environment `<name>` is a four-item checklist — no workflow fork,
 no script change:
 
-1. **Manifest**: `deploy/<name>/docker-compose.yml` on `main` (copy the
+1. **Manifest**: `envs/<name>/docker-compose.yml` on `main` (copy the
    test one; the image is pinned by state, never a floating tag).
 2. **Runner label**: the environment VPS's self-hosted runner carries
    `env-<name>` (see [VPS-SETUP.md](VPS-SETUP.md)) — one runner per VPS.
 3. **State branch**: `deploy/<name>` with the initial state commit
-   (`deploy/state/<name>/kingdoms-bot.yml`); the deploy workflow reads
+   (`envs/<name>/state/kingdoms-bot.yml`); the deploy workflow reads
    the pinned image from it.
 4. **Branch ruleset + workflow**: protect `deploy/<name>` (no force-push,
    no deletion; PR required for prod-like environments), and add a
    `deploy-<name>.yml` workflow from the same template as `deploy-test.yml`
-   (trigger: push on `deploy/<name>` paths `deploy/state/**`; runner label
+   (trigger: push on `deploy/<name>` paths `envs/<name>/state/**`; runner label
    `env-<name>`; GitHub environment `<name>` with its secrets).
 
 ## Keeping the state branches current (pipeline propagation)
 
 The state branches are cut from `main` once, then evolve on their own:
-the pipelines only ever touch `deploy/state/<env>/kingdoms-bot.yml`, so
+the pipelines only ever touch `envs/<env>/state/kingdoms-bot.yml`, so
 any change to a **deploy workflow, manifest or script merged on `main`
 keeps running in its old revision on the state branch** until it is
 propagated. A missed propagation is invisible — the deploy succeeds with
