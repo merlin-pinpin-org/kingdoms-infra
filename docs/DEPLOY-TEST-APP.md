@@ -62,9 +62,13 @@ credentials on `kingdoms-infra`: add `KINGDOMS_DEPLOYER_APP_ID` and
 `kingdoms-infra` too (Settings → Secrets and variables → Actions).
 
 Once the app is installed with Contents: write and the secrets set,
-`/deploy-test` comments on PRs of `kingdoms-services` pin the PR image
-in this repository's `deploy/test` state branch, and the state push
-deploys it to the test VPS.
+`/deploy-test` comments on PRs of `kingdoms-services` dispatch the
+[Pin state](../.github/workflows/pin-state.yml) workflow of this repository
+(`repository_dispatch`, `pin-state`): it pins the PR image in the
+`deploy/test` state branch — merging `main` in the same commit — and the
+state push deploys it to the test VPS. All writers to a state branch share
+the `deploy-state-<env>` concurrency group (single-writer design, see
+docs/ENVIRONMENTS.md § "Keeping the state branches current").
 
 ## 4. Restrict who may trigger Deploy test (recommended)
 

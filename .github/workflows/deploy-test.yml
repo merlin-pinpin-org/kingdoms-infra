@@ -41,9 +41,15 @@ jobs:
   repin-state:
     # A test-config change on main must also re-pin the state to the
     # latest sha-<sha> image before deploying (ADR-0018): the pipeline
-    # writes the state, the state push triggers the deploy.
+    # writes the state, the state push triggers the deploy. It shares the
+    # deploy-state-<env> concurrency group with pin-state.yml and
+    # sync-state.yml: one writer at a time per state branch (single-writer
+    # design, ADR-0018).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-state-test
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
