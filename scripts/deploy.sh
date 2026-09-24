@@ -43,6 +43,9 @@ if [[ -f "${STATE_FILE}" ]]; then
     export KINGDOMS_BOT_IMAGE="${pinned_image}"
     [[ -n "${pinned_url:-}" ]] || pinned_url=""
     export KINGDOMS_DEPLOY_URL="${pinned_url}"
+    # The pinned image reference is also exposed to the bot so /status can
+    # link the exact running container image (KINGDOMS_DEPLOY_IMAGE).
+    export KINGDOMS_DEPLOY_IMAGE="${pinned_image}"
     [[ -n "${pinned_label:-}" ]] || pinned_label=""
     export KINGDOMS_DEPLOY_LABEL="${pinned_label}"
     # Typed /status links (kingdoms-services#81): deploy kind, ref, tree and
