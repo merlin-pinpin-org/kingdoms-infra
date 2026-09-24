@@ -287,6 +287,12 @@ every merge to `main`.
 
 ## 8. Troubleshooting
 
+- **A deploy stays pending and nothing notifies**: run
+  `make doctor` (or `make diagnose-deploy-<env>`) from a clone **before
+  checking the runner** — in the 2026-09-24 prod incident the runner was
+  healthy and idle the whole time; a run left `waiting` on an older
+  workflow version held the `deploy-prod` concurrency group
+  (details: [DEVELOPER.md](DEVELOPER.md)).
 - **The deploy job stays queued**: the runner is offline — check it with
   `sudo ./svc.sh status` in `/opt/kingdoms/actions-runner`, restart
   with `sudo ./svc.sh start`.
