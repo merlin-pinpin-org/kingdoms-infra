@@ -19,7 +19,8 @@ this repo*.
 | `envs/<env>/` | One directory per environment: `docker-compose.yml` + `state/` (the pinned state files synced to the `deploy/<env>` branch) |
 | `deploy/<env>/` | Protected state branches (one per environment) pinning the image and deploy metadata — the GitOps source of truth (ADR-0018) |
 | `.github/workflows/` | CI checks + the deploy chain (`deploy.yml` routing, `deploy-env.yml` reusable per-env deploy, `pin-state.yml`, `sync-state.yml`, `repin-on-config-change.yml`) |
-| `scripts/` | `deploy.sh` (idempotent, health-gated), `restore_db.sh`, backup scripts |
+| `scripts/` | `deploy.sh` (idempotent, health-gated), `restore_db.sh`, backup scripts, `diagnose_deploy.sh` (stuck-deploy diagnosis) |
+| `Makefile` | `make check` (script syntax + compose config), `make doctor` (deploy health per env), `make diagnose-deploy-<env>` |
 | `docs/` | [ENVIRONMENTS.md](ENVIRONMENTS.md), [GITOPS.md](GITOPS.md), [DEPLOYMENT.md](DEPLOYMENT.md), [VPS-SETUP.md](VPS-SETUP.md) |
 
 ## Environments are data
@@ -84,6 +85,41 @@ support rollback (`deploy.sh`, database restore via `restore_db.sh`).
 - Deploy runs use the workflow file **from the state branch** — fixes to
   the deploy chain need sync propagation to take effect.
 - `client_payload` of `repository_dispatch` is capped at 10 properties.
+
+## A deploy stays pending: the concurrency-zombie trap (2026-09-24 prod incident)
+
+A run left `waiting` (environment approval) **acquires the
+`deploy-<env>` concurrency group immediately**, and with
+`cancel-in-progress: false` it holds it forever — every newer run stays
+`pending` with **no deployment status, no notification, and the runner is
+never asked** (`runner_name: null` on the job). Worse: the zombie may run
+an **older or deleted workflow version** (labels baked at run creation), so
+fixing the workflow file does not unblock it.
+
+Symptoms, in order of probability:
+
+1. Newer deploy runs `pending`, `steps: []`, `runner_name: null`, and the
+   deployment object has **no statuses at all** (not even `waiting`) →
+   check for a stale `waiting`/`pending` run on the same state branch:
+   it holds the concurrency group.
+2. The run is `waiting` with a **pending deployment** → environment
+   approval (required reviewers); GitHub notifies through the review
+   banner, not the usual run events.
+3. The deploy job is queued and `labels` shows one comma-joined string
+   (`self-hosted,kingdoms,env-prod`) → pre-`fromJSON` bug: no runner will
+   ever match; cancel the run.
+4. Everything green on GitHub but nothing on the VPS → runner offline
+   (`sudo ./svc.sh status`, VPS-SETUP troubleshooting).
+
+Run `make doctor` or `make diagnose-deploy-<env>`
+(`scripts/diagnose_deploy.sh <env>`, `--json` for agents) — it walks these
+causes in order, links every stale run to cancel, and exits 1 when
+something blocks. **Diagnose before touching the runner**: in the 2026-09-24
+incident the runner was healthy and idle the whole time.
+
+Queued runs of **deleted workflows** (e.g. the old `deploy-test.yml`) never
+start and hold no concurrency group — advisory cleanup only: cancel them
+from the run page.
 
 ## Keeping docs in sync
 
