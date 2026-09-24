@@ -1,15 +1,15 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-89-20260924145516-b3afe53
-version_label: pr-89-20260924145516-b3afe53
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/89#issuecomment-5816536965
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-91-20260924152625-56c8868
+version_label: pr-91-20260924152625-56c8868
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/91#issuecomment-5817064410
 deploy_kind: pr
-deploy_ref: 89
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/b3afe53b5e8370c4c29f9b76095e48f53e04e7fa
-deploy_ts: 1790261758
+deploy_ref: 91
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/56c88686e687d12bbd2bd5682313aa2001668536
+deploy_ts: 1790263636
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-24T14:55:58Z"
+deployed_at: "2026-09-24T15:27:16Z"
 source: 
-deploy_branch: vibe/deploy-readme-19c915
-deploy_pr_title: docs(readme): document the /deploy PR-comment command
+deploy_branch: vibe/readme-release-doc-19c915
+deploy_pr_title: docs(readme): document the release and prod deploy flow
