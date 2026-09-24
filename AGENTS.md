@@ -80,6 +80,11 @@ for the Kingdoms Discord bot platform.
 - **Anyone can run the local checks** (`bash -n`, shellcheck on scripts,
   `docker compose config`): they require public clones only, no
   credentials.
+- **Validate a user-facing change in Discord before asking for a merge:**
+  deploy the PR to the test environment (the `/deploy` PR comment on
+  kingdoms-services) and let the human check the live behavior in Discord
+  first; only then ask for the merge. Never present a PR as ready to
+  merge while its live validation is still pending.
 - Authorized contributors (per the GitHub environment protection rules)
   can deploy to the **test** environment; higher environments are gated by
   their own deployment triggers.
