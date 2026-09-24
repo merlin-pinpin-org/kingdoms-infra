@@ -16,7 +16,7 @@
 # Single-writer design (ADR-0018): every writer to a deploy/<env> state
 # branch lives in this repository and shares one concurrency group,
 # deploy-state-<env> — pin-state.yml (image pins dispatched by the deploy
-# pipelines), this sync workflow, and the re-pin job of deploy-test.yml.
+# pipelines), this sync workflow, and the re-pin job of deploy.yml.
 # GitHub serializes them, so a sync can never race a pin (the historical
 # "cannot lock ref" failure). Known limit: only the latest queued run of
 # a group survives; a superseded sync is re-triggered by the next push to

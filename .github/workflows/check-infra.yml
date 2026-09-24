@@ -14,7 +14,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check manifests fail closed without DISCORD_TOKEN
         run: |
-          for env in test prod; do
+          # Environments are data: every directory under envs/ is one.
+          for env in $(ls -1 envs); do
             echo "Checking envs/${env} rejects a missing DISCORD_TOKEN"
             if docker compose -f "envs/${env}/docker-compose.yml" config --quiet 2>/dev/null; then
               echo "envs/${env} must fail without DISCORD_TOKEN" >&2
@@ -29,7 +30,7 @@ jobs:
           done
       - name: Check bot services declare a healthcheck
         run: |
-          for env in test prod; do
+          for env in $(ls -1 envs); do
             echo "Checking kingdoms-bot healthcheck in envs/${env}"
             grep -q "healthcheck:" "envs/${env}/docker-compose.yml"
             grep -q "healthz" "envs/${env}/docker-compose.yml"
