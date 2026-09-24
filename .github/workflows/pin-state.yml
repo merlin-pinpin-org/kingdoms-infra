@@ -16,8 +16,11 @@
 # against it (they share the concurrency group anyway). The sync-state
 # workflow remains the catch-up path for infra-only changes.
 #
-# Adding an environment is adding it to the matrix (plus its ruleset and
-# VPS install); the dispatch is ignored for unknown environments.
+# Single job (no matrix): the env comes from the dispatch payload — the
+# job-level `if` cannot reference `matrix` (it is evaluated before the
+# matrix expansion), which is what broke the first deployment. The env is
+# whitelisted below; adding an environment is adding it to ENVS (plus its
+# sync-state matrix entry, ruleset and VPS install).
 
 name: Pin state
 
@@ -30,22 +33,27 @@ permissions:
 
 jobs:
   pin:
-    name: Pin deploy/${{ matrix.env }} state
-    if: github.event.client_payload.env == matrix.env
+    name: Pin deploy/<env> state
     runs-on: ubuntu-latest
     concurrency:
-      group: deploy-state-${{ matrix.env }}
+      group: deploy-state-${{ github.event.client_payload.env }}
       cancel-in-progress: false
-    strategy:
-      fail-fast: false
-      matrix:
-        env: [test, prod]
     steps:
-      - name: Refuse incomplete state payloads
+      - name: Validate the dispatch payload
         env:
           PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
           set -euo pipefail
+          # Known environments (keep in sync with sync-state.yml).
+          env_name="$(jq -r '.env // empty' <<<"$PAYLOAD")"
+          case "$env_name" in
+            test|prod) ;;
+            *)
+              echo "::error::unknown or missing environment '$env_name' (expected: test, prod)"
+              exit 1
+              ;;
+          esac
+          echo "env_name=$env_name" >> "$GITHUB_ENV"
           for field in image version_label deploy_kind deploy_ref deploy_tree_url; do
             value="$(jq -r --arg f "$field" '.[$f] // empty' <<<"$PAYLOAD")"
             if [[ -z "$value" ]]; then
@@ -67,7 +75,7 @@ jobs:
           git config --global user.email "noreply@merlin-pinpin.org"
       - uses: actions/checkout@v4
         with:
-          ref: deploy/${{ matrix.env }}
+          ref: deploy/${{ env.env_name }}
           fetch-depth: 0
           persist-credentials: false
       - name: Merge origin/main, write the pinned state, push
@@ -76,7 +84,7 @@ jobs:
           PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
           set -euo pipefail
-          env_name="${{ matrix.env }}"
+          env_name="${{ env.env_name }}"
           git remote set-branches origin '*'
           git fetch origin main
           if git merge-base --is-ancestor origin/main HEAD; then
