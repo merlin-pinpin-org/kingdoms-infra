@@ -8,12 +8,12 @@
 *                       @merlin-pinpin-org/maintainers
 
 # Production manifests: ops must review (on top of the default)
-/deploy/prod/           @merlin-pinpin-org/ops
+/envs/prod/            @merlin-pinpin-org/ops
 
 # Environment configuration, deployment scripts and workflows
 # Pinned deployment state (ADR-0018): the deploy pipelines write it on the
 # state branches; on main, a maintainer reviews any manual change.
-/deploy/state/          @merlin-pinpin-org/maintainers
-/deploy/test/           @merlin-pinpin-org/maintainers
+/envs/*/state/         @merlin-pinpin-org/maintainers
+/envs/test/            @merlin-pinpin-org/maintainers
 /scripts/               @merlin-pinpin-org/maintainers
 /.github/workflows/     @merlin-pinpin-org/maintainers
