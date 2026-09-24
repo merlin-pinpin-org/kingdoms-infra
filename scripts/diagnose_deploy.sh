@@ -127,7 +127,8 @@ if $json_out; then
     --argjson blocking "$blocking" \
     '{environment: $env, newest_run: $newest, stale_runs: $stale,
       approval_pending_run: $approval_pending_id, deploy_jobs: $deploy_jobs, blocking: $blocking}'
-  exit $([[ "$blocking" == true ]] && echo 1 || echo 0)
+  if [[ "$blocking" == true ]]; then exit 1; fi
+  exit 0
 fi
 
 echo "==> Deploy diagnose: ${env_name}"
@@ -157,4 +158,5 @@ if [[ -n "$dead_runs" ]]; then
   echo "    (advisory) queued runs of deleted workflows never start; cancel to clean up:"
   printf "$dead_runs" | awk -F'\t' '{printf "       - run %s %s\n", $1, $2}'
 fi
-exit $([[ "$blocking" == true ]] && echo 1 || echo 0)
+if [[ "$blocking" == true ]]; then exit 1; fi
+exit 0
