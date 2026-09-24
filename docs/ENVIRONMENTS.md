@@ -178,7 +178,7 @@ policy gates **who may trigger the workflows** (see
 
 | Protection | test | prod |
 | --- | --- | --- |
-| Deployment branch policy | `main`, `vibe/**` | `main` only |
+| Deployment branch policy | `deploy/test` (state branch, ADR-0018), `main`, `vibe/**` | `deploy/prod` (state branch, ADR-0018) |
 | Required reviewers | — | `merlin-pinpin` (approval before any prod job consumes prod secrets) |
 | Wait timer | — | — |
 | Actions policy (who may trigger the workflow) | `deploy-test-dispatch`: `kingdoms-deployer[bot]` + admins (via REST API — the UI picker does not list third-party apps); events `workflow_dispatch`, `push` | not implemented yet (`deploy-prod.yml` exits early; the prod deploy path is designed for released tags and identified production deployers) |
