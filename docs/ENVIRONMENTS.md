@@ -33,17 +33,18 @@ and fail closed when one is missing.
 | -------- | ----------- |
 | `DISCORD_TOKEN` | Discord bot token (required) |
 | `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35), provisioned as an environment **variable**; empty means `/status` reports no operator |
-| `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Deploy field: the `/deploy-test` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
-| `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Version field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
-| `KINGDOMS_DEPLOY_RUN_URL` | URL of the deploy job shown by the `/status` Deploy field — injected by the deploy workflow itself (`github.server_url/repository/actions/runs/<run_id>`), so the running bot links the exact job that deployed it |
-| `KINGDOMS_DEPLOY_INFRA_LABEL` | Short label of the deployed infra state (`deploy/<env>@<sha>`), shown by the `/status` Deploy field — injected by the deploy workflow |
+| `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Services field: the `/deploy-test` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
+| `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Services field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
+| `KINGDOMS_DEPLOY_RUN_URL` | URL of the deploy job shown by the `/status` Infra field — injected by the deploy workflow itself (`github.server_url/repository/actions/runs/<run_id>`), so the running bot links the exact job that deployed it |
+| `KINGDOMS_DEPLOY_INFRA_LABEL` | Short label of the deployed infra state (`deploy/<env>@<sha>`), shown by the `/status` Infra field — injected by the deploy workflow |
 | `KINGDOMS_DEPLOY_INFRA_URL` | Tree URL of the deployed infra state commit, the link behind `deploy/<env>@<sha>` |
 | `KINGDOMS_DEPLOY_KIND` | Deploy kind for the typed `/status` links: `pr`, `main`, or `release` — written by the deploy pipelines in the pinned state file |
 | `KINGDOMS_DEPLOY_REF` | Deploy reference for the typed link: PR number, short sha, or release tag |
 | `KINGDOMS_DEPLOY_TREE_URL` | Tree URL behind the `tree` link of a main/release version |
 | `KINGDOMS_DEPLOY_TS` | Unix timestamp of the deployed commit (relative Discord time in the Version field) |
 | `KINGDOMS_DEPLOY_RUN_NUMBER` | Number of the deploy job — renders as `Deployment #<n>` in the Deploy field |
-| `KINGDOMS_DEPLOY_RUN_TS` | Unix timestamp of the deploy job start (relative Discord time in the Deploy field) |
+| `KINGDOMS_DEPLOY_RUN_TS` | Unix timestamp of the deploy job start (relative Discord time in the Infra field) |
+| `KINGDOMS_DEPLOY_IMAGE` | Pinned container image reference, exported by `scripts/deploy.sh` from the state file — rendered as the `Image` line of the `/status` Services field (links to the GHCR package page) |
 
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
