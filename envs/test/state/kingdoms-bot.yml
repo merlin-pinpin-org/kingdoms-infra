@@ -1,15 +1,15 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-91-20260924152625-56c8868
-version_label: pr-91-20260924152625-56c8868
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/91#issuecomment-5817064410
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-92-20260924162859-51ebe8c
+version_label: pr-92-20260924162859-51ebe8c
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/92#issuecomment-5818060490
 deploy_kind: pr
-deploy_ref: 91
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/56c88686e687d12bbd2bd5682313aa2001668536
-deploy_ts: 1790263636
+deploy_ref: 92
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/51ebe8ca5de6c8dee20b207e01acfbc4d8759d20
+deploy_ts: 1790267377
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-24T15:27:16Z"
+deployed_at: "2026-09-24T16:29:37Z"
 source: 
-deploy_branch: vibe/readme-release-doc-19c915
-deploy_pr_title: docs(readme): document the release and prod deploy flow
+deploy_branch: vibe/status-files-line-19c915
+deploy_pr_title: feat(status): Files <sha7> line replaces the inline (tree) links
