@@ -37,13 +37,18 @@ on:
       - ".github/workflows/deploy-env.yml"
   workflow_dispatch:
     inputs:
-      env:
+      environment:
         description: "Environment to deploy (a directory under envs/)"
         required: true
         type: string
 
 permissions:
   contents: read
+  # The reusable deploy-env.yml pulls the bot image from GHCR: a reusable
+  # workflow may only downgrade the caller's permissions, never elevate
+  # them — the caller must grant packages: read or the run dies with a
+  # zero-job startup_failure.
+  packages: read
 
 jobs:
   route:
@@ -60,7 +65,7 @@ jobs:
             # A push to the deploy/<env> state branch deploys that env.
             echo "env=${GITHUB_REF_NAME#deploy/}" >> "$GITHUB_OUTPUT"
           else
-            echo "env=${{ inputs.env }}" >> "$GITHUB_OUTPUT"
+            echo "env=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
           fi
 
   deploy:
@@ -69,7 +74,7 @@ jobs:
     if: needs.route.outputs.env != ''
     uses: ./.github/workflows/deploy-env.yml
     with:
-      env: ${{ needs.route.outputs.env }}
+      environment: ${{ needs.route.outputs.env }}
     secrets: inherit
 
   repin-on-config-change:
