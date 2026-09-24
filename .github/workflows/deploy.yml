@@ -33,6 +33,7 @@ on:
       - "deploy/*"
     paths:
       - "envs/**"
+      - "scripts/deploy.sh"
       - ".github/workflows/deploy.yml"
       - ".github/workflows/deploy-env.yml"
   workflow_dispatch:
