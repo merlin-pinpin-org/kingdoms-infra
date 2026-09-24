@@ -1,10 +1,10 @@
 # Deploy the `test` environment (ADR-0007, ADR-0018).
 # Triggered by:
-# - a push to the `deploy/test` state branch (deploy/state/**): the state
+# - a push to the `deploy/test` state branch (envs/test/state/**): the state
 #   file pins the exact image and deploy URL; the deploy reads them from
 #   the pushed commit (written by the kingdoms-deployer GitHub App from a
 #   /deploy-test PR comment, or by the config-change path below), and
-# - any change to the test configuration on main (deploy/test/**), which
+# - any change to the test configuration on main (envs/test/**), which
 #   must also re-pin the state to the latest sha-<sha> image before deploying.
 # One dedicated workflow per environment so GitHub policies can gate who
 # may trigger it independently of the other environments.
@@ -20,8 +20,8 @@ on:
       - deploy/test
       - main
     paths:
-      - "deploy/state/**"
-      - "deploy/test/**"
+      - "envs/test/state/**"
+      - "envs/test/**"
       - ".github/workflows/deploy-test.yml"
   workflow_dispatch:
 
@@ -51,7 +51,7 @@ jobs:
       group: deploy-state-test
       cancel-in-progress: false
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Mint the kingdoms-deployer App token (state-branch writer)
         id: app-token
@@ -61,7 +61,7 @@ jobs:
           private-key: ${{ secrets.KINGDOMS_DEPLOYER_APP_PRIVATE_KEY }}
           owner: merlin-pinpin-org
           repositories: kingdoms-infra
-      - name: Pin the latest kingdoms-services image in deploy/test state
+      - name: Re-pin the latest kingdoms-services image via the Pin state workflow
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -80,40 +80,29 @@ jobs:
             // chars by default) — pin the tag that exists on GHCR, not the full SHA.
             const short = sha.slice(0, 7);
             const image = `ghcr.io/merlin-pinpin-org/kingdoms-services:sha-${short}`;
-            const url = `https://github.com/merlin-pinpin-org/kingdoms-services/tree/${sha}`;
-            const path = `deploy/state/test/${svc}.yml`;
-            const branch = "deploy/test";
-            let base;
-            try {
-              base = (await github.rest.repos.getContent({ owner: "merlin-pinpin-org", repo: "kingdoms-infra", path, ref: branch })).data;
-            } catch (e) {
-              core.setFailed(`state file ${path} missing on ${branch}`);
-              return;
-            }
-            const now = new Date().toISOString();
-            const state = [
-              "# Desired state of kingdoms-bot on the test environment (ADR-0018).",
-              "# Written by the deploy pipelines only (kingdoms-deployer GitHub App);",
-              "# a push to this branch deploys this exact image.",
-              `image: ${image}`,
-              `version_label: main@${short}`,
-              `deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/${sha}`,
-              `deploy_kind: main`,
-              `deploy_ref: ${short}`,
-              `deploy_tree_url: ${url}`,
-              `deploy_ts: ${Math.floor(Date.now() / 1000)}`,
-              `deployed_by: config-change-deploy (run ${context.runId})`,
-              `deployed_at: "${now}"`,
-              `source: test-config change on main (commit ${context.sha.slice(0, 7)})`,
-              ""].join("\n");
-            await github.rest.repos.createOrUpdateFileContents({
-              owner: "merlin-pinpin-org", repo: "kingdoms-infra",
-              path, branch,
-              message: `deploy(test): pin ${image.slice(image.lastIndexOf(":") + 1)} (config change on main)`,
-              content: Buffer.from(state).toString("base64"),
-              sha: base.sha,
+            // Delegate the write to the Pin state workflow (single-writer
+            // design, ADR-0018): it merges main into the state branch and
+            // writes the state in one commit — same path as a /deploy-test.
+            // GITHUB_TOKEN would not trigger it (no recursive runs), hence
+            // the kingdoms-deployer App token.
+            await github.rest.repos.createDispatchEvent({
+              owner: "merlin-pinpin-org",
+              repo: "kingdoms-infra",
+              event_type: "pin-state",
+              client_payload: {
+                env: "test",
+                image,
+                version_label: `main@${short}`,
+                deploy_url: `https://github.com/merlin-pinpin-org/kingdoms-services/commit/${sha}`,
+                deploy_kind: "main",
+                deploy_ref: short,
+                deploy_tree_url: `https://github.com/merlin-pinpin-org/kingdoms-services/tree/${sha}`,
+                deployed_by: `config-change-deploy (run ${context.runId})`,
+                source: `test-config change on main (commit ${context.sha.slice(0, 7)})`,
+                message: `deploy(test): pin sha-${short} (config change on main)`,
+              },
             });
-            core.notice(`state re-pinned on ${branch}: ${image}`);
+            core.notice(`pin-state dispatched for ${image} (config change on main)`);
   deploy-test:
     name: Deploy test (state-branch push, or manual)
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'

@@ -72,6 +72,22 @@ jobs:
             exit 0
           fi
           git merge origin/main --no-edit -m "deploy(${{ matrix.env }}): sync state branch with main"
+      - name: Migrate the state file to the envs/ layout (one-time)
+        run: |
+          set -euo pipefail
+          env="${{ matrix.env }}"
+          state_file="envs/${env}/state/kingdoms-bot.yml"
+          old_file="deploy/state/${env}/kingdoms-bot.yml"
+          # The merge from main cannot carry the state file to its new path
+          # (main never had it): move it as part of the merge commit, so the
+          # deploy workflow triggered by the push reads a complete tree.
+          if [[ ! -f "${state_file}" && -f "${old_file}" ]]; then
+            mkdir -p "envs/${env}/state"
+            git mv "${old_file}" "${state_file}"
+            rmdir "deploy/state/${env}" "deploy/state" 2>/dev/null || true
+            git commit --amend --no-edit
+            echo "state file migrated to ${state_file}"
+          fi
       - name: Push the synced state branch
         env:
           APP_TOKEN: ${{ steps.app-token.outputs.token }}

@@ -8,8 +8,8 @@ Three environments, each defined by a Docker Compose manifest in `deploy/`:
 
 | Environment | Manifest | Purpose |
 | ----------- | -------- | ------- |
-| `test` | `deploy/test/docker-compose.yml` | VPS; deployed on demand (`/deploy-test` PR comment via the kingdoms-deployer GitHub App, or test-config change on main). Commit-SHA-tagged images | validation environment |
-| `prod` | `deploy/prod/docker-compose.yml` | VPS; released tags only (`vX.Y.Z`), run by identified production deployers — **not implemented yet** (the workflow fails with the setup instructions) |
+| `test` | `envs/test/docker-compose.yml` | VPS; deployed on demand (`/deploy-test` PR comment via the kingdoms-deployer GitHub App, or test-config change on main). Commit-SHA-tagged images | validation environment |
+| `prod` | `envs/prod/docker-compose.yml` | VPS; released tags only (`vX.Y.Z`), run by identified production deployers — **not implemented yet** (the workflow fails with the setup instructions) |
 
 Each environment runs the same services:
 

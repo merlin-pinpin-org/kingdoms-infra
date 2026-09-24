@@ -1,9 +1,9 @@
 # Deploy the `prod` environment (ADR-0007, ADR-0018).
-# Triggered by a push to the `deploy/prod` state branch (deploy/state/**):
+# Triggered by a push to the `deploy/prod` state branch (envs/prod/state/**):
 # the release pipeline writes the released vX.Y.Z image there, and the
 # branch ruleset requires a pull request — approving a production
 # deployment is merging that PR. The bot image comes from the pinned
-# state file (KINGDOMS_BOT_IMAGE is required by deploy/prod/docker-compose.yml).
+# state file (KINGDOMS_BOT_IMAGE is required by envs/prod/docker-compose.yml).
 # One dedicated workflow per environment so GitHub policies can gate who
 # may trigger it independently of the other environments.
 
@@ -14,7 +14,7 @@ on:
     branches:
       - deploy/prod
     paths:
-      - "deploy/state/**"
+      - "envs/prod/state/**"
   workflow_dispatch:
 
 concurrency:

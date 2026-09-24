@@ -7,7 +7,7 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENTS=(test prod)
 ENVIRONMENT="${1:-test}"
-ENV_DIR="${REPO_ROOT}/deploy/${ENVIRONMENT}"
+ENV_DIR="${REPO_ROOT}/envs/${ENVIRONMENT}"
 COMPOSE_FILE="${ENV_DIR}/docker-compose.yml"
 MONGO_SERVICE="kingdoms-mongo"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-90}"
@@ -34,7 +34,7 @@ die() { echo "[deploy:${ENVIRONMENT}] ERROR: $*" >&2; exit 1; }
 # it is the source of truth for the deployed image and deploy URL —
 # the deploy workflow checks out the state branch commit, so the
 # pinned values cannot drift or be spoofed via workflow inputs.
-STATE_FILE="${REPO_ROOT}/deploy/state/${ENVIRONMENT}/kingdoms-bot.yml"
+STATE_FILE="${REPO_ROOT}/envs/${ENVIRONMENT}/state/kingdoms-bot.yml"
 if [[ -f "${STATE_FILE}" ]]; then
     pinned_image="$(grep -E '^image:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
     pinned_url="$(grep -E '^deploy_url:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
