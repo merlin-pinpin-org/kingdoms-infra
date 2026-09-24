@@ -32,10 +32,10 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.environment }}
     # The env-<name> label routes the job to the environment's runner
-    # (one runner per environment VPS). The label list must be a JSON
-    # array — a comma-joined string would be one literal label no runner
-    # carries, and the job would queue forever.
-    runs-on: ${{ format('["self-hosted", "kingdoms", "env-{0}"]', inputs.environment) }}
+    # (one runner per environment VPS). The label list must be a JSON array —
+    # a comma-joined string, or the raw format() string, would be one literal
+    # label no runner carries, and the job would queue forever.
+    runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', inputs.environment)) }}
     environment: ${{ inputs.environment }}
     concurrency:
       group: deploy-${{ inputs.environment }}
