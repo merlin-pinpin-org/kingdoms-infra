@@ -1,0 +1,77 @@
+# Reusable per-environment deployment (ADR-0007, ADR-0018).
+#
+# Called by deploy.yml (a push to a deploy/<env> state branch, or a
+# workflow_dispatch). This is the only place that touches a live
+# environment, so every environment deploys through the exact same
+# steps: read the pinned state, deploy the stack on the env's runner,
+# expose the deployed identity to the bot (/status).
+#
+# The GitHub environment `environment: <env>` (same name as the env)
+# carries the per-env gating: required reviewers (prod-like), secrets
+# and variables. The runner is selected by the `env-<name>` label —
+# one runner per environment VPS.
+name: Deploy environment
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        description: "Environment to deploy (a directory under envs/)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  # Pull the bot image from ghcr.io/merlin-pinpin-org/kingdoms-services:
+  # the package is owned by the kingdoms-services repository, so the
+  # anonymous pull from the VPS is unauthorized (the package grants
+  # Actions access to this repository — see docs/DEPLOY-TEST-APP.md).
+  packages: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.env }}
+    # The env-<name> label routes the job to the environment's runner
+    # (one runner per environment VPS). The dynamic label cannot be a
+    # YAML flow sequence, so it is composed as a string here.
+    runs-on: ${{ format('self-hosted,kingdoms,env-{0}', inputs.env) }}
+    environment: ${{ inputs.env }}
+    concurrency:
+      group: deploy-${{ inputs.env }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out the pinned state
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/${{ inputs.env }}
+      - name: Compute the deployed infra identity (short sha label)
+        id: infra-id
+        run: |
+          echo "label=deploy/${{ inputs.env }}@${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "run_ts=$(date -u +%s)" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR (the bot image package is not public)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy the stack (image pinned by the state file)
+        run: ./scripts/deploy.sh ${{ inputs.env }}
+        env:
+          BACKUP_DIR: /opt/kingdoms/backups
+          # Environment secrets must be mapped explicitly into the step
+          # env: declaring `environment:` alone does not inject them
+          # into the shell environment.
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          BOT_ADMINS: ${{ vars.BOT_ADMINS }}
+          MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
+          LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
+          # The deploy run links itself in /status (Infra field) so the
+          # running bot can point at the exact job that deployed it.
+          KINGDOMS_DEPLOY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          KINGDOMS_DEPLOY_RUN_NUMBER: ${{ github.run_number }}
+          KINGDOMS_DEPLOY_RUN_TS: ${{ steps.infra-id.outputs.run_ts }}
+          # The deployed infra state identity (branch@sha -> tree), shown as
+          # the Branch/@<sha> lines of the /status Infra field.
+          KINGDOMS_DEPLOY_INFRA_LABEL: ${{ steps.infra-id.outputs.label }}
+          KINGDOMS_DEPLOY_INFRA_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.sha }}

@@ -1,0 +1,164 @@
+# Deploy any environment (ADR-0007, ADR-0018).
+#
+# ONE workflow for every environment: environments are data (a directory
+# under envs/, a `deploy/<env>` state branch, a runner labeled `env-<name>`
+# and a GitHub environment whose reviewers gate it), never another
+# workflow.
+#
+# Two paths:
+# - a push to a `deploy/<env>` state branch routes to the reusable
+#   Deploy environment workflow for that env (deploy-env.yml), which
+#   deploys the pinned state;
+# - a push to `main` that changes an environment's configuration
+#   (envs/<env>/**) re-pins that env to the latest sha-<sha> image via
+#   the Pin state workflow (single-writer design, ADR-0018): the pin
+#   push then triggers the deploy path above. Prod-like environments are
+#   excluded (they pin released vX.Y.Z images only) — they are listed in
+#   PROTECTED_ENVS in the re-pin job.
+#
+# Per-environment gating is GitHub-native, not workflow logic:
+# - the GitHub environment (`environment: <env>` in deploy-env.yml)
+#   carries the required reviewers — e.g. only the developer/ops
+#   approve prod, any collaborator can deploy the test envs;
+# - the `deploy/<env>` branch ruleset decides whether a pin needs a
+#   PR (prod-like) or not (test-like).
+#
+# workflow_dispatch deploys a given environment on demand (recovery
+# path and manual test-env deploys).
+name: Deploy environment
+on:
+  push:
+    branches:
+      - main
+      - "deploy/*"
+    paths:
+      - "envs/**"
+      - ".github/workflows/deploy.yml"
+      - ".github/workflows/deploy-env.yml"
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment to deploy (a directory under envs/)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  route:
+    name: Route the deployment
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref != 'refs/heads/main')
+    runs-on: ubuntu-latest
+    outputs:
+      env: ${{ steps.route.outputs.env }}
+    steps:
+      - name: Resolve the target environment
+        id: route
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # A push to the deploy/<env> state branch deploys that env.
+            echo "env=${GITHUB_REF_NAME#deploy/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "env=${{ inputs.env }}" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy the pinned state
+    needs: route
+    if: needs.route.outputs.env != ''
+    uses: ./.github/workflows/deploy-env.yml
+    with:
+      env: ${{ needs.route.outputs.env }}
+    secrets: inherit
+
+  repin-on-config-change:
+    # An environment-config change on main must also re-pin that env to
+    # the latest sha-<sha> image before deploying (ADR-0018): the pin
+    # push (Pin state workflow) triggers the deploy above. It shares the
+    # deploy-state-<env> concurrency group with pin-state.yml and
+    # sync-state.yml (one writer at a time per state branch).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint the kingdoms-deployer App token (state-branch writer)
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.KINGDOMS_DEPLOYER_APP_ID }}
+          private-key: ${{ secrets.KINGDOMS_DEPLOYER_APP_PRIVATE_KEY }}
+          owner: merlin-pinpin-org
+          repositories: kingdoms-infra
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Re-pin every changed environment to the latest image
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            // Prod-like environments pin released images only — never
+            // re-pin them from main. Adding a prod-like environment is
+            // adding it to this list (docs/ENVIRONMENTS.md).
+            const protectedEnvs = ["prod"];
+            const { execSync } = require("node:child_process");
+            const before = "${{ github.event.before }}";
+            const sha = "${{ github.sha }}";
+            let changed = new Set();
+            try {
+              const out = execSync(
+                `git diff --name-only ${before} ${sha} -- envs/`,
+                { encoding: "utf8" },
+              );
+              for (const line of out.split("\n").filter(Boolean)) {
+                changed.add(line.split("/")[1]);
+              }
+            } catch (e) {
+              core.setFailed(`cannot list the changed files between ${before} and ${sha}: ${e.message}`);
+              return;
+            }
+            const svc = "kingdoms-bot";
+            const repo = { owner: "merlin-pinpin-org", repo: "kingdoms-services" };
+            const runs = await github.rest.actions.listWorkflowRuns({
+              ...repo, workflow_id: "docker.yml", branch: "main", per_page: 1, status: "success",
+            });
+            if (runs.data.workflow_runs.length === 0) {
+              core.setFailed("no successful docker.yml run on main to pin");
+              return;
+            }
+            const imageSha = runs.data.workflow_runs[0].head_sha;
+            // docker/metadata-action publishes type=sha tags as sha-<short> (7
+            // chars by default) — pin the tag that exists on GHCR.
+            const short = imageSha.slice(0, 7);
+            const image = `ghcr.io/merlin-pinpin-org/kingdoms-services:sha-${short}`;
+            for (const env of [...changed].sort()) {
+              if (protectedEnvs.includes(env)) {
+                core.info(`${env} is prod-like: skipped (released images only)`);
+                continue;
+              }
+              // Delegate the write to the Pin state workflow (single-writer
+              // design, ADR-0018): it merges main into the state branch
+              // and writes the state in one commit — same path as a
+              // /deploy-test. The client_payload is capped at 10 properties
+              // by the GitHub API; message is composed by the Pin state
+              // workflow itself.
+              await github.rest.repos.createDispatchEvent({
+                owner: "merlin-pinpin-org",
+                repo: "kingdoms-infra",
+                event_type: "pin-state",
+                client_payload: {
+                  env,
+                  image,
+                  version_label: `main@${short}`,
+                  deploy_url: `https://github.com/merlin-pinpin-org/kingdoms-services/commit/${imageSha}`,
+                  deploy_kind: "main",
+                  deploy_ref: short,
+                  deploy_tree_url: `https://github.com/merlin-pinpin-org/kingdoms-services/tree/${imageSha}`,
+                  deploy_branch: "main",
+                  deployed_by: `config-change-deploy (run ${context.runId})`,
+                  source: `${env}-config change on main (commit ${context.sha.slice(0, 7)})`,
+                },
+              });
+              core.notice(`pin-state dispatched for ${env}: ${image} (config change on main)`);
+            }
+            if (changed.size === 0) core.info("no environment configuration changed");

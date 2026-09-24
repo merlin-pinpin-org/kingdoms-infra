@@ -59,21 +59,32 @@ targets the in-stack services.
 
 ## Adding an environment (ADR-0018 checklist)
 
-A new environment `<name>` is a four-item checklist — no workflow fork,
-no script change:
+Environments are **data, not workflows**: one directory per environment
+(`envs/<name>/` with its manifest and state), one `deploy/<name>` state
+branch, one runner label, one GitHub environment. The deploy, sync,
+re-pin, CI and rules-audit workflows all discover the environments
+automatically — adding one is the checklist below, nothing else:
 
 1. **Manifest**: `envs/<name>/docker-compose.yml` on `main` (copy the
    test one; the image is pinned by state, never a floating tag).
 2. **Runner label**: the environment VPS's self-hosted runner carries
    `env-<name>` (see [VPS-SETUP.md](VPS-SETUP.md)) — one runner per VPS.
-3. **State branch**: `deploy/<name>` with the initial state commit
-   (`envs/<name>/state/kingdoms-bot.yml`); the deploy workflow reads
-   the pinned image from it.
-4. **Branch ruleset + workflow**: protect `deploy/<name>` (no force-push,
-   no deletion; PR required for prod-like environments), and add a
-   `deploy-<name>.yml` workflow from the same template as `deploy-test.yml`
-   (trigger: push on `deploy/<name>` paths `envs/<name>/state/**`; runner label
-   `env-<name>`; GitHub environment `<name>` with its secrets).
+3. **State branch**: `deploy/<name>` cut from `main` with the initial
+   state commit (`envs/<name>/state/kingdoms-bot.yml`); the deploy
+   workflow reads the pinned image from it.
+4. **GitHub environment**: create the `<name>` environment with its
+   secrets/variables (`DISCORD_TOKEN`, `BOT_ADMINS`, …) and its
+   reviewers — **the environment's required reviewers are who may
+   deploy it** (e.g. only the developer and ops for prod; leave test
+   envs open to collaborators).
+5. **Branch ruleset**: protect `deploy/<name>` (no force-push, no
+   deletion; PR required for prod-like environments — approving a
+   production deployment is merging that PR).
+
+Prod-like environments (released `vX.Y.Z` images only, never re-pinned
+from a config change on main) are listed in `PROTECTED_ENVS` in
+[deploy.yml](../.github/workflows/deploy.yml); everything else is
+per-environment data.
 
 ## Keeping the state branches current (pipeline propagation)
 
@@ -115,7 +126,7 @@ only non-admin actor in the `deploy/*` ruleset bypass lists.
 **Single-writer design:** every writer to a `deploy/<env>` state branch
 lives in this repository and shares one concurrency group,
 `deploy-state-<env>` — pin-state.yml (image pins dispatched by the deploy
-pipelines), sync-state.yml and the re-pin job of deploy-test.yml. GitHub
+pipelines), sync-state.yml and the re-pin job of deploy.yml. GitHub
 serializes them, so a pin can never race a sync (the historical "cannot
 lock ref" failure); a pin also merges `main` into the state branch, so
 deployments cannot run stale pipeline code. Known limit: only the latest
@@ -183,7 +194,7 @@ policy gates **who may trigger the workflows** (see
 | Deployment branch policy | `deploy/test` (state branch, ADR-0018), `main`, `vibe/**` | `deploy/prod` (state branch, ADR-0018) |
 | Required reviewers | — | `merlin-pinpin` (approval before any prod job consumes prod secrets) |
 | Wait timer | — | — |
-| Actions policy (who may trigger the workflow) | `deploy-test-dispatch`: `kingdoms-deployer[bot]` + admins (via REST API — the UI picker does not list third-party apps); events `workflow_dispatch`, `push` | not implemented yet (`deploy-prod.yml` exits early; the prod deploy path is designed for released tags and identified production deployers) |
+| Actions policy (who may trigger the workflow) | `deploy-test-dispatch`: `kingdoms-deployer[bot]` + admins (via REST API — the UI picker does not list third-party apps); events `workflow_dispatch`, `push` | not implemented yet (`deploy.yml` exits early; the prod deploy path is designed for released tags and identified production deployers) |
 
 Reading the matrix:
 
@@ -195,7 +206,7 @@ Reading the matrix:
   `KINGDOMS_BOT_IMAGE` input (what image runs).
 - **prod** deploys only from `main` (a released image, per ADR-0007) and
   requires an explicit human approval before the job starts. Even an
-  accidental `workflow_dispatch` of `deploy-prod.yml` cannot consume prod
+  accidental `workflow_dispatch` of `deploy.yml` cannot consume prod
   secrets without a reviewer's approval.
 
 ## Deploying a test image from a services branch
