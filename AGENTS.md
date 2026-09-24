@@ -62,7 +62,11 @@ for the Kingdoms Discord bot platform.
   `kingdoms/docs/VIBEWORKFLOW.md`): always open PRs as drafts; mark a PR
   ready for review only when, from your point of view, it can be merged
   (checks green, implementation complete, self-review done, docs updated);
-  keep or return it to draft (`gh pr ready --undo`) while work remains.
+  keep or return it to draft (`gh pr ready --undo`) while work remains A user-facing change is also validated live
+  first: deploy the PR to the test environment (the `/deploy` PR comment
+  on kingdoms-services) and let the human check the behavior in Discord —
+  only then mark the PR ready and ask for the merge; if fixes are needed,
+  return the PR to draft.
 - **The merge is one human click.** The agent never merges: it prepares
   PRs to merge-ready (ready for review, checks green, docs updated, issue
   linked) and reports the PR URL; the developer or ops clicks **Merge**
@@ -80,11 +84,6 @@ for the Kingdoms Discord bot platform.
 - **Anyone can run the local checks** (`bash -n`, shellcheck on scripts,
   `docker compose config`): they require public clones only, no
   credentials.
-- **Validate a user-facing change in Discord before asking for a merge:**
-  deploy the PR to the test environment (the `/deploy` PR comment on
-  kingdoms-services) and let the human check the live behavior in Discord
-  first; only then ask for the merge. Never present a PR as ready to
-  merge while its live validation is still pending.
 - Authorized contributors (per the GitHub environment protection rules)
   can deploy to the **test** environment; higher environments are gated by
   their own deployment triggers.
