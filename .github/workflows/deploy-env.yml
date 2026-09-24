@@ -30,24 +30,24 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy ${{ inputs.env }}
+    name: Deploy ${{ inputs.environment }}
     # The env-<name> label routes the job to the environment's runner
     # (one runner per environment VPS). The dynamic label cannot be a
     # YAML flow sequence, so it is composed as a string here.
-    runs-on: ${{ format('self-hosted,kingdoms,env-{0}', inputs.env) }}
-    environment: ${{ inputs.env }}
+    runs-on: ${{ format('self-hosted,kingdoms,env-{0}', inputs.environment) }}
+    environment: ${{ inputs.environment }}
     concurrency:
-      group: deploy-${{ inputs.env }}
+      group: deploy-${{ inputs.environment }}
       cancel-in-progress: false
     steps:
       - name: Check out the pinned state
         uses: actions/checkout@v4
         with:
-          ref: deploy/${{ inputs.env }}
+          ref: deploy/${{ inputs.environment }}
       - name: Compute the deployed infra identity (short sha label)
         id: infra-id
         run: |
-          echo "label=deploy/${{ inputs.env }}@${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "label=deploy/${{ inputs.environment }}@${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           echo "run_ts=$(date -u +%s)" >> "$GITHUB_OUTPUT"
       - name: Log in to GHCR (the bot image package is not public)
         uses: docker/login-action@v3
@@ -56,7 +56,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Deploy the stack (image pinned by the state file)
-        run: ./scripts/deploy.sh ${{ inputs.env }}
+        run: ./scripts/deploy.sh ${{ inputs.environment }}
         env:
           BACKUP_DIR: /opt/kingdoms/backups
           # Environment secrets must be mapped explicitly into the step
