@@ -12,10 +12,10 @@ with a **GitHub App** instead of a permanent personal access token:
 - the workflow in `kingdoms-services` mints an **ephemeral token** from it
   (valid for at most one hour, `actions/create-github-app-token@v3`), so no
   permanent credential ever leaves GitHub;
-- `deploy-prod.yml` exposes no `workflow_dispatch` trigger, so the app is
+- `deploy.yml` exposes its `workflow_dispatch` trigger to the allowed actors only, so the app is
   structurally unable to touch production;
 - workflow execution rulesets (see below) restrict who may dispatch
-  `deploy-test.yml`, so the app is the *only* actor that may trigger it
+  `deploy.yml`, so the app is the *only* actor that may trigger it
   on demand.
 
 ## 1. Create the app
@@ -75,7 +75,7 @@ docs/ENVIRONMENTS.md § "Keeping the state branches current").
 GitHub [workflow execution protections](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/actions-policies/workflow-execution-protections)
 are built on the rulesets framework: they define, **before a run starts**,
 which actors may trigger which workflows. This step is **defense-in-depth**:
-the app already cannot do anything but dispatch `deploy-test.yml` (single
+the app already cannot do anything but dispatch `deploy.yml` (single
 permission, single repository, and the prod workflow is not dispatchable).
 Without a policy, anyone with write access can still trigger the workflow
 manually from the Actions tab.
@@ -93,7 +93,7 @@ To add the policy, on `merlin-pinpin-org/kingdoms-infra` (Settings →
 Actions → Policies → New policy):
 
 - **Name**: `deploy-test-dispatch`;
-- **Target**: the workflow `.github/workflows/deploy-test.yml`;
+- **Target**: the workflow `.github/workflows/deploy.yml`;
 - **Actor rule** (allow list): **`kingdoms-deployer[bot]`** only — add the
   human administrators too if they want a manual fallback (otherwise
   nobody can dispatch the workflow by hand);
@@ -123,7 +123,7 @@ app would break `/deploy-test` entirely.
 > gh api --method POST /repos/merlin-pinpin-org/kingdoms-infra/actions/policies \
 >   -f name=deploy-test-dispatch \
 >   -f enforcement=active \
->   -f workflow_path=.github/workflows/deploy-test.yml \
+>   -f workflow_path=.github/workflows/deploy.yml \
 >   -F 'allowed_actors[][id]=332499271' -F 'allowed_actors[][type]=Bot' \
 >   -F 'allowed_events[]=workflow_dispatch' -F 'allowed_events[]=push'
 > ```
@@ -156,8 +156,7 @@ Two halves, both required:
   **Read** (pull only; the repo never pushes to this package). Do the
   same for the `kingdoms` repo only if a workflow there ever needs to
   pull the image.
-- **Workflow side (in this repository):** `deploy-test.yml` (and
-  `deploy-prod.yml`) log in to ghcr.io with the job's `GITHUB_TOKEN`
+- **Workflow side (in this repository):** `deploy.yml` logs in to ghcr.io with the job's `GITHUB_TOKEN`
   (`permissions: packages: read`) before running `scripts/deploy.sh`,
   so the pull from the VPS is authenticated as this repository.
 

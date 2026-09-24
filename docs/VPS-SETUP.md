@@ -318,7 +318,7 @@ every merge to `main`.
   log for the list of variables to create first.
 - Production deploys only released tags (`vX.Y.Z`), manually by identified
   production deployers — see the **Deploy prod** workflow
-  (`.github/workflows/deploy-prod.yml`) and
+  (`.github/workflows/deploy.yml`) and
   [DEPLOYMENT.md](DEPLOYMENT.md).
 - Monitoring (resource usage, alerts) is tracked in
   [kingdoms-infra#5](https://github.com/merlin-pinpin-org/kingdoms-infra/issues/5).

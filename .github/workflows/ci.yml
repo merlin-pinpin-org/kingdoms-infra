@@ -21,16 +21,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate test manifest
+      - name: Validate every environment manifest
         run: |
-          DISCORD_TOKEN=ci-placeholder \
-          KINGDOMS_BOT_IMAGE=ghcr.io/merlin-pinpin-org/kingdoms-services:sha-ci \
-            docker compose -f envs/test/docker-compose.yml config --quiet
-      - name: Validate prod manifest
-        run: |
-          DISCORD_TOKEN=ci-placeholder \
-          KINGDOMS_BOT_IMAGE=ghcr.io/merlin-pinpin-org/kingdoms-services:v0.0.0-ci \
-            docker compose -f envs/prod/docker-compose.yml config --quiet
+          set -euo pipefail
+          # Environments are data: validate all of them, so a new env
+          # directory is checked without touching this workflow.
+          for manifest in envs/*/docker-compose.yml; do
+            echo "Validating ${manifest}"
+            DISCORD_TOKEN=ci-placeholder \
+            KINGDOMS_BOT_IMAGE=ghcr.io/merlin-pinpin-org/kingdoms-services:sha-ci \
+              docker compose -f "${manifest}" config --quiet
+          done
 
   smoke:
     name: Smoke test (test stack boot)
