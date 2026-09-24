@@ -44,6 +44,7 @@ server installation guide (step by step, no Linux knowledge required).
 
 ## Contributing
 
-See [AGENTS.md](AGENTS.md) for the working rules (English only, no secrets in
-the repo, idempotent scripts with rollback). Every infrastructure change must
-be reflected in the `kingdoms` documentation before merge.
+See [docs/DEVELOPER.md](docs/DEVELOPER.md) for the developer guide
+(environment model, checks, deploy chain) and [AGENTS.md](AGENTS.md) for
+the agent entry points. Every infrastructure change must be reflected in
+the `kingdoms` documentation before merge.
