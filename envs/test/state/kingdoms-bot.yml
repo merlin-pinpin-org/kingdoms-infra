@@ -1,13 +1,15 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-a10cdc7
-version_label: main@a10cdc7
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/a10cdc793c7cb3be43d51464078225250f3ffabd
-deploy_kind: main
-deploy_ref: a10cdc7
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/a10cdc793c7cb3be43d51464078225250f3ffabd
-deploy_ts: 1790248554
-deployed_by: config-change-deploy (run 35991958248)
-deployed_at: "2026-09-24T11:15:54Z"
-source: test-config change on main (commit 676a730)
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-89-20260924145516-b3afe53
+version_label: pr-89-20260924145516-b3afe53
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/89#issuecomment-5816536965
+deploy_kind: pr
+deploy_ref: 89
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/b3afe53b5e8370c4c29f9b76095e48f53e04e7fa
+deploy_ts: 1790261758
+deployed_by: merlin-pinpin (/deploy)
+deployed_at: "2026-09-24T14:55:58Z"
+source: 
+deploy_branch: vibe/deploy-readme-19c915
+deploy_pr_title: docs(readme): document the /deploy PR-comment command
