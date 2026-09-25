@@ -1,19 +1,19 @@
-# Deploy test GitHub App setup (one-time)
+# Deploy GitHub App setup (one-time)
 
-`/deploy-test` (a PR comment on `kingdoms-services`) must trigger the
-**Deploy test** workflow of this repository. GitHub Actions cannot listen to
+`/deploy` (a PR comment on `kingdoms-services`) must trigger the
+**Pin state** workflow of this repository. GitHub Actions cannot listen to
 another repository's events, so the trigger crosses repositories; it does so
 with a **GitHub App** instead of a permanent personal access token:
 
 - the app is installed on **`merlin-pinpin-org/kingdoms-infra` only**;
 - it holds two permissions: **Actions: write** and **Contents: write**
-  (ADR-0018: it pins the deployed image in the `deploy/test` state
-  branch; it still cannot read secrets, comment, or touch `main`);
+  (ADR-0018: it pins the deployed image in the `deploy/<env>` state
+  branches; it still cannot read secrets, comment, or touch `main`);
 - the workflow in `kingdoms-services` mints an **ephemeral token** from it
   (valid for at most one hour, `actions/create-github-app-token@v3`), so no
   permanent credential ever leaves GitHub;
-- `deploy.yml` exposes its `workflow_dispatch` trigger to the allowed actors only, so the app is
-  structurally unable to touch production;
+- `deploy.yml` exposes its `workflow_dispatch` trigger to the allowed
+  actors only, so the app is structurally unable to reach `prod`;
 - workflow execution rulesets (see below) restrict who may dispatch
   `deploy.yml`, so the app is the *only* actor that may trigger it
   on demand.
@@ -54,23 +54,23 @@ Actions → New repository secret), add:
 | `KINGDOMS_DEPLOYER_APP_ID` | The App ID shown on the app's page |
 | `KINGDOMS_DEPLOYER_APP_PRIVATE_KEY` | The `.pem` private key (download it when generated; the full file content, including the BEGIN/END lines) |
 
-The `Deploy test (PR comment)` workflow of `kingdoms-services` reads these
-two secrets. The **re-pin job** of this repository's Deploy test workflow
-(a test-config change on `main` re-pins the state) needs the same
-credentials on `kingdoms-infra`: add `KINGDOMS_DEPLOYER_APP_ID` and
+The `Deploy PR (comment)` workflow of `kingdoms-services` reads these
+two secrets. The **re-pin job** of this repository's Deploy environment workflow
+(a config change on `main` re-pins the state of non-protected
+environments) needs the same credentials on `kingdoms-infra`: add `KINGDOMS_DEPLOYER_APP_ID` and
 `KINGDOMS_DEPLOYER_APP_PRIVATE_KEY` as repository secrets of
 `kingdoms-infra` too (Settings → Secrets and variables → Actions).
 
 Once the app is installed with Contents: write and the secrets set,
-`/deploy-test` comments on PRs of `kingdoms-services` dispatch the
+`/deploy` comments on PRs of `kingdoms-services` dispatch the
 [Pin state](../.github/workflows/pin-state.yml) workflow of this repository
 (`repository_dispatch`, `pin-state`): it pins the PR image in the
-`deploy/test` state branch — merging `main` in the same commit — and the
+`deploy/<env>` state branch — merging `main` in the same commit — and the
 state push deploys it to the test VPS. All writers to a state branch share
 the `deploy-state-<env>` concurrency group (single-writer design, see
 docs/ENVIRONMENTS.md § "Keeping the state branches current").
 
-## 4. Restrict who may trigger Deploy test (recommended)
+## 4. Restrict who may trigger the deploy chain (recommended)
 
 GitHub [workflow execution protections](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/actions-policies/workflow-execution-protections)
 are built on the rulesets framework: they define, **before a run starts**,
@@ -84,7 +84,7 @@ manually from the Actions tab.
 > added to actor allow lists **when the repository belongs to an
 > organization**. The repositories moved from the personal account
 > `merlin-pinpin` to the `merlin-pinpin-org` organization, and the app has
-> since recorded activity here (it dispatched the Deploy test run), so the
+> since recorded activity here (it dispatched the Pin state run), so the
 > actor picker now lists `kingdoms-deployer[bot]`. On the personal-account
 > repository the picker did not list the app and this policy was deferred
 > — this note records why.
@@ -100,15 +100,15 @@ Actions → Policies → New policy):
 - **Event rule** (allow list): `workflow_dispatch` and `push` — `push`
   keeps the test-config-change deploys on `main` working.
 
-Result: only the app can dispatch **Deploy test** on demand; the
+Result: only the app can dispatch **Deploy environment** on demand; the
 test-config-change deploys (push on `main`) keep working; no other human
 or bot can trigger the workflow directly.
 
 Order matters: enable this policy only **after** a first successful
-`/deploy-test` (so the app has recorded activity and appears in the
-picker), then run a second `/deploy-test` to verify the flow still passes —
+`/deploy` (so the app has recorded activity and appears in the
+picker), then run a second `/deploy` to verify the flow still passes —
 the app is the actor of the dispatch, so an actor allow list without the
-app would break `/deploy-test` entirely.
+app would break `/deploy` entirely.
 
 > **The actor picker may still not list the app.** The UI picker
 > (checked 2026-09, on an organization repository, with the app having
@@ -128,9 +128,9 @@ app would break `/deploy-test` entirely.
 >   -F 'allowed_events[]=workflow_dispatch' -F 'allowed_events[]=push'
 > ```
 >
-> Then verify with a `/deploy-test`: the run must still be created by
+> Then verify with a `/deploy`: the run must still be created by
 > `kingdoms-deployer[bot]` — an actor list without the app breaks the
-> `/deploy-test` flow. To adjust the policy later, use
+> `/deploy` flow. To adjust the policy later, use
 > `gh api /repos/merlin-pinpin-org/kingdoms-infra/actions/policies` to list
 > the policy ids and the update endpoint on the same API.
 > The exact body-parameter names are documented in the
@@ -145,7 +145,7 @@ The bot image package `ghcr.io/merlin-pinpin-org/kingdoms-services` is
 owned by the **kingdoms-services** repository (its Docker workflow
 publishes it). It is not public, and after the organization transfer a
 package's access no longer extends to the other repositories: the
-Deploy test job pulling it from the test VPS fails with
+deploy job pulling it from the test VPS fails with
 `error from registry: unauthorized`.
 
 Two halves, both required:
@@ -166,8 +166,9 @@ anonymous and fails closed.
 
 ## Verify
 
-1. Comment `/deploy-test` on any PR of `kingdoms-services`.
+1. Comment `/deploy` on any PR of `kingdoms-services`.
 2. The PR gets a 🚀 comment, then a ✅ one.
-3. A **Deploy test** run appears in this repository's Actions
-   (triggered by `kingdoms-deployer[bot]`), runs on the self-hosted
-   runner, and the bot on the test VPS restarts with the PR image.
+3. A **Pin state** run followed by a **Deploy environment** run appear in
+   this repository's Actions (triggered by `kingdoms-deployer[bot]`),
+   run on the self-hosted runner, and the bot on the test VPS restarts
+   with the PR image.
