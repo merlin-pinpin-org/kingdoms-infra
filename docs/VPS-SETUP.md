@@ -78,6 +78,12 @@ sudo ufw allow OpenSSH
 sudo ufw enable
 ```
 
+Defence in depth on the test environment: the MongoDB and Redis ports of
+`envs/test/docker-compose.yml` are published on **loopback only**
+(`127.0.0.1:27017`, `127.0.0.1:6379`) — operator debugging from the VPS
+works, but even with the firewall misconfigured the databases are not
+reachable from the network. Production does not publish the ports at all.
+
 ## 2. Install Docker and Docker Compose
 
 Install Docker from the official repository (the

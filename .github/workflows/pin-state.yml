@@ -54,6 +54,16 @@ jobs:
               ;;
           esac
           echo "env_name=$env_name" >> "$GITHUB_ENV"
+          # The GitHub API caps a client_payload at 10 properties — the
+          # emitters sit at exactly 10, so an over-cap dispatch fails with
+          # a 422 before reaching this workflow. Say it here too: if this
+          # check ever fires, an emitter gained a property (see
+          # kingdoms-services scripts/check_pin_payloads.sh, the CI guard).
+          count="$(jq 'keys | length' <<<"$PAYLOAD")"
+          if (( count > 10 )); then
+            echo "::error::the pin-state dispatch payload carries ${count} properties — the GitHub API cap is 10; compose the extra fields here instead of passing them"
+            exit 1
+          fi
           for field in image version_label deploy_kind deploy_ref deploy_tree_url deploy_branch; do
             value="$(jq -r --arg f "$field" '.[$f] // empty' <<<"$PAYLOAD")"
             if [[ -z "$value" ]]; then
