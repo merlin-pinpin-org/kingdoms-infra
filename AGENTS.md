@@ -29,6 +29,11 @@ for the Kingdoms Discord bot platform.
   pushing; sandbox-limited checks are covered by CI workflows.
 - Any infrastructure change is reflected in the `kingdoms` docs (source
   of truth) before merge.
+- **Enrich the docs and skills proactively** (developer-mandated): when
+  the session's work teaches a rule, pitfall or pattern, update the
+  matching skill page, convention or AGENTS.md entry as part of the
+  change — see the kingdoms CONVENTIONS.md
+  (*Documentation is part of the change*).
 - Issue templates: `## Objective` / `## Context` / `## Specifications` /
   `## Acceptance criteria` / `## Dependencies` (blank issues disabled).
 - **Automation mandate:** no one-off commands, for humans or sessions —
