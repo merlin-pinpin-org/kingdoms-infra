@@ -7,13 +7,14 @@ the deployed state converges to them through automation.
 ## Principles
 
 1. **Declarative**: each environment is fully described by its compose
-   manifest in `deploy/` and its documented variables.
+   manifest in `envs/<env>/` and its documented variables.
 2. **Versioned and immutable**: every environment change goes through a pull
    request; the manifests reviewed are the manifests applied.
-3. **Pulled automatically**: the deploy workflows
-   (`.github/workflows/deploy-<env>.yml`) apply the
-   manifests after merge, executed by a self-hosted runner on the VPS
-   (see [VPS-SETUP.md](VPS-SETUP.md)) — nobody applies changes by hand.
+3. **Pulled automatically**: the deploy chain
+   (`deploy.yml` routing → `deploy-env.yml` per-environment deploy) applies
+   the pinned state after the state-branch push, executed by a
+   self-hosted runner on the VPS (see [VPS-SETUP.md](VPS-SETUP.md)) —
+   nobody applies changes by hand.
 4. **Continuously reconciled**: `scripts/deploy.sh` is idempotent; re-running
    it converges the environment to the manifest state.
 
@@ -21,7 +22,7 @@ the deployed state converges to them through automation.
 
 ```mermaid
 flowchart LR
-    PR["Pull request touching deploy/"] --> REVIEW["Developer review"]
+    PR["Pull request touching envs/"] --> REVIEW["Developer review"]
     REVIEW --> MERGE["Merge to main"]
     MERGE --> CI["CI: shellcheck, compose validation, smoke, backup/restore round-trip"]
     CI --> CD["CD: apply manifests to the target environment"]
@@ -32,7 +33,7 @@ flowchart LR
     ROLLBACK --> STACK
 ```
 
-1. A change to `deploy/` or `scripts/` opens a PR; the
+1. A change to `envs/` or `scripts/` opens a PR; the
    `Check infra` and `CI` workflows validate it.
 2. After merge to `main`, `CD` applies the new state.
 3. Secrets are injected at deploy time by the self-hosted runner from the

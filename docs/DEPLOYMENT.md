@@ -4,12 +4,13 @@ This guide describes how the Kingdoms stack is deployed to each environment.
 
 ## Environments
 
-Three environments, each defined by a Docker Compose manifest in `deploy/`:
+Two environments, each defined by a Docker Compose manifest in `envs/` and
+a pinned state on its `deploy/<env>` state branch (ADR-0018):
 
 | Environment | Manifest | Purpose |
 | ----------- | -------- | ------- |
-| `test` | `envs/test/docker-compose.yml` | VPS; deployed on demand (`/deploy-test` PR comment via the kingdoms-deployer GitHub App, or test-config change on main). Commit-SHA-tagged images | validation environment |
-| `prod` | `envs/prod/docker-compose.yml` | VPS; released tags only (`vX.Y.Z`), run by identified production deployers — **not implemented yet** (the workflow fails with the setup instructions) |
+| `test` | `envs/test/docker-compose.yml` | VPS; deployed on demand (`/deploy` PR comment via the kingdoms-deployer GitHub App, or test-config change on main). Commit-SHA-tagged images | validation environment |
+| `prod` | `envs/prod/docker-compose.yml` | VPS; released `vX.Y.Z` images only, promoted after validation on `test` and approved by the `prod` environment reviewers |
 
 Each environment runs the same services:
 
@@ -32,32 +33,33 @@ Each environment runs the same services:
 
 ## Deploying
 
-Deployment is **GitOps-driven**: changes to `deploy/` are applied by the
-CD pipelines running on a **self-hosted runner installed on the VPS** —
-see [VPS-SETUP.md](VPS-SETUP.md) for the step-by-step server installation.
-There is **one workflow per environment**
-(`.github/workflows/deploy-<env>.yml`), so GitHub policies can gate who
-may deploy each environment independently:
+Deployment is **GitOps-driven**: the pinned state on the `deploy/<env>`
+state branches is applied by the deploy chain (`deploy.yml` routing →
+`deploy-env.yml` per-environment deploy) running on a **self-hosted runner
+installed on the VPS** — see [VPS-SETUP.md](VPS-SETUP.md) for the
+step-by-step server installation. Environments are data, not workflows:
+per-environment gating is GitHub-native (the `<env>` GitHub environment
+carries the required reviewers; the `deploy/<env>` branch ruleset decides
+whether a pin needs a PR — approving a production deployment is merging
+it):
 
-- `test` — **deployed by state push** (ADR-0018): a `/deploy-test` PR
-  comment in `kingdoms-services` builds the PR image
+- `test` — **deployed by state push** (ADR-0018): a `/deploy` (or
+  `/deploy <env>`) PR comment in `kingdoms-services` builds the PR image
   (`pr-<id>-<timestamp>-<sha>`) and pins it in the `deploy/test` state
   branch via the **GitHub App** (ephemeral token — setup in
   [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md));
   the push deploys the pinned image. A test-config change on `main`
-  re-pins the latest `sha-<sha>` image first. The state file records the
+  re-pins the latest `sha-<sha>` image first (never on `prod` —
+  `PROTECTED_ENVS` in `deploy.yml`). The state file records the
   image, version label, deploy URL, deployer and time — Git history is
   the audit trail.
-- `prod` — **deployed by state push** (ADR-0018): the release pipeline
-  writes the released `vX.Y.Z` image to `deploy/prod`; the branch
-  ruleset requires a PR, so approving a prod deployment is merging it.
-  **Not implemented yet** — the workflow fails with the setup
-  instructions.
-- `prod` — **released only**: the workflow is triggered by a `vX.Y.Z` tag
-  or manually by an identified production deployer (a repository ruleset
-  restricts who may run it), and the bot image must be a released
-  `vX.Y.Z` image. **Not implemented yet** — the workflow fails with the
-  list of GitHub environment variables to create first.
+- `prod` — **deployed by state push** (ADR-0018): released `vX.Y.Z`
+  images only, promoted by the [Promote
+  release](https://github.com/merlin-pinpin-org/kingdoms-services/blob/main/.github/workflows/release.yml)
+  workflow of `kingdoms-services` once the release has been validated
+  on `test`; the Deploy environment run then waits for the `prod`
+  environment reviewers before deploying. The branch ruleset requires a
+  PR, so approving a prod deployment is merging it.
 
 Every deployment enforces two safety gates:
 
@@ -80,6 +82,26 @@ DISCORD_TOKEN=... ./scripts/deploy.sh test
 `scripts/deploy.sh` is idempotent: re-running it on a deployed environment
 converges to the manifest state.
 
+## Troubleshooting
+
+A deployment that does not start or never finishes is almost always one of
+a few known causes. **Diagnose before touching anything**: run `make doctor`
+or `make diagnose-deploy-<env>` (`scripts/diagnose_deploy.sh <env>`,
+`--json` for agents) — it walks the causes in order, links every stale run
+to cancel, and exits 1 when something blocks. The full runbook (including
+the concurrency-zombie trap behind the 2026-09-24 prod incident) lives in
+[DEVELOPER.md](DEVELOPER.md) § "A deploy stays pending".
+
+| Symptom | Cause | What to do |
+| ------- | ----- | ---------- |
+| Newer deploy runs stay `pending`, no deployment status, no notification, runner never asked | A stale `waiting`/`pending` run holds the `deploy-<env>` concurrency group forever | Cancel the stale run the diagnose script links ([DEVELOPER.md](DEVELOPER.md) runbook) |
+| The run is `waiting` with a pending deployment | Environment approval: the required reviewers have not approved yet | Approve or dismiss the deployment in the GitHub UI |
+| The deploy job is queued forever, `runner_name: null` | No runner carries the `env-<env>` label, or the runner is offline | Check the runner on the VPS (`sudo ./svc.sh status`, [VPS-SETUP.md](VPS-SETUP.md)) |
+| The deploy fails: `DISCORD_TOKEN is not set` | The GitHub `<env>` environment secret is missing | Settings → Environments → `<env>`; the manifests fail closed on missing secrets |
+| The deploy fails at the health gate and rolls back | A service never reports `healthy` within the timeout | Inspect `docker compose logs` on the VPS; the automatic rollback already restored the latest backup |
+| The image pull fails: `unauthorized` | `kingdoms-infra` lost its Read role on the bot image package | [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md) §5 (package Actions access) |
+| A deploy-chain fix merged on `main` does not change behavior | Deploy runs use the workflow revision of the state branch | Wait for the state-branch propagation ([ENVIRONMENTS.md](ENVIRONMENTS.md) § "Keeping the state branches current") |
+
 ## Database backup and restore
 
 ```bash
@@ -99,7 +121,7 @@ before being accepted.
 ## Rollback
 
 `scripts/rollback.sh <env>` restores the most recent backup of the
-environment (or a given archive), reverts the `deploy/` manifests to the
+environment (or a given archive), reverts the `envs/` manifests to the
 previous committed revision when git is available, and re-applies the
 stack:
 

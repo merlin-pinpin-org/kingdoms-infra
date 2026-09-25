@@ -7,7 +7,7 @@ is the environment matrix; the deployment procedure lives in
 | | test | prod |
 | --- | --- | --- |
 | Manifest | `envs/test/docker-compose.yml` | `envs/prod/docker-compose.yml` |
-| Bot image | `ghcr.io/...` pinned by the state branch: `pr-<id>-<timestamp>-<sha>` for `/deploy-test`, `sha-<sha>` for main | `ghcr.io/...` released tag `vX.Y.Z` via `KINGDOMS_BOT_IMAGE` |
+| Bot image | `ghcr.io/...` pinned by the state branch: `pr-<id>-<timestamp>-<sha>` for `/deploy`, `sha-<sha>` for main | `ghcr.io/...` released tag `vX.Y.Z` via `KINGDOMS_BOT_IMAGE` |
 | Image pull policy | `missing` | `always` |
 | Host | VPS (runner) | VPS (runner) |
 | Secrets | GitHub environment secrets (injected by the runner) | GitHub environment secrets |
@@ -15,7 +15,7 @@ is the environment matrix; the deployment procedure lives in
 | Redis exposed ports | 6379 | — |
 | Redis persistence | volume | volume + AOF |
 | Bot memory limit | — | 512M |
-| Deploy trigger | Push to the `deploy/test` state branch (written by the GitHub App from a `/deploy-test` PR comment, or re-pinned by a test-config change on main) | Push to the `deploy/prod` state branch (written by the release pipeline; the branch ruleset requires a PR — approving a prod deploy is merging it) |
+| Deploy trigger | Push to the `deploy/test` state branch (written by the GitHub App from a `/deploy` PR comment, or re-pinned by a test-config change on main) | Push to the `deploy/prod` state branch (written by the release pipeline; the branch ruleset requires a PR — approving a prod deploy is merging it) |
 | Pre-deploy backup | mandatory | mandatory |
 | Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `prod`) |
 | State branch | `deploy/test` (ADR-0018) | `deploy/prod` (ADR-0018) |
@@ -33,7 +33,7 @@ and fail closed when one is missing.
 | -------- | ----------- |
 | `DISCORD_TOKEN` | Discord bot token (required) |
 | `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35), provisioned as an environment **variable**; empty means `/status` reports no operator |
-| `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Services field: the `/deploy-test` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
+| `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Services field: the `/deploy` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
 | `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Services field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
 | `KINGDOMS_DEPLOY_RUN_URL` | URL of the deploy job shown by the `/status` Infra field — injected by the deploy workflow itself (`github.server_url/repository/actions/runs/<run_id>`), so the running bot links the exact job that deployed it |
 | `KINGDOMS_DEPLOY_INFRA_LABEL` | Short label of the deployed infra state (`deploy/<env>@<sha>`), shown by the `/status` Infra field — injected by the deploy workflow |
@@ -102,11 +102,11 @@ manifest or `scripts/deploy.sh`, it must be propagated to every state
 branch. State branches carry their own state commits (and sync merges),
 so this is a merge, not a fast-forward. Propagation is **automated**:
 
-- the [Sync state branches](.github/workflows/sync-state.yml) workflow
+- the [Sync state branches](../.github/workflows/sync-state.yml) workflow
   merges `main` into each `deploy/<env>` on every push to `main` (no-op
   when the state branch already contains `main`);
-- the [Pin state](.github/workflows/pin-state.yml) workflow (the
-  `/deploy-test` path) merges `main` in the same commit as the image pin,
+- the [Pin state](../.github/workflows/pin-state.yml) workflow (the
+  `/deploy` path) merges `main` in the same commit as the image pin,
   so a deployment can never run stale manifests either.
 
 Adding an environment is adding it to both matrices. The manual
@@ -194,12 +194,12 @@ policy gates **who may trigger the workflows** (see
 | Deployment branch policy | `deploy/test` (state branch, ADR-0018), `main`, `vibe/**` | `deploy/prod` (state branch, ADR-0018) |
 | Required reviewers | — | `merlin-pinpin` (approval before any prod job consumes prod secrets) |
 | Wait timer | — | — |
-| Actions policy (who may trigger the workflow) | `deploy-test-dispatch`: `kingdoms-deployer[bot]` + admins (via REST API — the UI picker does not list third-party apps); events `workflow_dispatch`, `push` | not implemented yet (`deploy.yml` exits early; the prod deploy path is designed for released tags and identified production deployers) |
+| Actions policy (who may trigger the workflow) | `deploy-test-dispatch`: `kingdoms-deployer[bot]` + admins (via REST API — the UI picker does not list third-party apps); events `workflow_dispatch`, `push` | — (prod deploys are state-branch pushes written by the release pipeline only; the `prod` environment reviewers gate the Deploy environment run) |
 
 Reading the matrix:
 
 - **test** is open to feature branches (`vibe/**`) so the game designer can
-  validate a PR live in Discord via `/deploy-test` before it merges. The
+  validate a PR live in Discord via `/deploy` before it merges. The
   dispatch always references `ref: main` on this repository, so the
   `vibe/**` branch-policy entry is tolerance, not the actual gate — the
   real gates are the Actions policy (who dispatches) and the
@@ -217,23 +217,24 @@ branch on this repository):
 1. The code change lives on a `vibe/<slug>` branch of **kingdoms-services**,
    opened as a PR (draft while work remains).
 2. The **Docker** workflow of kingdoms-services builds the image on
-   every PR push; `/deploy-test` publishes a timestamped tag
+   every PR push; `/deploy` publishes a timestamped tag
    (`pr-<id>-<timestamp>-<sha>`) from the PR head.
-3. A `/deploy-test` comment on the PR builds/publishes that exact image and
-   dispatches this repository's **Deploy test** workflow with it via the
+3. A `/deploy` comment on the PR builds/publishes that exact image and
+   dispatches this repository's **Pin state** workflow with it via the
    `kingdoms-deployer` GitHub App (ephemeral token, Actions: write only).
-4. **Deploy test** runs on the self-hosted runner (test VPS), pulls the
+4. The pinned state push triggers the deploy chain on the self-hosted
+   runner (test VPS); it pulls the
    authenticated image (package access: kingdoms-infra has role Read on the
    package — [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md) §5), and restarts the
    bot with it. The health gate confirms the stack is healthy.
 
 So: the image under test is always a PR image tagged by PR number,
 timestamp and commit SHA — never an untagged `latest`, never a hand-built
-local image on the VPS. Rolling back is re-running `/deploy-test` on the
+local image on the VPS. Rolling back is re-running `/deploy` on the
 previous PR, or letting the next config-change deploy on `main` restore the
 default image (`sha-<sha>` of main).
 
-The `/deploy-test` dispatch also carries the **deploy URL** and the
+The `/deploy` dispatch also carries the **deploy URL** and the
 **version label** so the bot's `/status` shows what is running
 (kingdoms-infra#37): a PR deploy's URL is the permalink of the deployment
 comment (label `pr-<id>-<timestamp>-<sha>`), a config-change deploy on
