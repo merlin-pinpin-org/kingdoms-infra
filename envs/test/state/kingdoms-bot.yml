@@ -1,15 +1,15 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-105-20260925151534-1c638e5
-version_label: pr-105-20260925151534-1c638e5
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/105#issuecomment-5834785075
-deploy_kind: pr
-deploy_ref: 105
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/1c638e57c5f3c5531d34414e01659da8b0280e45
-deploy_ts: 1790349380
-deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-25T15:16:20Z"
-source: 
-deploy_branch: vibe/harden-deploy-and-admin-bb30f6
-deploy_pr_title: fix(security): /deploy injection + /admin gating; actionlint & payload-cap guards in CI
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-e8717da
+version_label: main@e8717da
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/e8717daa5df48f0a0bbd85376ce9d606555a29ad
+deploy_kind: main
+deploy_ref: e8717da
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/e8717daa5df48f0a0bbd85376ce9d606555a29ad
+deploy_ts: 1790354112
+deployed_by: config-change-deploy (run 36161660780)
+deployed_at: "2026-09-25T16:35:12Z"
+source: test-config change on main (commit 1175e08)
+deploy_branch: main
+deploy_pr_title: 
