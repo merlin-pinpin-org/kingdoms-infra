@@ -7,7 +7,7 @@ on:
 
 jobs:
   lint:
-    name: Lint scripts and shell files
+    name: Lint scripts and workflows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,6 +15,16 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: ShellCheck
         run: shellcheck --severity=warning scripts/*.sh
+      - name: Install actionlint
+        run: |
+          # bash installer from the actionlint releases (checksum-verified
+          # by the script itself)
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          echo "$HOME/actionlint" >> "$GITHUB_PATH"
+      - name: Run actionlint
+        # The historical startup_failure bugs (matrix in a job-level if,
+        # label-list strings in runs-on) were all statically detectable.
+        run: actionlint -color
 
   compose:
     name: Validate compose manifests

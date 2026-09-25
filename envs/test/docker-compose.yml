@@ -51,8 +51,12 @@ services:
 
   kingdoms-mongo:
     image: mongo:7.0
+    # Loopback binding only: the database listens on the docker network
+    # for the bot; the host publish is for operator debugging (mongosh
+    # from the VPS), never for the network. The VPS firewall (ufw,
+    # VPS-SETUP.md) stays the outer barrier; this is defence in depth.
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo_data:/data/db
     healthcheck:
@@ -64,8 +68,9 @@ services:
 
   kingdoms-redis:
     image: redis:7.2
+    # Loopback binding only — same rationale as kingdoms-mongo above.
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
