@@ -1,15 +1,15 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-110-20260925213141-d1c11e8
-version_label: pr-110-20260925213141-d1c11e8
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/110#issuecomment-5839927527
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-110-20260925214540-edce935
+version_label: pr-110-20260925214540-edce935
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/110#issuecomment-5840099354
 deploy_kind: pr
 deploy_ref: 110
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/d1c11e867ae568b748438438a354ce0032cb5485
-deploy_ts: 1790371942
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/edce935993ab93f15cdc740939fb1d1926e380d8
+deploy_ts: 1790372810
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-25T21:32:22Z"
+deployed_at: "2026-09-25T21:46:50Z"
 source: 
 deploy_branch: vibe/bot-logs-channel-109
 deploy_pr_title: feat(logs): per-guild bot logs channel with lifecycle events and /admin management
