@@ -64,8 +64,8 @@ jobs:
       - name: Wait for MongoDB and Redis healthchecks
         working-directory: envs/test
         run: |
-          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
-          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-redis)")" = "healthy" ]; do sleep 3; done'
+          timeout 90 bash -c "until [ \"\$(docker inspect --format '{{.State.Health.Status}}' \"\$(docker compose ps -q kingdoms-mongo)\")\" = healthy ]; do sleep 3; done"
+          timeout 90 bash -c "until [ \"\$(docker inspect --format '{{.State.Health.Status}}' \"\$(docker compose ps -q kingdoms-redis)\")\" = healthy ]; do sleep 3; done"
 
       - name: Smoke check from a bot-like container
         working-directory: envs/test
@@ -130,7 +130,7 @@ jobs:
       - name: Wait for MongoDB healthcheck
         working-directory: envs/test
         run: |
-          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
+          timeout 90 bash -c "until [ \"\$(docker inspect --format '{{.State.Health.Status}}' \"\$(docker compose ps -q kingdoms-mongo)\")\" = healthy ]; do sleep 3; done"
 
       - name: Seed reference data
         working-directory: envs/test
@@ -165,8 +165,8 @@ jobs:
 
       - name: Restore the backup (MongoDB + Redis)
         run: |
-          BACKUP_PREFIX="$(ls -1t /tmp/kingdoms-backups/test-*.archive.gz | head -n 1 | sed 's/\.archive\.gz$//')"
-          ./scripts/restore_db.sh test "${BACKUP_PREFIX}.archive.gz" --yes
+          BACKUP_ARCHIVE="$(find /tmp/kingdoms-backups -maxdepth 1 -name 'test-*.archive.gz' -printf '%T@ %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)"
+          ./scripts/restore_db.sh test "${BACKUP_ARCHIVE}" --yes
 
       - name: Verify the restored data matches the reference
         working-directory: envs/test
