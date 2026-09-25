@@ -232,19 +232,19 @@ GitHub "environments" gate deployments (protected environments can
 require manual approval). Open **Settings → Environments** on the
 `kingdoms-infra` repository and create:
 
-- `test` — no protection (deploys on config change and `/deploy-test`),
-- `prod` — **required reviewers** only, protection rules recommended
-  (the prod deployment is not implemented yet; the deploy-prod workflow
-  fails with the setup instructions)
+- `test` — no protection (deploys on config change and `/deploy`),
+- `prod` — **required reviewers** only (the Deploy environment run waits
+  for their approval before any prod job consumes prod secrets)
   ([docs](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)).
 
-These names must match the `environment:` values in the deploy workflows
-(`.github/workflows/deploy-<env>.yml`). Note that step 3 already had you
-create the `test` environment with its `DISCORD_TOKEN` secret — creating
-an environment with one secret is a single operation in that screen.
+These names must match the `environment:` value of the reusable deploy
+workflow (`deploy-env.yml`), one per environment directory under `envs/`.
+Note that step 3 already had you create the `test` environment with its
+`DISCORD_TOKEN` secret — creating an environment with one secret is a
+single operation in that screen.
 
 One optional step remains to enable on-demand deployments of a pull
-request (`/deploy-test` comment on a `kingdoms-services` PR): creating the
+request (`/deploy` comment on a `kingdoms-services` PR): creating the
 **kingdoms-deployer GitHub App** and its workflow execution ruleset — see
 [DEPLOY-TEST-APP.md](DEPLOY-TEST-APP.md). Without it, the test stack still
 deploys on every test-config change on `main`.
