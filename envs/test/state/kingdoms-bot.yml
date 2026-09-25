@@ -1,15 +1,15 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-e8717da
-version_label: main@e8717da
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/e8717daa5df48f0a0bbd85376ce9d606555a29ad
-deploy_kind: main
-deploy_ref: e8717da
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/e8717daa5df48f0a0bbd85376ce9d606555a29ad
-deploy_ts: 1790354112
-deployed_by: config-change-deploy (run 36161660780)
-deployed_at: "2026-09-25T16:35:12Z"
-source: test-config change on main (commit 1175e08)
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:v0.2.1
+version_label: v0.2.1
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/releases/tag/v0.2.1
+deploy_kind: release
+deploy_ref: v0.2.1
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/v0.2.1
+deploy_ts: 1790354671
+deployed_by: merlin-pinpin (release v0.2.1)
+deployed_at: "2026-09-25T16:44:31Z"
+source: 
 deploy_branch: main
 deploy_pr_title: 
