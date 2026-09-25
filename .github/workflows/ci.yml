@@ -18,9 +18,11 @@ jobs:
       - name: Install actionlint
         run: |
           # bash installer from the actionlint releases (checksum-verified
-          # by the script itself)
-          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          echo "$HOME/actionlint" >> "$GITHUB_PATH"
+          # by the script itself); it extracts the binary into the given
+          # directory, so that directory goes on PATH.
+          mkdir -p "$HOME/.local/bin"
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) "$HOME/.local/bin"
+          "$HOME/.local/bin/actionlint" --version
       - name: Run actionlint
         # The historical startup_failure bugs (matrix in a job-level if,
         # label-list strings in runs-on) were all statically detectable.
