@@ -38,10 +38,12 @@ and fail closed when one is missing.
 | `KINGDOMS_DEPLOY_RUN_URL` | URL of the deploy job shown by the `/status` Infra field — injected by the deploy workflow itself (`github.server_url/repository/actions/runs/<run_id>`), so the running bot links the exact job that deployed it |
 | `KINGDOMS_DEPLOY_INFRA_LABEL` | Short label of the deployed infra state (`deploy/<env>@<sha>`), shown by the `/status` Infra field — injected by the deploy workflow |
 | `KINGDOMS_DEPLOY_INFRA_URL` | Tree URL of the deployed infra state commit, the link behind `deploy/<env>@<sha>` |
+| `KINGDOMS_DEPLOY_INFRA_COMMIT_TS` | Unix timestamp of the deployed infra state commit, exported by the deploy workflow from the pinned state checkout — the `Committed` relative time of the announcement Infra section, distinct from the `Deployed` run time |
 | `KINGDOMS_DEPLOY_KIND` | Deploy kind for the typed `/status` links: `pr`, `main`, or `release` — written by the deploy pipelines in the pinned state file |
 | `KINGDOMS_DEPLOY_REF` | Deploy reference for the typed link: PR number, short sha, or release tag |
 | `KINGDOMS_DEPLOY_TREE_URL` | Tree URL behind the `tree` link of a main/release version |
-| `KINGDOMS_DEPLOY_TS` | Unix timestamp of the deployed commit (relative Discord time in the Version field) |
+| `KINGDOMS_DEPLOY_TS` | Unix timestamp of the image build/pin, written by the Pin state workflow — the `Built` relative time of the announcement Services section |
+| `KINGDOMS_DEPLOY_COMMIT_TS` | Unix timestamp of the deployed services commit (its sha rides inside `deploy_tree_url`), resolved by the Pin state workflow via the GitHub API — the `Committed` relative time of the announcement Services section |
 | `KINGDOMS_DEPLOY_RUN_NUMBER` | Number of the deploy job — renders as `Deployment #<n>` in the Deploy field |
 | `KINGDOMS_DEPLOY_RUN_TS` | Unix timestamp of the deploy job start (relative Discord time in the Infra field) |
 | `KINGDOMS_DEPLOY_IMAGE` | Pinned container image reference, exported by `scripts/deploy.sh` from the state file — rendered as the `Image` line of the `/status` Services field (links to the GHCR package page) |
