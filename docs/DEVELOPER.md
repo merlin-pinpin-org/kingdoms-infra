@@ -18,7 +18,7 @@ this repo*.
 | `AGENTS.md` | Short agent entry point (points here) |
 | `envs/<env>/` | One directory per environment: `docker-compose.yml` + `state/` (the pinned state files synced to the `deploy/<env>` branch) |
 | `deploy/<env>/` | Protected state branches (one per environment) pinning the image and deploy metadata — the GitOps source of truth (ADR-0018) |
-| `.github/workflows/` | CI checks + the deploy chain (`deploy.yml` routing, `deploy-env.yml` reusable per-env deploy, `pin-state.yml`, `sync-state.yml`, `repin-on-config-change.yml`) |
+| `.github/workflows/` | CI checks + the deploy chain (`deploy.yml` routing + re-pin job, `deploy-env.yml` reusable per-env deploy, `pin-state.yml`, `sync-state.yml`) |
 | `scripts/` | `deploy.sh` (idempotent, health-gated), `restore_db.sh`, backup scripts, `diagnose_deploy.sh` (stuck-deploy diagnosis) |
 | `Makefile` | `make check` (script syntax + compose config), `make doctor` (deploy health per env), `make diagnose-deploy-<env>` |
 | `docs/` | [ENVIRONMENTS.md](ENVIRONMENTS.md), [GITOPS.md](GITOPS.md), [DEPLOYMENT.md](DEPLOYMENT.md), [VPS-SETUP.md](VPS-SETUP.md) |
