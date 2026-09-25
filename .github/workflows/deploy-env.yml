@@ -72,6 +72,9 @@ jobs:
           KINGDOMS_DEPLOY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           KINGDOMS_DEPLOY_RUN_NUMBER: ${{ github.run_number }}
           KINGDOMS_DEPLOY_RUN_TS: ${{ steps.infra-id.outputs.run_ts }}
+          # The environment name reaches the bot (announcement env badge,
+          # kingdoms-deploy footer, /status) — kingdoms-infra#78 spec 1.
+          KINGDOMS_DEPLOY_ENV: ${{ inputs.environment }}
           # The deployed infra state identity (branch@sha -> tree), shown as
           # the Branch/@<sha> lines of the /status Infra field.
           KINGDOMS_DEPLOY_INFRA_LABEL: ${{ steps.infra-id.outputs.label }}

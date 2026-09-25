@@ -47,6 +47,7 @@ and fail closed when one is missing.
 | `KINGDOMS_DEPLOY_IMAGE` | Pinned container image reference, exported by `scripts/deploy.sh` from the state file — rendered as the `Image` line of the `/status` Services field (links to the GHCR package page) |
 | `KINGDOMS_DEPLOY_BRANCH` | Source branch of the deployed services commit (e.g. the PR branch, `main`), written by the deploy pipelines in the pinned state — rendered as the `Branch` line of the `/status` Services field |
 | `KINGDOMS_DEPLOY_PR_TITLE` | Title of the pull request that triggered the deployment (empty for main/release deploys) — rendered in the `Pull-request #<n>` label of the `/status` Services field |
+| `KINGDOMS_DEPLOY_ENV` | Environment name (`test`, `prod`) injected by the deploy workflow — the bot's startup announcement env badge and `kingdoms-deploy env=` footer field (kingdoms-infra#78 spec 1) |
 
 | `MONGO_URI` | MongoDB connection string (overridden by compose inside the stack) |
 | `MONGO_DB` | MongoDB database name |
