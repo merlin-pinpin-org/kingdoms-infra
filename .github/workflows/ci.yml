@@ -7,7 +7,7 @@ on:
 
 jobs:
   lint:
-    name: Lint scripts and shell files
+    name: Lint scripts and workflows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,6 +15,18 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: ShellCheck
         run: shellcheck --severity=warning scripts/*.sh
+      - name: Install actionlint
+        run: |
+          # bash installer from the actionlint releases (checksum-verified
+          # by the script itself); it extracts the binary into the given
+          # directory, so that directory goes on PATH.
+          mkdir -p "$HOME/.local/bin"
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest "$HOME/.local/bin"
+          "$HOME/.local/bin/actionlint" --version
+      - name: Run actionlint
+        # The historical startup_failure bugs (matrix in a job-level if,
+        # label-list strings in runs-on) were all statically detectable.
+        run: actionlint -color
 
   compose:
     name: Validate compose manifests
@@ -52,8 +64,8 @@ jobs:
       - name: Wait for MongoDB and Redis healthchecks
         working-directory: envs/test
         run: |
-          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
-          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-redis)")" = "healthy" ]; do sleep 3; done'
+          timeout 90 bash -c "until [ \"\$(docker inspect --format '{{.State.Health.Status}}' \"\$(docker compose ps -q kingdoms-mongo)\")\" = healthy ]; do sleep 3; done"
+          timeout 90 bash -c "until [ \"\$(docker inspect --format '{{.State.Health.Status}}' \"\$(docker compose ps -q kingdoms-redis)\")\" = healthy ]; do sleep 3; done"
 
       - name: Smoke check from a bot-like container
         working-directory: envs/test
@@ -118,7 +130,7 @@ jobs:
       - name: Wait for MongoDB healthcheck
         working-directory: envs/test
         run: |
-          timeout 90 bash -c 'until [ "$(docker inspect --format "{{.State.Health.Status}}" "$(docker compose ps -q kingdoms-mongo)")" = "healthy" ]; do sleep 3; done'
+          timeout 90 bash -c "until [ \"\$(docker inspect --format '{{.State.Health.Status}}' \"\$(docker compose ps -q kingdoms-mongo)\")\" = healthy ]; do sleep 3; done"
 
       - name: Seed reference data
         working-directory: envs/test
@@ -153,8 +165,8 @@ jobs:
 
       - name: Restore the backup (MongoDB + Redis)
         run: |
-          BACKUP_PREFIX="$(ls -1t /tmp/kingdoms-backups/test-*.archive.gz | head -n 1 | sed 's/\.archive\.gz$//')"
-          ./scripts/restore_db.sh test "${BACKUP_PREFIX}.archive.gz" --yes
+          BACKUP_ARCHIVE="$(find /tmp/kingdoms-backups -maxdepth 1 -name 'test-*.archive.gz' -printf '%T@ %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)"
+          ./scripts/restore_db.sh test "${BACKUP_ARCHIVE}" --yes
 
       - name: Verify the restored data matches the reference
         working-directory: envs/test
