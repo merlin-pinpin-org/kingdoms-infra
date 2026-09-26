@@ -1,16 +1,16 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-110-20260926190250-c9d8555
-version_label: pr-110-20260926190250-c9d8555
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/110#issuecomment-5848992519
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-114-20260926194142-b21bf69
+version_label: pr-114-20260926194142-b21bf69
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/114#issuecomment-5849286285
 deploy_kind: pr
-deploy_ref: 110
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/c9d85558d7e85d026359d465a055030fb7801bed
-deploy_ts: 1790449409
-deploy_commit_ts: 1790448011
+deploy_ref: 114
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/b21bf69d68e78538a18920d6ded2dd64f0fc62cb
+deploy_ts: 1790451744
+deploy_commit_ts: 1790451514
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-26T19:03:29Z"
+deployed_at: "2026-09-26T19:42:24Z"
 source: 
-deploy_branch: vibe/bot-logs-channel-109
-deploy_pr_title: feat(logs): per-guild bot logs channel with lifecycle events and /admin management
+deploy_branch: vibe/bot-admins-role-55618a
+deploy_pr_title: feat(roles): bot-admins role, runtime permission guards, enrollment screen
