@@ -34,7 +34,7 @@ title: "[Task] "
 
 **Depends on:**
 
-- [ ] kingdoms-infra#N
+- [ ] #N (same repo) or merlin-pinpin-org/kingdoms-services#N (cross repo)
 
 ## Related
 
