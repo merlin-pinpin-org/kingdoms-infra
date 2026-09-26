@@ -91,6 +91,7 @@ jobs:
       - name: Merge origin/main, write the pinned state, push
         env:
           APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
           PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
           set -euo pipefail
