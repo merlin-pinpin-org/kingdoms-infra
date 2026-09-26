@@ -29,11 +29,12 @@ BACKUP_DIR="${BACKUP_DIR:-${REPO_ROOT}/backups}"
 STATE_FILE="envs/${ENVIRONMENT}/state/kingdoms-bot.yml"
 
 usage() {
-    echo "Usage: $0 <${ENVIRONMENTS[*]}> [archive.gz] [--auto]"
+    echo "Usage: $0 <${ENVIRONMENTS[*]}> [archive.gz] [--auto|--yes]"
     echo "  BACKUP_DIR=<dir> overrides the backup directory (default: <repo>/backups)."
     echo "  Without an archive, restores the most recent backup of the environment."
     echo "  --auto is the deploy.sh recovery path: re-apply the previous pinned"
     echo "  state (no data restore) where the state branch accepts a direct push."
+    echo "  --yes restores a backup without the interactive confirmation (CI)."
     exit 1
 }
 
@@ -112,7 +113,7 @@ fi
 
 log "rolling back to ${ARCHIVE}"
 
-if [[ "${MODE}" != "--auto" ]]; then
+if [[ "${MODE}" != "--yes" ]]; then
     echo "This overwrites the current state of '${ENVIRONMENT}'."
     read -r -p "Continue? [y/N] " answer
     [[ "${answer}" == "y" || "${answer}" == "Y" ]] || { echo "Aborted."; exit 1; }
