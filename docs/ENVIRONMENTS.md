@@ -156,7 +156,7 @@ ruleset change.
 
 Infra required status checks (all three branch rulesets):
 
-1. `Lint scripts and shell files`
+1. `Lint scripts and workflows`
 2. `Validate compose manifests`
 3. `Validate infrastructure files`
 4. `Backup/restore round-trip test`
