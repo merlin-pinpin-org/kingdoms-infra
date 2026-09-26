@@ -42,10 +42,13 @@ flowchart LR
 
 ## Rollback
 
-Because state is versioned, rollback is a git operation: revert the commit
-(or deploy a previous tag) and let the pipeline re-apply the previous
-manifest. Data-level rollback uses the database backups — every deployment
-produces one *before* touching the stack, and `scripts/rollback.sh` restores
-the latest one (or a given archive) as its recovery path. The CI job
-`Backup/restore round-trip test` continuously verifies that a backup can be
-restored byte-for-byte.
+Because state is versioned, rollback is a git operation: revert the **pin
+commit on the state branch** and the push re-triggers the pipeline, which
+re-applies the previous image. A failed deployment never reverts code on
+`main` and never touches another repository — the state is the only
+rollback surface. Data-level rollback (schema changes) uses the database
+backups — every deployment produces one *before* touching the stack, and
+`scripts/rollback.sh --auto` restores the latest one when the state revert
+is unavailable (prod requires an approved PR for every state push, by
+design). The CI job `Backup/restore round-trip test` continuously verifies
+that a backup can be restored byte-for-byte.
