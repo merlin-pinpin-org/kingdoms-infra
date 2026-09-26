@@ -32,6 +32,11 @@ for the Kingdoms Discord bot platform.
   silently blocks merges (see DEVELOPER.md, *Workflow pitfalls*).
 - Any infrastructure change is reflected in the `kingdoms` docs (source
   of truth) before merge.
+- **Enrich the docs and skills proactively** (developer-mandated): when
+  the session's work teaches a rule, pitfall or pattern, update the
+  matching skill page, convention or AGENTS.md entry as part of the
+  change — see the kingdoms CONVENTIONS.md
+  (*Documentation is part of the change*).
 - Issue templates: `## Objective` / `## Context` / `## Specifications` /
   `## Acceptance criteria` / `## Dependencies` (blank issues disabled).
 - **Issue references** are GitHub autolinks: same-repo `#N`, cross-repo
