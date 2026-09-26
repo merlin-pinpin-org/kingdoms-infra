@@ -15,7 +15,7 @@ title: "Sub-task: "
 ## Context
 
 <!-- Mandatory "Parent issue:" line (inherited labels/milestone come from it):
-     Parent issue: kingdoms-infra#N
+     Parent issue: #N (same repo) or merlin-pinpin-org/kingdoms-infra#N (cross repo)
      Plus the decisions already made in the parent, and where they live in the
      kingdoms docs. Sub-tasks never re-open parent decisions. -->
 
@@ -36,7 +36,7 @@ title: "Sub-task: "
 
 **Depends on:**
 
-- [ ] kingdoms-infra#N
+- [ ] #N (same repo) or merlin-pinpin-org/kingdoms-services#N (cross repo)
 
 ## Related
 
