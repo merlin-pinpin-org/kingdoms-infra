@@ -287,7 +287,7 @@ every merge to `main`.
 | Watch a deployment | Actions tab → **Deploy test** workflow runs |
 | Check the bot | `docker ps --filter name=kingdoms` (above) must show `(healthy)` |
 | Read the bot logs | `docker logs -f kingdoms-bot` |
-| Roll back | automatic on a failed health gate; to go back further, revert the merge and let the deploy workflow re-apply |
+| Roll back | automatic on a failed health gate — the pin revert re-applies the previous image (test: direct push; prod: revert PR, the ruleset requires review) |
 | Restore data | handled by the pipeline's backup/restore scripts (see [DEPLOYMENT.md](DEPLOYMENT.md)) |
 | Backups | `/opt/kingdoms/backups` — one per deployment, produced automatically |
 
