@@ -1,16 +1,16 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-3971a6c
-version_label: main@3971a6c
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/3971a6c55d640410b64597b9b29b323db794cacd
-deploy_kind: main
-deploy_ref: 3971a6c
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/3971a6c55d640410b64597b9b29b323db794cacd
-deploy_ts: 1790423195
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-110-20260926144042-d70c995
+version_label: pr-110-20260926144042-d70c995
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/110#issuecomment-5847143132
+deploy_kind: pr
+deploy_ref: 110
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/d70c9953c4db0f2c73f077e27e342a799a26bc9b
+deploy_ts: 1790433683
 deploy_commit_ts: 
-deployed_by: config-change-deploy (run 36239854887)
-deployed_at: "2026-09-26T11:46:35Z"
-source: test-config change on main (commit f63c553)
-deploy_branch: main
-deploy_pr_title: 
+deployed_by: merlin-pinpin (/deploy)
+deployed_at: "2026-09-26T14:41:23Z"
+source: 
+deploy_branch: vibe/bot-logs-channel-109
+deploy_pr_title: feat(logs): per-guild bot logs channel with lifecycle events and /admin management
