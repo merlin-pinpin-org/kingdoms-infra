@@ -31,7 +31,7 @@ jobs:
           script: |
             const org = "merlin-pinpin-org";
             const infraChecks = [
-              "Lint scripts and shell files",
+              "Lint scripts and workflows",
               "Validate compose manifests",
               "Validate infrastructure files",
               "Backup/restore round-trip test",

@@ -27,6 +27,9 @@ for the Kingdoms Discord bot platform.
   never handles secret values.
 - Verify scripts with `bash -n` and shellcheck (if available) before
   pushing; sandbox-limited checks are covered by CI workflows.
+- **Never rename a workflow or a workflow job backing a required status
+  check** — GitHub matches check contexts by exact name, so a rename
+  silently blocks merges (see DEVELOPER.md, *Workflow pitfalls*).
 - Any infrastructure change is reflected in the `kingdoms` docs (source
   of truth) before merge.
 - **Enrich the docs and skills proactively** (developer-mandated): when
@@ -36,6 +39,10 @@ for the Kingdoms Discord bot platform.
   (*Documentation is part of the change*).
 - Issue templates: `## Objective` / `## Context` / `## Specifications` /
   `## Acceptance criteria` / `## Dependencies` (blank issues disabled).
+- **Issue references** are GitHub autolinks: same-repo `#N`, cross-repo
+  `owner/repo#N` (e.g. `merlin-pinpin-org/kingdoms-services#52`) — a bare
+  `repo#N` renders as plain text; never write it. See CONVENTIONS.md,
+  *Documentation is part of the change*.
 - **Automation mandate:** no one-off commands, for humans or sessions —
   every recurring operation is a committed Makefile target, script or
   workflow, and a useful improvised command is committed ("learned").

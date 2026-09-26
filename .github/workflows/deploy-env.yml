@@ -48,8 +48,11 @@ jobs:
       - name: Compute the deployed infra identity (short sha label)
         id: infra-id
         run: |
-          echo "label=deploy/${{ inputs.environment }}@${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          echo "run_ts=$(date -u +%s)" >> "$GITHUB_OUTPUT"
+          {
+            echo "label=deploy/${{ inputs.environment }}@${GITHUB_SHA::7}"
+            echo "run_ts=$(date -u +%s)"
+            echo "commit_ts=$(git -C "$GITHUB_WORKSPACE" show -s --format=%ct "$GITHUB_SHA")"
+          } >> "$GITHUB_OUTPUT"
       - name: Log in to GHCR (the bot image package is not public)
         uses: docker/login-action@v3
         with:
@@ -79,3 +82,6 @@ jobs:
           # the Branch/@<sha> lines of the /status Infra field.
           KINGDOMS_DEPLOY_INFRA_LABEL: ${{ steps.infra-id.outputs.label }}
           KINGDOMS_DEPLOY_INFRA_URL: ${{ github.server_url }}/${{ github.repository }}/tree/${{ github.sha }}
+          # The infra state commit date, distinct from the deploy run date
+          # in the announcement (kingdoms-services#109: Committed vs Deployed).
+          KINGDOMS_DEPLOY_INFRA_COMMIT_TS: ${{ steps.infra-id.outputs.commit_ts }}
