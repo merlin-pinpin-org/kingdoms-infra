@@ -59,10 +59,25 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Mint the kingdoms-deployer App token (auto-rollback writer)
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.KINGDOMS_DEPLOYER_APP_ID }}
+          private-key: ${{ secrets.KINGDOMS_DEPLOYER_APP_PRIVATE_KEY }}
+          owner: merlin-pinpin-org
+          repositories: kingdoms-infra
+
       - name: Deploy the stack (image pinned by the state file)
         run: ./scripts/deploy.sh ${{ inputs.environment }}
         env:
           BACKUP_DIR: /opt/kingdoms/backups
+          # The failed-health-gate recovery path (rollback.sh --auto) pushes
+          # the state revert to deploy/<env> with this token — the same
+          # single-writer App as the pin (ADR-0018). On prod the push is
+          # rejected by the ruleset and the script falls back to the backup
+          # restore with a loud warning.
+          ROLLBACK_TOKEN: ${{ steps.app-token.outputs.token }}
           # Environment secrets must be mapped explicitly into the step
           # env: declaring `environment:` alone does not inject them
           # into the shell environment.
