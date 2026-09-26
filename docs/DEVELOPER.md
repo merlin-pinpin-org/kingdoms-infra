@@ -72,6 +72,18 @@ support rollback (`deploy.sh`, database restore via `restore_db.sh`).
 
 ## Workflow pitfalls (learned the hard way)
 
+- **Never rename a workflow or a workflow job that backs a required status
+  check.** GitHub rulesets match check contexts by **exact name**: the
+  rename in #77 (`Lint scripts and shell files` → `Lint scripts and
+  workflows`) left all three rulesets waiting for a check that never
+  reports, silently blocking every merge — caught on #81, fixed by #82 and
+  the live ruleset update (2026-09-26). The repo-side audit cannot catch
+  this: the rename PR passes its own checks while the ruleset still expects
+  the old name. A rename therefore requires the three changes in one PR:
+  job rename + docs/audit list update + live ruleset update (admin, web UI) —
+  and if you must rename, update the rulesets first, merge the rename
+  second. When in doubt: don't rename, add the extra step to the existing
+  job instead.
 - A required status check never uses a `paths:` filter — it must report on
   every PR (fixed for `check-infra.yml`; applies to every workflow backing
   a required check).

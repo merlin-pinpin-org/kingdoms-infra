@@ -27,6 +27,9 @@ for the Kingdoms Discord bot platform.
   never handles secret values.
 - Verify scripts with `bash -n` and shellcheck (if available) before
   pushing; sandbox-limited checks are covered by CI workflows.
+- **Never rename a workflow or a workflow job backing a required status
+  check** — GitHub matches check contexts by exact name, so a rename
+  silently blocks merges (see DEVELOPER.md, *Workflow pitfalls*).
 - Any infrastructure change is reflected in the `kingdoms` docs (source
   of truth) before merge.
 - Issue templates: `## Objective` / `## Context` / `## Specifications` /
