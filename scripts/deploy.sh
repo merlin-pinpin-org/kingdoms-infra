@@ -65,6 +65,21 @@ cd "${ENV_DIR}"
 log "pulling images"
 docker compose pull --quiet
 
+# Resolve the pulled image digest and expose tag@digest to the bot:
+# /status and the boot announcement render the exact running image
+# (KINGDOMS_DEPLOY_IMAGE), not just its mutable tag (ADR-0018).
+if [[ -n "${KINGDOMS_BOT_IMAGE:-}" ]]; then
+    image_digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "${KINGDOMS_BOT_IMAGE}" 2>/dev/null || true)"
+    if [[ "${image_digest}" == *"@sha256:"* ]]; then
+        digest="${image_digest##*@}"
+        tag="${KINGDOMS_BOT_IMAGE##*:}"
+        export KINGDOMS_DEPLOY_IMAGE="${tag}@${digest}"
+        log "image resolved to ${KINGDOMS_DEPLOY_IMAGE}"
+    else
+        log "image digest not resolvable; /status shows the pinned tag"
+    fi
+fi
+
 # Mandatory backup before any deployment — except the very first one:
 # on a fresh VPS the stack does not exist yet, so there is nothing to
 # back up (backup_db.sh fails closed on a non-running MongoDB).
