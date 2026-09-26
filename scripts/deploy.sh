@@ -50,7 +50,7 @@ if [[ -f "${STATE_FILE}" ]]; then
     export KINGDOMS_DEPLOY_LABEL="${pinned_label}"
     # Typed /status links (kingdoms-services#81): deploy kind, ref, tree and
     # timestamp, written by the pipelines alongside the pinned image.
-    for field in kind ref tree_url ts branch pr_title; do
+    for field in kind ref tree_url ts commit_ts branch pr_title; do
         value="$(grep -E "^deploy_${field}:" "${STATE_FILE}" | head -1 | cut -d' ' -f2- || true)"
         export "KINGDOMS_DEPLOY_${field^^}"="${value}"
     done
