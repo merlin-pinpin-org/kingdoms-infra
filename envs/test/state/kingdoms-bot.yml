@@ -1,16 +1,16 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-114-20260926195258-d5f63b6
-version_label: pr-114-20260926195258-d5f63b6
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/114#issuecomment-5849365870
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-114-20260926200350-f121106
+version_label: pr-114-20260926200350-f121106
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/114#issuecomment-5849439835
 deploy_kind: pr
 deploy_ref: 114
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/d5f63b687d0bb6c052db1e33ec7209982e153eea
-deploy_ts: 1790452411
-deploy_commit_ts: 1790452177
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/f1211067dbe448e66bbfbb9f8a3bd03c98d2d222
+deploy_ts: 1790453066
+deploy_commit_ts: 1790452909
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-26T19:53:31Z"
+deployed_at: "2026-09-26T20:04:26Z"
 source: 
 deploy_branch: vibe/bot-admins-role-55618a
 deploy_pr_title: feat(roles): bot-admins role, runtime permission guards, enrollment screen
