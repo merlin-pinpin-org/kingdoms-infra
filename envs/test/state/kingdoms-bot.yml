@@ -1,19 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-125-20260927201945-57ed4be
-version_label: pr-125-20260927201945-57ed4be
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/125#issuecomment-5859489360
-deploy_kind: pr
-deploy_ref: 125
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/57ed4be3265e4371c06e5ce4d65eafc626fd8277
-deploy_ts: 1790540427
-deploy_commit_ts: 1790540256
-deploy_commit: 57ed4be3265e4371c06e5ce4d65eafc626fd8277
-deploy_ci_run_id: 36347607318
-deploy_ci_run_number: 59
-deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-27T20:20:27Z"
-source: 
-deploy_branch: vibe/unpin-all-old-boot-status-74fa34
-deploy_pr_title: fix(logs): unpin every stale pin; new tag/CI emojis
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-be27a90
+version_label: main@be27a90
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/be27a90cf1d7e17d1ea911c8b351401885a7a926
+deploy_kind: main
+deploy_ref: be27a90
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/be27a90cf1d7e17d1ea911c8b351401885a7a926
+deploy_ts: 1790541639
+deploy_commit_ts: 1790528896
+deploy_commit: be27a90cf1d7e17d1ea911c8b351401885a7a926
+deploy_ci_run_id: 
+deploy_ci_run_number: 
+deploy_ci_run_ts: 
+deployed_by: config-change-deploy (run 36348890920)
+deployed_at: "2026-09-27T20:40:39Z"
+source: test-config change on main (commit e991c55)
+deploy_branch: main
+deploy_pr_title: 
