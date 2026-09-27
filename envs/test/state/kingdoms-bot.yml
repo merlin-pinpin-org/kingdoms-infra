@@ -1,16 +1,16 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:v0.2.2
-version_label: v0.2.2
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/releases/tag/v0.2.2
-deploy_kind: release
-deploy_ref: v0.2.2
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/v0.2.2
-deploy_ts: 1790519917
-deploy_commit_ts: 1790518856
-deployed_by: merlin-pinpin (release v0.2.2)
-deployed_at: "2026-09-27T14:38:37Z"
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-124-20260927160008-6f85807
+version_label: pr-124-20260927160008-6f85807
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/124#issuecomment-5857458560
+deploy_kind: pr
+deploy_ref: 124
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/6f85807cb704db0f8e0fc02b10d5c47401b269a7
+deploy_ts: 1790524852
+deploy_commit_ts: 1790524775
+deployed_by: merlin-pinpin (/deploy)
+deployed_at: "2026-09-27T16:00:52Z"
 source: 
-deploy_branch: main
-deploy_pr_title: 
+deploy_branch: vibe/status-job-lines-74fa34
+deploy_pr_title: feat(status): tag vs commit, Job lines with their ids
