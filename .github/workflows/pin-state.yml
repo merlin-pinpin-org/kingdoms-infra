@@ -140,9 +140,13 @@ jobs:
           # payload stays at exactly 10 properties).
           ci_run_id="$(field ci_run)"
           ci_run_number=""
+          ci_run_ts=""
           if [[ -n "$ci_run_id" ]]; then
             ci_run_number="$(gh api "repos/merlin-pinpin-org/kingdoms-services/actions/runs/${ci_run_id}" --jq '.run_number' 2>/dev/null || true)"
             [[ -n "$ci_run_number" ]] || echo "::warning::CI run number not resolved for run ${ci_run_id}; /status shows the run id"
+            run_started="$(gh api "repos/merlin-pinpin-org/kingdoms-services/actions/runs/${ci_run_id}" --jq '.run_started_at' 2>/dev/null || true)"
+            [[ -n "$run_started" ]] && ci_run_ts="$(date -u -d "$run_started" +%s 2>/dev/null || true)"
+            [[ -n "$ci_run_ts" ]] || echo "::warning::CI run date not resolved for run ${ci_run_id}; the Job CI line renders no date"
           fi
           # The PR title is composed here too (kingdoms-services deploy.yml
           # passes ci_run instead — the /deploy run has the PR in context
@@ -171,6 +175,7 @@ jobs:
             echo "deploy_commit: ${commit_sha}"
             echo "deploy_ci_run_id: ${ci_run_id}"
             echo "deploy_ci_run_number: ${ci_run_number}"
+            echo "deploy_ci_run_ts: ${ci_run_ts}"
             echo "deployed_by: $(field deployed_by)"
             echo "deployed_at: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
             echo "source: $(field source)"
