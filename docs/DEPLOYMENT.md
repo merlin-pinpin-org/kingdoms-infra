@@ -120,16 +120,29 @@ before being accepted.
 
 ## Rollback
 
-`scripts/rollback.sh <env>` restores the most recent backup of the
-environment (or a given archive), reverts the `envs/` manifests to the
-previous committed revision when git is available, and re-applies the
-stack:
+Rollback is a **state operation** (ADR-0018): a failed or rejected
+deployment rolls the pinned state back — never the code on `main`,
+never another repository.
+
+`scripts/rollback.sh <env> [archive.gz] [--auto]`:
+
+- **`--auto` (the deploy.sh recovery path)** — when the post-deploy
+  health gate fails, the script reverts the last pin commit and pushes
+  the revert to `deploy/<env>`: the push itself re-triggers the Deploy
+  environment workflow, which re-applies the previous known-good image.
+  No data is touched. On `deploy/prod` the push is rejected by the
+  "Deploy PROD" ruleset (required PR) — by design; the script then
+  restores the latest backup and fails loudly so a human opens the
+  revert PR (the `Rollback state` workflow).
+- **manual** — restores the most recent backup (or a given archive),
+  interactive unless the archive is given with `--yes` semantics.
 
 ```bash
 ./scripts/rollback.sh test                              # latest backup, interactive
 ./scripts/rollback.sh test backups/test-...archive.gz  # specific archive
 ```
 
-Rollback is also the automatic recovery path of `deploy.sh`: when the
-post-deploy health gate fails, the deployment rolls back to the latest
-backup without human intervention.
+The `Rollback state` workflow (`.github/workflows/rollback.yml`) is the
+deliberate path: a `repository_dispatch` from the post-deploy battery or
+a manual dispatch reverts the pin and either pushes it directly
+(`deploy/test`) or opens a revert PR (`deploy/prod`) for review.
