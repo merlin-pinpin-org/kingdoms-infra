@@ -1,19 +1,19 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-125-20260927192132-ce434b3
-version_label: pr-125-20260927192132-ce434b3
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/125#issuecomment-5859014834
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-125-20260927192520-ce434b3
+version_label: pr-125-20260927192520-ce434b3
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/125#issuecomment-5859051628
 deploy_kind: pr
 deploy_ref: 125
 deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/ce434b36ebcc28228e118ccd4563c869538f0ec8
-deploy_ts: 1790536923
+deploy_ts: 1790537154
 deploy_commit_ts: 1790536726
 deploy_commit: ce434b36ebcc28228e118ccd4563c869538f0ec8
-deploy_ci_run_id: 36344046370
-deploy_ci_run_number: 57
+deploy_ci_run_id: 36344274598
+deploy_ci_run_number: 58
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-27T19:22:03Z"
+deployed_at: "2026-09-27T19:25:54Z"
 source: 
 deploy_branch: vibe/unpin-all-old-boot-status-74fa34
 deploy_pr_title: fix(logs): unpin every stale pin; new tag/CI emojis
