@@ -115,18 +115,44 @@ jobs:
           fi
           [[ -f "$state_file" ]] || { echo "::error::state file ${state_file} missing on deploy/${env_name}" >&2; exit 1; }
           field() { jq -r --arg f "$1" '.[$f] // ""' <<<"$PAYLOAD"; }
-          # message and source are composed here (not passed in the dispatch
-          # payload, capped at 10 properties by the GitHub API).
-          # deploy_commit_ts is derived from the deployed commit itself
-          # (its sha rides inside deploy_tree_url) via the GitHub API — the
-          # payload cap leaves no room for another field, and the commit
-          # date is a property of the commit, not of the pipeline run.
+          # message, source and every composed identity are written here
+          # (not passed in the dispatch payload, capped at 10 properties by
+          # the GitHub API): the commit sha and date are resolved from the
+          # deployed ref (releases pin the tag, not the sha), the CI job id
+          # and number from the ci_run passed by the emitter, and the PR
+          # title from the deploy kind — all properties of their objects,
+          # never of the pipeline run itself.
           commit_url="$(field deploy_tree_url)"
-          commit_sha="${commit_url##*/}"
-          committed="$(gh api "repos/merlin-pinpin-org/kingdoms-services/commits/${commit_sha}" --jq '.commit.committer.date' 2>/dev/null || true)"
+          commit_ref="${commit_url##*/}"
+          # Releases pin the tag: the real commit sha is a property of the
+          # tag, resolved here via the GitHub API — the payload cap (10
+          # properties) leaves no room for another field, and /status must
+          # never render the tag as the commit.
+          commit_sha="$(gh api "repos/merlin-pinpin-org/kingdoms-services/commits/${commit_ref}" --jq '.sha' 2>/dev/null || true)"
+          [[ -n "$commit_sha" ]] || commit_sha="$commit_ref"
+          committed="$(gh api "repos/merlin-pinpin-org/kingdoms-services/commits/${commit_ref}" --jq '.commit.committer.date' 2>/dev/null || true)"
           commit_ts=""
           [[ -n "$committed" ]] && commit_ts="$(date -u -d "$committed" +%s 2>/dev/null || true)"
-          [[ -n "$commit_ts" ]] || echo "::warning::deploy_commit_ts not resolved for ${commit_sha}; the announcement renders no Committed date"
+          [[ -n "$commit_ts" ]] || echo "::warning::deploy_commit_ts not resolved for ${commit_ref}; the announcement renders no Committed date"
+          # The CI job that built the image: the emitter passes its run id
+          # (ci_run) — the id and the run number are run properties, resolved
+          # here through the same API budget (composed, not passed: the
+          # payload stays at exactly 10 properties).
+          ci_run_id="$(field ci_run)"
+          ci_run_number=""
+          if [[ -n "$ci_run_id" ]]; then
+            ci_run_number="$(gh api "repos/merlin-pinpin-org/kingdoms-services/actions/runs/${ci_run_id}" --jq '.run_number' 2>/dev/null || true)"
+            [[ -n "$ci_run_number" ]] || echo "::warning::CI run number not resolved for run ${ci_run_id}; /status shows the run id"
+          fi
+          # The PR title is composed here too (kingdoms-services deploy.yml
+          # passes ci_run instead — the /deploy run has the PR in context
+          # anyway and the payload had no room for both).
+          deploy_kind="$(field deploy_kind)"
+          deploy_ref="$(field deploy_ref)"
+          pr_title=""
+          if [[ "$deploy_kind" == "pr" ]]; then
+            pr_title="$(gh api "repos/merlin-pinpin-org/kingdoms-services/pulls/${deploy_ref}" --jq '.title' 2>/dev/null || true)"
+          fi
           branch="$(field deploy_branch)"
           message="$(field message)"
           [[ -n "$message" ]] || message="deploy(${env_name}): pin $(field version_label)"
@@ -137,16 +163,19 @@ jobs:
             echo "image: $(field image)"
             echo "version_label: $(field version_label)"
             echo "deploy_url: $(field deploy_url)"
-            echo "deploy_kind: $(field deploy_kind)"
-            echo "deploy_ref: $(field deploy_ref)"
+            echo "deploy_kind: ${deploy_kind}"
+            echo "deploy_ref: ${deploy_ref}"
             echo "deploy_tree_url: $(field deploy_tree_url)"
             echo "deploy_ts: $(date -u +%s)"
             echo "deploy_commit_ts: ${commit_ts}"
+            echo "deploy_commit: ${commit_sha}"
+            echo "deploy_ci_run_id: ${ci_run_id}"
+            echo "deploy_ci_run_number: ${ci_run_number}"
             echo "deployed_by: $(field deployed_by)"
             echo "deployed_at: \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
             echo "source: $(field source)"
             echo "deploy_branch: ${branch}"
-            echo "deploy_pr_title: $(field deploy_pr_title)"
+            echo "deploy_pr_title: ${pr_title}"
           } > "$state_file"
           git add "$state_file"
           git commit -m "$message"
