@@ -1,16 +1,16 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-119-20260927124729-e2e36c4
-version_label: pr-119-20260927124729-e2e36c4
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/119#issuecomment-5855950057
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-119-20260927131939-60c6e44
+version_label: pr-119-20260927131939-60c6e44
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/119#issuecomment-5856218613
 deploy_kind: pr
 deploy_ref: 119
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/e2e36c4b4c2d53fe770d14d639365ebe06c600ee
-deploy_ts: 1790513287
-deploy_commit_ts: 1790512907
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/60c6e448cb36f913a492b0958ed35e7f8744ff8c
+deploy_ts: 1790515234
+deploy_commit_ts: 1790515029
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-27T12:48:07Z"
+deployed_at: "2026-09-27T13:20:34Z"
 source: 
 deploy_branch: vibe/conventional-changelog-74fa34
 deploy_pr_title: vibe[merlin-pinpin] Conventional changelog & roadmap sync
