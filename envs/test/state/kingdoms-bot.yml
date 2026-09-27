@@ -1,16 +1,19 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-124-20260927160008-6f85807
-version_label: pr-124-20260927160008-6f85807
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/124#issuecomment-5857458560
-deploy_kind: pr
-deploy_ref: 124
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/6f85807cb704db0f8e0fc02b10d5c47401b269a7
-deploy_ts: 1790524852
-deploy_commit_ts: 1790524775
-deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-27T16:00:52Z"
-source: 
-deploy_branch: vibe/status-job-lines-74fa34
-deploy_pr_title: feat(status): tag vs commit, Job lines with their ids
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-c35e51e
+version_label: main@c35e51e
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/c35e51e70a79b054535dc9b1ef3df016f2229cc3
+deploy_kind: main
+deploy_ref: c35e51e
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/c35e51e70a79b054535dc9b1ef3df016f2229cc3
+deploy_ts: 1790528941
+deploy_commit_ts: 1790524556
+deploy_commit: c35e51e70a79b054535dc9b1ef3df016f2229cc3
+deploy_ci_run_id: 
+deploy_ci_run_number: 
+deployed_by: config-change-deploy (run 36335832600)
+deployed_at: "2026-09-27T17:09:01Z"
+source: test-config change on main (commit ac7adee)
+deploy_branch: main
+deploy_pr_title: 
