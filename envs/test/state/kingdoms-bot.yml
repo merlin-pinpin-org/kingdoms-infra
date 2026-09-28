@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:v0.3.0
-version_label: v0.3.0
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/releases/tag/v0.3.0
-deploy_kind: release
-deploy_ref: v0.3.0
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/v0.3.0
-deploy_ts: 1790545892
-deploy_commit_ts: 1790545187
-deploy_commit: 76964ebfcbae059a592e89f8ddebc812168aa512
-deploy_ci_run_id: 36353181077
-deploy_ci_run_number: 262
-deploy_ci_run_ts: 1790545826
-deployed_by: merlin-pinpin (release v0.3.0)
-deployed_at: "2026-09-27T21:51:32Z"
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-127-20260928084112-1def36e
+version_label: pr-127-20260928084112-1def36e
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/127#issuecomment-5866482643
+deploy_kind: pr
+deploy_ref: 127
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/1def36e0f96f3b64ce6c3e28d237fb316273e90c
+deploy_ts: 1790584916
+deploy_commit_ts: 1790584657
+deploy_commit: 1def36e0f96f3b64ce6c3e28d237fb316273e90c
+deploy_ci_run_id: 36398818626
+deploy_ci_run_number: 63
+deploy_ci_run_ts: 1790584860
+deployed_by: merlin-pinpin (/deploy)
+deployed_at: "2026-09-28T08:41:56Z"
 source: 
-deploy_branch: main
-deploy_pr_title: 
+deploy_branch: vibe/pin-menu-unique-ids-74fa34
+deploy_pr_title: fix(admin): unique admin:pin: namespace for the pinned menu (no double dispatch)
