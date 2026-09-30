@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-150-20260930072347-9483d92
-version_label: pr-150-20260930072347-9483d92
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/150#issuecomment-5906280029
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-165-20260930085758-7cc361d
+version_label: pr-165-20260930085758-7cc361d
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/165#issuecomment-5907776166
 deploy_kind: pr
-deploy_ref: 150
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/9483d9258347508a5431ec97e82c4ab7374a49e9
-deploy_ts: 1790753070
-deploy_commit_ts: 1790721348
-deploy_commit: 9483d9258347508a5431ec97e82c4ab7374a49e9
-deploy_ci_run_id: 36683422053
-deploy_ci_run_number: 91
-deploy_ci_run_ts: 1790753015
-deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-09-30T07:24:30Z"
+deploy_ref: 165
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/7cc361d9693773452d7b47ae843de628b6998fd6
+deploy_ts: 1790758752
+deploy_commit_ts: 1790758549
+deploy_commit: 7cc361d9693773452d7b47ae843de628b6998fd6
+deploy_ci_run_id: 36693018305
+deploy_ci_run_number: 93
+deploy_ci_run_ts: 1790758670
+deployed_by: Drasahaoe (/deploy)
+deployed_at: "2026-09-30T08:59:12Z"
 source: 
-deploy_branch: vibe/bot-logs-admin-role-visibility-79a59a
-deploy_pr_title: fix(logs): bot-admins role sees the admin-only bot logs channel
+deploy_branch: feat/kingdoms-mod-declaration
+deploy_pr_title: feat(kingdoms): mod declaration — Lot A (channels, roles, season settings)
