@@ -78,6 +78,9 @@ services:
       MONGO_URI: mongodb://kingdoms-mongo:27017
       REDIS_URI: redis://kingdoms-redis:6379
       CORE_GRPC_PORT: "50051"
+      # Live dashboard (#147): svc-core consumes the providers' streams.
+      EXT_AOE2LOBBY_URI: ${EXT_AOE2LOBBY_URI:-kingdoms-ext-aoe2lobby:50062}
+      EXT_LIBREMATCH_URI: ${EXT_LIBREMATCH_URI:-kingdoms-ext-librematch:50061}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     expose:
       - "50051"
@@ -140,6 +143,30 @@ services:
       retries: 5
       start_period: 15s
     restart: unless-stopped
+
+  kingdoms-seed:
+    # One-shot AoE2 seeding (#137): initial catalog (maps, civs), the
+    # first map pool, ladder and season. Idempotent — re-running a
+    # deploy re-seeds nothing. Same pinned image as the other processes.
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be pinned by deploy/state/test/kingdoms-bot.yml}
+    pull_policy: always
+    environment:
+      KINGDOMS_PROCESS: seed
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    restart: "no"
+    healthcheck:
+      # One-shot job: healthy while the seed runs; the container exits
+      # (exit 0) when done, so the health gate sees a completed seed, not
+      # a crash loop (a failing seed exits non-zero and reports unhealthy).
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      kingdoms-mongo:
+        condition: service_healthy
 
   kingdoms-mongo:
     image: mongo:7.0
