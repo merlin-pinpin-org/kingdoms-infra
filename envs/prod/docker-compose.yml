@@ -80,6 +80,8 @@ services:
       MONGO_URI: mongodb://kingdoms-mongo:27017
       REDIS_URI: redis://kingdoms-redis:6379
       CORE_GRPC_PORT: "50051"
+      EXT_AOE2LOBBY_URI: ${EXT_AOE2LOBBY_URI:-kingdoms-ext-aoe2lobby:50062}
+      EXT_LIBREMATCH_URI: ${EXT_LIBREMATCH_URI:-kingdoms-ext-librematch:50061}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     expose:
       - "50051"
@@ -154,6 +156,20 @@ services:
       resources:
         limits:
           memory: 512M
+
+  kingdoms-seed:
+    # One-shot AoE2 seeding (#137): idempotent catalog + first pool,
+    # ladder and season load. Same pinned image as the other processes.
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be set, e.g. ghcr.io/merlin-pinpin-org/kingdoms-services:v0.1.0}
+    pull_policy: always
+    environment:
+      KINGDOMS_PROCESS: seed
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    restart: "no"
+    depends_on:
+      kingdoms-mongo:
+        condition: service_healthy
 
   kingdoms-mongo:
     image: mongo:7.0
