@@ -94,13 +94,31 @@ else
 fi
 
 log "applying the stack"
+# ADR-0020 process split (kingdoms-infra#89): the stack is now four
+# Kingdoms processes (bot, core, ext-librematch, ext-aoe2lobby) plus the
+# stores. `up` is still one atomic converge: compose starts the
+# dependencies first (depends_on service_healthy), so core comes up
+# before the bot and the providers; the health gate below then verifies
+# every declared service. Rollback stays per-pin (one image backs the
+# four processes), applied by scripts/rollback.sh as before.
 docker compose up -d --remove-orphans
 
 log "waiting for services to become healthy (${HEALTH_TIMEOUT}s)"
 DEADLINE=$(( $(date +%s) + HEALTH_TIMEOUT ))
-for service in kingdoms-bot "${MONGO_SERVICE}" kingdoms-redis; do
-    if ! docker compose config --services | grep -q "^${service}$"; then
-        continue
+# Every service in the manifest is gated: the manifest is the source of
+# truth, a service added later is gated without touching this script.
+# Order matters for the gate only (core before bot reads better in logs);
+# startup order itself is enforced by depends_on.
+for service in $(docker compose config --services | sort); do
+    if ! docker compose ps --format json "${service}" 2>/dev/null \
+        | grep -q '"Health"'; then
+        # A service without a healthcheck (none today, but the manifest is
+        # data) passes on the running state instead of blocking the gate.
+        if docker compose ps --status running --format json "${service}" 2>/dev/null \
+            | grep -q '"${service}"'; then
+            log "service ${service} is running (no healthcheck declared)"
+            continue
+        fi
     fi
     until docker compose ps --format json "${service}" 2>/dev/null \
         | grep -q '"Health":"healthy"'; do

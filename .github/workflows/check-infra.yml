@@ -39,3 +39,30 @@ jobs:
             grep -q "healthcheck:" "${manifest}"
             grep -q "healthz" "${manifest}"
           done
+      - name: Check every service declares a healthcheck
+        run: |
+          # ADR-0020 process split (kingdoms-infra#89): a service without a
+          # healthcheck would silently bypass the deploy health gate.
+          shopt -s nullglob
+          for manifest in envs/*/docker-compose.yml; do
+            python3 - "$manifest" <<'PY'
+            import sys, yaml
+            manifest = sys.argv[1]
+            services = yaml.safe_load(open(manifest))["services"]
+            missing = [name for name, svc in services.items() if "healthcheck" not in svc]
+            assert not missing, f"{manifest}: services without healthcheck: {missing}"
+            print(f"{manifest}: all {len(services)} services declare a healthcheck")
+            PY
+          done
+      - name: Check the gRPC processes are on the internal network only
+        run: |
+          # The gRPC seams never publish to the host: cross-process traffic
+          # stays inside the docker network (no public exposure).
+          shopt -s nullglob
+          for manifest in envs/*/docker-compose.yml; do
+            if grep -E '^[[:space:]]+- "[0-9]+:500(51|61|62)"' "${manifest}"; then
+              echo "${manifest}: gRPC ports must not be published to the host" >&2
+              exit 1
+            fi
+            echo "${manifest}: no published gRPC ports"
+          done

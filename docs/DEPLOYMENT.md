@@ -12,12 +12,62 @@ a pinned state on its `deploy/<env>` state branch (ADR-0018):
 | `test` | `envs/test/docker-compose.yml` | VPS; deployed on demand (`/deploy` PR comment via the kingdoms-deployer GitHub App, or test-config change on main). Commit-SHA-tagged images | validation environment |
 | `prod` | `envs/prod/docker-compose.yml` | VPS; released `vX.Y.Z` images only, promoted after validation on `test` and approved by the `prod` environment reviewers |
 
-Each environment runs the same services:
+Each environment runs the same services (ADR-0020 process split,
+kingdoms-infra#89):
 
-- `kingdoms-bot` — the Discord bot (image `ghcr.io/merlin-pinpin-org/kingdoms-services`,
-  published by the `Docker` workflow of the `kingdoms-services` repo)
+- `kingdoms-bot` — the Discord bot process (image
+  `ghcr.io/merlin-pinpin-org/kingdoms-services`, published by the `Docker`
+  workflow of the `kingdoms-services` repo; `KINGDOMS_PROCESS=bot`)
+- `kingdoms-core` — svc-core, the domain process (MongoDB/Redis owner,
+  gRPC server on the internal network, port 50051)
+- `kingdoms-ext-librematch` — AoE2 data provider process (gRPC, port 50061;
+  owns the LibreMatch/Worlds Edge API secrets)
+- `kingdoms-ext-aoe2lobby` — AoE2 live lobby events provider process (gRPC,
+  port 50062; owns the aoe2lobby.com secrets)
 - `kingdoms-mongo` — MongoDB 7.0 (persistence)
 - `kingdoms-redis` — Redis 7.2 (hot state)
+
+One image backs the four Kingdoms processes: the container entrypoint
+dispatches on `KINGDOMS_PROCESS`. All four deploy atomically from a single
+pinned image (`KINGDOMS_BOT_IMAGE`), so version skew between core and its
+clients cannot exceed one deploy. The gRPC ports are **internal to the
+docker network** — never published to the host, never exposed publicly:
+the processes talk to each other, nobody outside the network does.
+
+Health checks: the bot probes `http://localhost:8000/healthz` (HTTP); the
+core and provider processes are probed with a TCP connect on their gRPC
+port (the image ships no `grpc_health` module, and the gRPC server binds
+its port only once the servicers are up). The deploy health gate
+(`scripts/deploy.sh`) waits on every service declared in the manifest.
+
+## Transition plan — mono-process → 4 processes
+
+The ADR-0020 split moves the deployed stack from one `kingdoms-bot`
+container to four processes with **no player-facing downtime**:
+
+1. **Order**: the new services ship in the manifest *before* the image that
+   needs them. Compose `depends_on` (`service_healthy`) starts the stack
+   in dependency order: stores → core → bot; the providers have no
+   inbound dependency and start in parallel. The first deploy of the split
+   manifest with the current image is a no-op for the new services: the
+   entrypoint of the pre-split image ignores `KINGDOMS_PROCESS` and runs
+   the bot, and the TCP health checks pass because the processes bind
+   their ports. **Wait — this is only true once the pinned image contains
+   the split entrypoint; the split manifest must be deployed *together with*
+   the first split image pin.** The deploy is therefore: merge this
+   manifest change, then pin/deploy the first split image (from the
+   kingdoms-services PR that ships the split entrypoint) in one deploy —
+   the same single-pin deploy as always.
+2. **Version skew during the transition**: the gRPC contracts tolerate one
+   version of skew (additive-only changes to `kingdoms.v1`); the pin is
+   atomic, so in practice the four processes always run the same image.
+3. **Rollback per process**: rollback is per-pin, not per-process — one
+   image backs the four processes, and `scripts/rollback.sh` re-applies the
+   previous pin as before. A single misbehaving process can be restarted
+   (`docker compose restart <service>`) without a pin move.
+4. **Pin-state behavior across the split**: unchanged (ADR-0018). The state
+   file keeps pinning `KINGDOMS_BOT_IMAGE`; the three new services read
+   the same variable — one pin moves the four processes together.
 
 ## Prerequisites
 
