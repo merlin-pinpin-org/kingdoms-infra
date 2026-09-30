@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-165-20260930085758-7cc361d
-version_label: pr-165-20260930085758-7cc361d
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/165#issuecomment-5907776166
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-166-20260930090914-3549c49
+version_label: pr-166-20260930090914-3549c49
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/166#issuecomment-5907964971
 deploy_kind: pr
-deploy_ref: 165
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/7cc361d9693773452d7b47ae843de628b6998fd6
-deploy_ts: 1790758752
-deploy_commit_ts: 1790758549
-deploy_commit: 7cc361d9693773452d7b47ae843de628b6998fd6
-deploy_ci_run_id: 36693018305
-deploy_ci_run_number: 93
-deploy_ci_run_ts: 1790758670
+deploy_ref: 166
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/3549c4941ab7b095a0bad6a2a08636603c2b9ad0
+deploy_ts: 1790759393
+deploy_commit_ts: 1790759299
+deploy_commit: 3549c4941ab7b095a0bad6a2a08636603c2b9ad0
+deploy_ci_run_id: 36694250928
+deploy_ci_run_number: 96
+deploy_ci_run_ts: 1790759345
 deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-09-30T08:59:12Z"
+deployed_at: "2026-09-30T09:09:53Z"
 source: 
-deploy_branch: feat/kingdoms-mod-declaration
-deploy_pr_title: feat(kingdoms): mod declaration — Lot A (channels, roles, season settings)
+deploy_branch: feat/kingdoms-mod-views
+deploy_pr_title: feat(kingdoms): Lot B screens — UI SDK builders + /kingdoms command group
