@@ -167,6 +167,15 @@ services:
       MONGO_URI: mongodb://kingdoms-mongo:27017
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     restart: "no"
+    healthcheck:
+      # One-shot job: healthy while the seed runs; the container exits
+      # (exit 0) when done, so the health gate sees a completed seed, not
+      # a crash loop (a failing seed exits non-zero and reports unhealthy).
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     depends_on:
       kingdoms-mongo:
         condition: service_healthy
