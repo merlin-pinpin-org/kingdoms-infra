@@ -45,14 +45,14 @@ jobs:
           # healthcheck would silently bypass the deploy health gate.
           shopt -s nullglob
           for manifest in envs/*/docker-compose.yml; do
-            python3 - "$manifest" <<'PY'
+            python3 -c '
             import sys, yaml
             manifest = sys.argv[1]
             services = yaml.safe_load(open(manifest))["services"]
             missing = [name for name, svc in services.items() if "healthcheck" not in svc]
-            assert not missing, f"{manifest}: services without healthcheck: {missing}"
-            print(f"{manifest}: all {len(services)} services declare a healthcheck")
-            PY
+            assert not missing, manifest + ": services without healthcheck: " + str(missing)
+            print(manifest + ": all " + str(len(services)) + " services declare a healthcheck")
+            ' "$manifest"
           done
       - name: Check the gRPC processes are on the internal network only
         run: |
