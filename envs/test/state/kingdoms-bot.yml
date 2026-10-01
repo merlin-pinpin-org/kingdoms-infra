@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-170-20261001212012-11e6e82
-version_label: pr-170-20261001212012-11e6e82
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/170#issuecomment-5940837473
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-170-20261001233536-cad9be2
+version_label: pr-170-20261001233536-cad9be2
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/170#issuecomment-5942734644
 deploy_kind: pr
 deploy_ref: 170
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/11e6e82da2ae83ee4c31c1b8de5adc33a0e8065a
-deploy_ts: 1790889652
-deploy_commit_ts: 1790889432
-deploy_commit: 11e6e82da2ae83ee4c31c1b8de5adc33a0e8065a
-deploy_ci_run_id: 36927962683
-deploy_ci_run_number: 122
-deploy_ci_run_ts: 1790889603
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/cad9be2d4910dd89231ff3c07d7ef126e3d1c598
+deploy_ts: 1790897779
+deploy_commit_ts: 1790896443
+deploy_commit: cad9be2d4910dd89231ff3c07d7ef126e3d1c598
+deploy_ci_run_id: 36941608581
+deploy_ci_run_number: 123
+deploy_ci_run_ts: 1790897726
 deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-10-01T21:20:52Z"
+deployed_at: "2026-10-01T23:36:19Z"
 source: 
 deploy_branch: vibe/kingdom-salons-first-cbeb55
 deploy_pr_title: feat(kingdoms): /kingdom salons-first bootstrap + panels (Postuler, Candidatures, Paramètres)
