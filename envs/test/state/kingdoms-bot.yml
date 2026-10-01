@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-170-20261001183215-39dcf9c
-version_label: pr-170-20261001183215-39dcf9c
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/170#issuecomment-5937961457
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-170-20261001183943-39dcf9c
+version_label: pr-170-20261001183943-39dcf9c
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/170#issuecomment-5938105351
 deploy_kind: pr
 deploy_ref: 170
 deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/39dcf9c34522ff3295621d513eda52855d73b4b4
-deploy_ts: 1790879575
+deploy_ts: 1790880026
 deploy_commit_ts: 1790878778
 deploy_commit: 39dcf9c34522ff3295621d513eda52855d73b4b4
-deploy_ci_run_id: 36907538593
-deploy_ci_run_number: 116
-deploy_ci_run_ts: 1790879523
+deploy_ci_run_id: 36908459100
+deploy_ci_run_number: 117
+deploy_ci_run_ts: 1790879970
 deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-10-01T18:32:55Z"
+deployed_at: "2026-10-01T18:40:26Z"
 source: 
 deploy_branch: vibe/kingdom-salons-first-cbeb55
 deploy_pr_title: feat(kingdoms): /kingdom salons-first bootstrap + panels (Postuler, Candidatures, Paramètres)
