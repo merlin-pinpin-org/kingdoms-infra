@@ -149,6 +149,55 @@ jobs:
               .map((b) => b.name)
               .filter((n) => n.startsWith("deploy/"))
               .map((n) => n.slice("deploy/".length));
+            // Personal environments (envs/<alias>, e.g. envs/drasah —
+            // docs/GUIDES/your-test-env.md) are data too, and nothing
+            // watched them: an env directory without its deploy/<name>
+            // state branch (or the reverse — a state branch whose env
+            // directory was removed) is drift, and so is an unprotected
+            // personal state branch. test/prod are audited above.
+            const { execSync } = require("child_process");
+            const envDirs = execSync(
+              "find envs -mindepth 1 -maxdepth 1 -type d -printf '%f\\n'",
+              { cwd: process.env.GITHUB_WORKSPACE, encoding: "utf8" }
+            ).trim().split("\n").filter(Boolean);
+            for (const env of envDirs) {
+              if (!envNames.includes(env)) {
+                problems.push(`kingdoms-infra: envs/${env} exists but the deploy/${env} state branch does not — create it (docs/GUIDES/your-test-env.md, ENVIRONMENTS.md § "Keeping the state branches current")`);
+              }
+            }
+            for (const env of envNames) {
+              if (!envDirs.includes(env)) {
+                problems.push(`kingdoms-infra: deploy/${env} exists but envs/${env} does not — the branch is a state record for a removed (or never created) environment`);
+              }
+            }
+            // Every state branch — personal envs included — must carry
+            // the same protections as deploy/test: deletion and
+            // non-fast-forward at minimum (the templated per-env ruleset).
+            for (const env of envNames) {
+              const branch = `deploy/${env}`;
+              let rules;
+              try {
+                rules = (await github.rest.repos.getBranchRules({
+                  owner: org,
+                  repo: "kingdoms-infra",
+                  branch,
+                })).data;
+              } catch (e) {
+                problems.push(`kingdoms-infra: cannot read rules for ${branch} — ${e.message}`);
+                continue;
+              }
+              const types = rules.map((r) => r.type);
+              const missing = ["deletion", "non_fast_forward"].filter(
+                (t) => !types.includes(t)
+              );
+              if (rules.length === 0) {
+                problems.push(`kingdoms-infra: NO ruleset protects ${branch}`);
+              } else if (missing.length > 0) {
+                problems.push(`kingdoms-infra: ${branch} is missing rules: ${missing.join(", ")}`);
+              } else {
+                core.info(`kingdoms-infra: ${branch} is protected`);
+              }
+            }
             for (const env of envNames) {
               const branch = `deploy/${env}`;
               try {

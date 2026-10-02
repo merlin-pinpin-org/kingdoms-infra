@@ -141,6 +141,14 @@ The rulesets (no force-push) keep the history auditable:
 beyond `main`. The [Branch and tag rules audit](#branch-and-tag-rules-audit)
 workflow fails when a state branch drifts from `main`.
 
+The audit also covers **personal environments** (`envs/<alias>`, e.g.
+`envs/drasah` — see kingdoms `docs/GUIDES/your-test-env.md`): every
+env directory must have its `deploy/<alias>` state branch and vice
+versa, and every personal state branch must carry the same protections
+as `deploy/test` (deletion, non-fast-forward). An env created halfway
+—or abandoned— is drift, and the weekly audit reports it; drift is
+reported, never repaired.
+
 ## Branch and tag rules (expected configuration)
 
 The authoritative configuration lives on GitHub (Settings → Rules → Rule
