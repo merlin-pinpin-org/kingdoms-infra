@@ -17,10 +17,10 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Environment to dump (empty = all)"
-        required: false
+        description: "Environment to dump (all = every environment)"
+        required: true
         type: choice
-        options: ["", test, prod]
+        options: [all, test, prod]
 
 permissions:
   contents: read
@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment != '' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["test", "prod"]') }}
+        environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment != 'all' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["test", "prod"]') }}
     steps:
       - name: Check out the environment configuration
         uses: actions/checkout@v4
