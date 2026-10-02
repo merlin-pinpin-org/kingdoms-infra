@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-174-20261002081749-361ae45
-version_label: pr-174-20261002081749-361ae45
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/174#issuecomment-5948036038
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-182-20261002195913-8fdbb3e
+version_label: pr-182-20261002195913-8fdbb3e
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/182#issuecomment-5960413823
 deploy_kind: pr
-deploy_ref: 174
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/361ae45c0a1eb39f8e8d491f03e86177a2149b34
-deploy_ts: 1790929112
-deploy_commit_ts: 1790928878
-deploy_commit: 361ae45c0a1eb39f8e8d491f03e86177a2149b34
-deploy_ci_run_id: 36983219321
-deploy_ci_run_number: 135
-deploy_ci_run_ts: 1790929061
-deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-10-02T08:18:32Z"
+deploy_ref: 182
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/8fdbb3e6a794ba20230d13e34902634ba39551e7
+deploy_ts: 1790971188
+deploy_commit_ts: 1790953534
+deploy_commit: 8fdbb3e6a794ba20230d13e34902634ba39551e7
+deploy_ci_run_id: 37057629565
+deploy_ci_run_number: 140
+deploy_ci_run_ts: 1790971145
+deployed_by: merlin-pinpin (/deploy)
+deployed_at: "2026-10-02T19:59:48Z"
 source: 
-deploy_branch: feat/kingdoms-t5-t8-eevee
-deploy_pr_title: feat(kingdoms): T5-T8 - events, diplomacy, economy, season end
+deploy_branch: vibe/177-admin-panel-seam-916f16
+deploy_pr_title: vibe[merlin] Runtime extension seam for the pinned admin panel (mods register admin sections)
