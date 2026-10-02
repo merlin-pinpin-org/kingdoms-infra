@@ -1,0 +1,94 @@
+# Dump the logs of a live environment (repository_dispatch: env-logs,
+# called by kingdoms-services ops-commands.yml on a /logs PR comment).
+# Runs ON the environment's own runner and uploads the dump as a
+# PRIVATE workflow artifact; the caller posts the relevant excerpts back
+# on the requesting PR/issue. Read-only: never deploys, never pulls,
+# never touches the pinned state.
+#
+# No GitHub `environment:` gate: reading logs mutates nothing, and a
+# gate here would queue a read behind the ops approval for no gain.
+# The roster gate (capability env-logs) already decided who may read.
+name: Environment logs
+
+on:
+  repository_dispatch:
+    types: [env-logs]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to read logs from"
+        required: true
+        type: choice
+        options: [test, prod]
+      service:
+        description: "Service (empty = all)"
+        required: false
+        type: string
+      since:
+        description: "Relative window (e.g. 30m, 2h)"
+        required: false
+        type: string
+      from:
+        description: "Absolute window start (ISO8601)"
+        required: false
+        type: string
+      to:
+        description: "Absolute window end (ISO8601)"
+        required: false
+        type: string
+      tail:
+        description: "Last N lines per service"
+        required: false
+        type: string
+        default: "200"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: env-logs-${{ github.event.client_payload.environment || inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  logs:
+    name: Dump logs (${{ github.event.client_payload.environment || inputs.environment }})
+    runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', github.event.client_payload.environment || inputs.environment)) }}
+    steps:
+      - name: Check out the environment configuration
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/${{ github.event.client_payload.environment || inputs.environment }}
+
+      - name: Collect the logs
+        env:
+          ENVIRONMENT: ${{ github.event.client_payload.environment || inputs.environment }}
+          SERVICE: ${{ github.event.client_payload.service || inputs.service || '' }}
+          SINCE: ${{ github.event.client_payload.since || inputs.since || '' }}
+          FROM: ${{ github.event.client_payload.from || inputs.from || '' }}
+          TO: ${{ github.event.client_payload.to || inputs.to || '' }}
+          TAIL: ${{ github.event.client_payload.tail || inputs.tail || '200' }}
+        run: |
+          ARGS=("${ENVIRONMENT}")
+          [[ -n "${SERVICE}" ]] && ARGS+=(--service "${SERVICE}")
+          [[ -n "${SINCE}" ]]  && ARGS+=(--since "${SINCE}")
+          [[ -n "${FROM}" ]]   && ARGS+=(--from "${FROM}")
+          [[ -n "${TO}" ]]     && ARGS+=(--to "${TO}")
+          ARGS+=(--tail "${TAIL}")
+          mkdir -p /tmp/envlogs
+          ./scripts/envlogs.sh "${ARGS[@]}" | tee /tmp/envlogs/logs.txt
+          # Hard ceiling: a runaway dump must not eat the artifact store;
+          # the full dump also lands in the run log, viewable on GitHub.
+          MAX_BYTES=$(( 10 * 1024 * 1024 ))
+          SIZE=$(stat -c%s /tmp/envlogs/logs.txt || echo 0)
+          if (( SIZE > MAX_BYTES )); then
+            head -c "${MAX_BYTES}" /tmp/envlogs/logs.txt > /tmp/envlogs/logs.truncated.txt
+            mv /tmp/envlogs/logs.truncated.txt /tmp/envlogs/logs.txt
+            echo "::warning::log dump truncated to 10 MB (${SIZE} bytes collected — narrow the window)"
+          fi
+
+      - name: Upload the dump (private artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: env-logs-${{ github.event.client_payload.environment || inputs.environment }}-${{ github.run_id }}
+          path: /tmp/envlogs/logs.txt
+          retention-days: 90

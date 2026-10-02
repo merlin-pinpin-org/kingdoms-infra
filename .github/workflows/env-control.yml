@@ -1,0 +1,51 @@
+# Control a live environment's stack from GitHub (workflow_dispatch):
+# start | stop | restart | status. Runs ON the environment's runner and
+# dumps the result — it never deploys, never pulls, never touches the
+# pinned state (scripts/envctl.sh). This is the operator's day-to-day
+# handle for an environment; deployments stay on the state-branch path.
+#
+# The prod environment is gated like any workflow touching it: the
+# `environment: prod` protection (required reviewers) applies — a
+# stop/restart on prod asks for the ops approval, status is read-only.
+name: Environment control
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command to run on the stack"
+        required: true
+        type: choice
+        options:
+          - status
+          - start
+          - stop
+          - restart
+      environment:
+        description: "Environment to control (a directory under envs/)"
+        required: true
+        type: choice
+        options:
+          - test
+          - prod
+
+permissions:
+  contents: read
+
+concurrency:
+  group: env-control-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  control:
+    name: ${{ inputs.command }} (${{ inputs.environment }})
+    runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', inputs.environment)) }}
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Check out the environment configuration
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/${{ inputs.environment }}
+
+      - name: Run the control command (dumps the result)
+        run: ./scripts/envctl.sh "${{ inputs.environment }}" "${{ inputs.command }}"
