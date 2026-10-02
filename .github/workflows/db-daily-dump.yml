@@ -1,0 +1,59 @@
+# Daily database dump of every environment: a cron run of
+# scripts/backup_db.sh on each environment's own runner. The archives
+# land in the runner's persistent BACKUP_DIR (VPS disk — no expiry;
+# GitHub artifacts cap at 90 days, so the VPS path is the retention
+# answer) and are additionally uploaded as PRIVATE artifacts for
+# off-box access. Read-only for the data: mongodump/BGSAVE never write
+# to the databases they read.
+#
+# No `environment:` gate: the dump is the pre-deploy backup taken daily
+# for the same purpose the deploy path takes it per run; a gate would
+# ask ops to approve a backup. Restores stay gated (rollback.yml).
+name: Daily DB dump
+
+on:
+  schedule:
+    - cron: "30 4 * * *"  # 04:30 UTC, before the 06:00 sync wave
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to dump (empty = all)"
+        required: false
+        type: choice
+        options: ["", test, prod]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-daily-dump
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: Dump ${{ matrix.environment }}
+    runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', matrix.environment)) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment != '' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["test", "prod"]') }}
+    steps:
+      - name: Check out the environment configuration
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/${{ matrix.environment }}
+
+      - name: Dump the databases
+        env:
+          # VPS-SETUP.md: the persistent backup directory survives
+          # checkouts; the same path the deploy backup uses.
+          BACKUP_DIR: /opt/kingdoms/backups
+        run: ./scripts/backup_db.sh "${{ matrix.environment }}"
+
+      - name: Upload the archives (private artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-dump-${{ matrix.environment }}-${{ github.run_id }}
+          path: /opt/kingdoms/backups/${{ matrix.environment }}-*.archive.gz
+          retention-days: 90
+          if-no-files-found: error
