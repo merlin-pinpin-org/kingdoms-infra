@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-170-20261002002212-a9540bd
-version_label: pr-170-20261002002212-a9540bd
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/170#issuecomment-5943219297
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-171-20261002035432-c6d3a70
+version_label: pr-171-20261002035432-c6d3a70
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/171#issuecomment-5945312836
 deploy_kind: pr
-deploy_ref: 170
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/a9540bd83e25d1079e5a8c62fd51ca0335c4655b
-deploy_ts: 1790900593
-deploy_commit_ts: 1790899054
-deploy_commit: a9540bd83e25d1079e5a8c62fd51ca0335c4655b
-deploy_ci_run_id: 36945614769
-deploy_ci_run_number: 125
-deploy_ci_run_ts: 1790900519
+deploy_ref: 171
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/c6d3a70f01a0fb23ec406d1df915634471ad69f0
+deploy_ts: 1790913311
+deploy_commit_ts: 1790913216
+deploy_commit: c6d3a70f01a0fb23ec406d1df915634471ad69f0
+deploy_ci_run_id: 36962183575
+deploy_ci_run_number: 127
+deploy_ci_run_ts: 1790913243
 deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-10-02T00:23:13Z"
+deployed_at: "2026-10-02T03:55:11Z"
 source: 
-deploy_branch: vibe/kingdom-salons-first-cbeb55
-deploy_pr_title: feat(kingdoms): /kingdom salons-first bootstrap + panels (Postuler, Candidatures, Paramètres)
+deploy_branch: feat/kingdoms-salon-content
+deploy_pr_title: feat(kingdoms): salons-first live content (groupe 1)
