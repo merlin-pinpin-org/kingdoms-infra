@@ -23,8 +23,14 @@ set -Eeuo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENTS=(test prod)
 ENVIRONMENT="${1:-test}"
-ARCHIVE="${2:-}"
-MODE="${3:-}"
+shift || true
+MODE=""
+for arg in "$@"; do
+    case "${arg}" in
+        --auto|--yes) MODE="${arg}" ;;
+        *) if [[ -n "${ARCHIVE:-}" ]]; then usage; fi; ARCHIVE="${arg}" ;;
+    esac
+done
 BACKUP_DIR="${BACKUP_DIR:-${REPO_ROOT}/backups}"
 STATE_FILE="envs/${ENVIRONMENT}/state/kingdoms-bot.yml"
 
