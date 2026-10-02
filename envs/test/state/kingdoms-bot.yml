@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-172-20261002065206-2b47631
-version_label: pr-172-20261002065206-2b47631
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/172#issuecomment-5946970813
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-173-20261002073313-079e91f
+version_label: pr-173-20261002073313-079e91f
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/173#issuecomment-5947431391
 deploy_kind: pr
-deploy_ref: 172
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/2b47631d97efe2010f9642884201a4ffd58a1a0b
-deploy_ts: 1790923963
-deploy_commit_ts: 1790923247
-deploy_commit: 2b47631d97efe2010f9642884201a4ffd58a1a0b
-deploy_ci_run_id: 36975573507
-deploy_ci_run_number: 131
-deploy_ci_run_ts: 1790923883
+deploy_ref: 173
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/079e91fa87b951f5b2deff7e9c18985d4227ffcd
+deploy_ts: 1790926437
+deploy_commit_ts: 1790925727
+deploy_commit: 079e91fa87b951f5b2deff7e9c18985d4227ffcd
+deploy_ci_run_id: 36979148010
+deploy_ci_run_number: 133
+deploy_ci_run_ts: 1790926382
 deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-10-02T06:52:43Z"
+deployed_at: "2026-10-02T07:33:57Z"
 source: 
-deploy_branch: feat/kingdoms-t3-territories
-deploy_pr_title: feat(kingdoms): T3 territories & maps — catalog, draw, ejection, transfer
+deploy_branch: feat/kingdoms-t4-attacks
+deploy_pr_title: feat(kingdoms): T4 attacks & defenses - state machine, delays, budgets, combat techs
