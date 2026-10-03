@@ -62,7 +62,7 @@ the CI workflows instead.
    concurrency `deploy-state-<env>`, ADR-0018).
 3. The push triggers `deploy.yml` → `deploy-env.yml`, which runs on the
    `env-<env>` self-hosted runner, applies the pinned state with
-   `scripts/deploy.sh` and gates on health.
+   `.github/workflows/scripts/deploy.sh` and gates on health.
 4. `sync-state.yml` propagates `main` to the state branches; config changes
    on `main` trigger a repin (never on `prod`).
 
@@ -87,7 +87,7 @@ support rollback (`deploy.sh`, database restore via `restore_db.sh`).
 - A required status check never uses a `paths:` filter — it must report on
   every PR (fixed for `check-infra.yml`; applies to every workflow backing
   a required check).
-- `paths:` filters on the deploy chain must include `scripts/deploy.sh`
+- `paths:` filters on the deploy chain must include `.github/workflows/scripts/deploy.sh`
   and the workflow files themselves, or a merge triggers no deploy.
 - Dynamic `runs-on` needs
   `fromJSON(format('[\"self-hosted\", \"kingdoms\", \"env-{0}\"]', inputs.environment))`
@@ -124,7 +124,7 @@ Symptoms, in order of probability:
    (`sudo ./svc.sh status`, VPS-SETUP troubleshooting).
 
 Run `make doctor` or `make diagnose-deploy-<env>`
-(`scripts/diagnose_deploy.sh <env>`, `--json` for agents) — it walks these
+(`.github/workflows/scripts/diagnose_deploy.sh <env>`, `--json` for agents) — it walks these
 causes in order, links every stale run to cancel, and exits 1 when
 something blocks. **Diagnose before touching the runner**: in the 2026-09-24
 incident the runner was healthy and idle the whole time.

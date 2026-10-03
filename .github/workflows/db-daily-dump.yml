@@ -1,5 +1,5 @@
 # Daily database dump of every environment: a cron run of
-# scripts/backup_db.sh on each environment's own runner. The archives
+# .github/workflows/scripts/backup_db.sh on each environment's own runner. The archives
 # land in the runner's persistent BACKUP_DIR (VPS disk — no expiry;
 # GitHub artifacts cap at 90 days, so the VPS path is the retention
 # answer) and are additionally uploaded as PRIVATE artifacts for
@@ -48,7 +48,7 @@ jobs:
           # VPS-SETUP.md: the persistent backup directory survives
           # checkouts; the same path the deploy backup uses.
           BACKUP_DIR: /opt/kingdoms/backups
-        run: ./scripts/backup_db.sh "${{ matrix.environment }}"
+        run: ./.github/workflows/scripts/backup_db.sh "${{ matrix.environment }}"
 
       - name: Upload the archives (private artifacts)
         uses: actions/upload-artifact@v4

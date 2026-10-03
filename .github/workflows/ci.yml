@@ -14,7 +14,7 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: ShellCheck
-        run: shellcheck --severity=warning scripts/*.sh
+        run: shellcheck --severity=warning .github/workflows/scripts/*.sh
       - name: Install actionlint
         run: |
           # bash installer from the actionlint releases (checksum-verified
@@ -155,7 +155,7 @@ jobs:
       - name: Run backup
         env:
           BACKUP_DIR: /tmp/kingdoms-backups
-        run: ./scripts/backup_db.sh test /tmp/kingdoms-backups
+        run: ./.github/workflows/scripts/backup_db.sh test /tmp/kingdoms-backups
 
       - name: Wipe both stores (simulate data loss)
         working-directory: envs/test
@@ -166,7 +166,7 @@ jobs:
       - name: Restore the backup (MongoDB + Redis)
         run: |
           BACKUP_ARCHIVE="$(find /tmp/kingdoms-backups -maxdepth 1 -name 'test-*.archive.gz' -printf '%T@ %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)"
-          ./scripts/restore_db.sh test "${BACKUP_ARCHIVE}" --yes
+          ./.github/workflows/scripts/restore_db.sh test "${BACKUP_ARCHIVE}" --yes
 
       - name: Verify the restored data matches the reference
         working-directory: envs/test
@@ -185,7 +185,7 @@ jobs:
         run: |
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.deleteOne({_id: "user-3"})'
           docker compose exec -T kingdoms-redis redis-cli DEL session:user-1
-          BACKUP_DIR=/tmp/kingdoms-backups "${GITHUB_WORKSPACE}/scripts/rollback.sh" test "" --yes
+          BACKUP_DIR=/tmp/kingdoms-backups "${GITHUB_WORKSPACE}/.github/workflows/scripts/rollback.sh" test "" --yes
           docker compose exec -T kingdoms-mongo mongosh --quiet kingdoms --eval 'db.users.find().sort({_id:1}).toArray()' > /tmp/after-rollback.json
           diff /tmp/reference.json /tmp/after-rollback.json
           docker compose exec -T kingdoms-redis redis-cli --raw MGET workflow:wf-1:step workflow:wf-2:step session:user-1 > /tmp/after-rollback-redis.txt
