@@ -15,7 +15,7 @@ the deployed state converges to them through automation.
    the pinned state after the state-branch push, executed by a
    self-hosted runner on the VPS (see [VPS-SETUP.md](VPS-SETUP.md)) —
    nobody applies changes by hand.
-4. **Continuously reconciled**: `scripts/deploy.sh` is idempotent; re-running
+4. **Continuously reconciled**: `.github/workflows/scripts/deploy.sh` is idempotent; re-running
    it converges the environment to the manifest state.
 
 ## Workflow
@@ -48,7 +48,7 @@ re-applies the previous image. A failed deployment never reverts code on
 `main` and never touches another repository — the state is the only
 rollback surface. Data-level rollback (schema changes) uses the database
 backups — every deployment produces one *before* touching the stack, and
-`scripts/rollback.sh --auto` restores the latest one when the state revert
+`.github/workflows/scripts/rollback.sh --auto` restores the latest one when the state revert
 is unavailable (prod requires an approved PR for every state push, by
 design). The CI job `Backup/restore round-trip test` continuously verifies
 that a backup can be restored byte-for-byte.

@@ -4,7 +4,7 @@
 
 set -Eeuo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ENVIRONMENTS=(test prod)
 ENVIRONMENT="${1:-test}"
 ENV_DIR="${REPO_ROOT}/envs/${ENVIRONMENT}"

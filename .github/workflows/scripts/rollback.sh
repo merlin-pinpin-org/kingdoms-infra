@@ -20,7 +20,7 @@
 # us that).
 set -Eeuo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ENVIRONMENTS=(test prod)
 ENVIRONMENT="${1:-test}"
 shift || true
@@ -104,7 +104,7 @@ if [[ "${MODE}" == "--auto" ]]; then
     warn "state revert unavailable on ${ENVIRONMENT}: restoring the latest backup instead"
     LATEST="$(ls -1t "${BACKUP_DIR}/${ENVIRONMENT}-"*.archive.gz 2>/dev/null | head -n 1 || true)"
     [[ -n "${LATEST}" ]] || die "no backup found in ${BACKUP_DIR}; nothing to roll back to"
-    "${REPO_ROOT}/scripts/restore_db.sh" "${ENVIRONMENT}" "${LATEST}" --yes
+    "${REPO_ROOT}/.github/workflows/scripts/restore_db.sh" "${ENVIRONMENT}" "${LATEST}" --yes
     die "rollback incomplete: the pinned state on deploy/${ENVIRONMENT} still carries the failed image — open a revert PR (the rollback workflow) or re-pin manually"
 fi
 
@@ -125,6 +125,6 @@ if [[ "${MODE}" != "--yes" ]]; then
     [[ "${answer}" == "y" || "${answer}" == "Y" ]] || { echo "Aborted."; exit 1; }
 fi
 
-"${REPO_ROOT}/scripts/restore_db.sh" "${ENVIRONMENT}" "${ARCHIVE}" --yes
+"${REPO_ROOT}/.github/workflows/scripts/restore_db.sh" "${ENVIRONMENT}" "${ARCHIVE}" --yes
 
 log "rollback complete"

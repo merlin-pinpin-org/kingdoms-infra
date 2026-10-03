@@ -3,7 +3,7 @@
 #
 # The state branches run the deploy workflows in their own revision: a merge
 # on main that touches a deploy workflow, a deploy/<env>/ manifest or
-# scripts/deploy.sh keeps running in its old revision on the state branch
+# .github/workflows/scripts/deploy.sh keeps running in its old revision on the state branch
 # until it is propagated. This workflow automates the propagation.
 #
 # The push uses the kingdoms-deployer App token — the same actor the deploy

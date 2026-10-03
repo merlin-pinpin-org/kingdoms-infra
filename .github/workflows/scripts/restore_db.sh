@@ -9,7 +9,7 @@
 
 set -Eeuo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ENVIRONMENTS=(test prod)
 ENVIRONMENT="${1:-test}"
 # Allow a bare archive name resolved against BACKUP_DIR (CD passes the

@@ -5,7 +5,7 @@
 # it never deploys, never pulls, never touches the pinned state.
 set -Eeuo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ENVIRONMENTS=(test prod)
 COMMANDS=(start stop restart status)
 

@@ -1,7 +1,7 @@
 # Control a live environment's stack from GitHub (workflow_dispatch):
 # start | stop | restart | status. Runs ON the environment's runner and
 # dumps the result — it never deploys, never pulls, never touches the
-# pinned state (scripts/envctl.sh). This is the operator's day-to-day
+# pinned state (.github/workflows/scripts/envctl.sh). This is the operator's day-to-day
 # handle for an environment; deployments stay on the state-branch path.
 #
 # The prod environment is gated like any workflow touching it: the
@@ -48,6 +48,6 @@ jobs:
           ref: deploy/${{ inputs.environment }}
 
       - name: Run the control command (dumps the result)
-        run: ./scripts/envctl.sh "${{ inputs.environment }}" "${{ inputs.command }}"
+        run: ./.github/workflows/scripts/envctl.sh "${{ inputs.environment }}" "${{ inputs.command }}"
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}

@@ -157,7 +157,7 @@ Two halves, both required:
   same for the `kingdoms` repo only if a workflow there ever needs to
   pull the image.
 - **Workflow side (in this repository):** `deploy.yml` logs in to ghcr.io with the job's `GITHUB_TOKEN`
-  (`permissions: packages: read`) before running `scripts/deploy.sh`,
+  (`permissions: packages: read`) before running `.github/workflows/scripts/deploy.sh`,
   so the pull from the VPS is authenticated as this repository.
 
 Without the package-side grant the token is not enough: GHCR checks

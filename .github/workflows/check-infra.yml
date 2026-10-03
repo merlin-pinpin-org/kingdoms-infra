@@ -27,7 +27,7 @@ jobs:
           done
       - name: Check deploy scripts are executable
         run: |
-          for script in scripts/*.sh; do
+          for script in .github/workflows/scripts/*.sh; do
             echo "Checking ${script}"
             test -x "${script}"
           done

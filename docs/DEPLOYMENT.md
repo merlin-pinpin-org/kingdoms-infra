@@ -38,7 +38,7 @@ Health checks: the bot probes `http://localhost:8000/healthz` (HTTP); the
 core and provider processes are probed with a TCP connect on their gRPC
 port (the image ships no `grpc_health` module, and the gRPC server binds
 its port only once the servicers are up). The deploy health gate
-(`scripts/deploy.sh`) waits on every service declared in the manifest.
+(`.github/workflows/scripts/deploy.sh`) waits on every service declared in the manifest.
 
 ## Transition plan — mono-process → 4 processes
 
@@ -62,7 +62,7 @@ container to four processes with **no player-facing downtime**:
    version of skew (additive-only changes to `kingdoms.v1`); the pin is
    atomic, so in practice the four processes always run the same image.
 3. **Rollback per process**: rollback is per-pin, not per-process — one
-   image backs the four processes, and `scripts/rollback.sh` re-applies the
+   image backs the four processes, and `.github/workflows/scripts/rollback.sh` re-applies the
    previous pin as before. A single misbehaving process can be restarted
    (`docker compose restart <service>`) without a pin move.
 4. **Pin-state behavior across the split**: unchanged (ADR-0018). The state
@@ -113,12 +113,12 @@ it):
 
 Every deployment enforces two safety gates:
 
-1. **Pre-deploy backup (mandatory)**: `scripts/deploy.sh` runs
-   `scripts/backup_db.sh` *before* touching the stack and aborts the
+1. **Pre-deploy backup (mandatory)**: `.github/workflows/scripts/deploy.sh` runs
+   `.github/workflows/scripts/backup_db.sh` *before* touching the stack and aborts the
    deployment if the backup fails.
 2. **Post-deploy health gate**: after `docker compose up`, the script waits
    for every service to report `healthy`; if a service fails the gate, the
-   script triggers an automatic rollback (`scripts/rollback.sh --auto`).
+   script triggers an automatic rollback (`.github/workflows/scripts/rollback.sh --auto`).
    The bot serves a liveness endpoint (`GET /healthz`, port 8000) for the
    whole lifetime of the process; the compose healthcheck probes it and the
    gate reports a crash-looping bot as `unhealthy`.
@@ -126,17 +126,17 @@ Every deployment enforces two safety gates:
 For a manual, reproducible deployment (test only, e.g. on the VPS):
 
 ```bash
-DISCORD_TOKEN=... ./scripts/deploy.sh test
+DISCORD_TOKEN=... ./.github/workflows/scripts/deploy.sh test
 ```
 
-`scripts/deploy.sh` is idempotent: re-running it on a deployed environment
+`.github/workflows/scripts/deploy.sh` is idempotent: re-running it on a deployed environment
 converges to the manifest state.
 
 ## Troubleshooting
 
 A deployment that does not start or never finishes is almost always one of
 a few known causes. **Diagnose before touching anything**: run `make doctor`
-or `make diagnose-deploy-<env>` (`scripts/diagnose_deploy.sh <env>`,
+or `make diagnose-deploy-<env>` (`.github/workflows/scripts/diagnose_deploy.sh <env>`,
 `--json` for agents) — it walks the causes in order, links every stale run
 to cancel, and exits 1 when something blocks. The full runbook (including
 the concurrency-zombie trap behind the 2026-09-24 prod incident) lives in
@@ -155,8 +155,8 @@ the concurrency-zombie trap behind the 2026-09-24 prod incident) lives in
 ## Database backup and restore
 
 ```bash
-./scripts/backup_db.sh test              # writes backups/test-<timestamp>.archive.gz
-./scripts/restore_db.sh test backups/test-<timestamp>.archive.gz --yes
+./.github/workflows/scripts/backup_db.sh test              # writes backups/test-<timestamp>.archive.gz
+./.github/workflows/scripts/restore_db.sh test backups/test-<timestamp>.archive.gz --yes
 ```
 
 The round trip is continuously verified: the CI job
@@ -174,7 +174,7 @@ Rollback is a **state operation** (ADR-0018): a failed or rejected
 deployment rolls the pinned state back — never the code on `main`,
 never another repository.
 
-`scripts/rollback.sh <env> [archive.gz] [--auto]`:
+`.github/workflows/scripts/rollback.sh <env> [archive.gz] [--auto]`:
 
 - **`--auto` (the deploy.sh recovery path)** — when the post-deploy
   health gate fails, the script reverts the last pin commit and pushes
@@ -188,8 +188,8 @@ never another repository.
   interactive unless the archive is given with `--yes` semantics.
 
 ```bash
-./scripts/rollback.sh test                              # latest backup, interactive
-./scripts/rollback.sh test backups/test-...archive.gz  # specific archive
+./.github/workflows/scripts/rollback.sh test                              # latest backup, interactive
+./.github/workflows/scripts/rollback.sh test backups/test-...archive.gz  # specific archive
 ```
 
 The `Rollback state` workflow (`.github/workflows/rollback.yml`) is the

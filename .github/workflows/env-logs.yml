@@ -80,7 +80,7 @@ jobs:
           [[ -n "${TO}" ]]     && ARGS+=(--to "${TO}")
           ARGS+=(--tail "${TAIL}")
           mkdir -p /tmp/envlogs
-          ./scripts/envlogs.sh "${ARGS[@]}" | tee /tmp/envlogs/logs.txt
+          ./.github/workflows/scripts/envlogs.sh "${ARGS[@]}" | tee /tmp/envlogs/logs.txt
           # Hard ceiling: a runaway dump must not eat the artifact store;
           # the full dump also lands in the run log, viewable on GitHub.
           MAX_BYTES=$(( 10 * 1024 * 1024 ))

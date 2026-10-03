@@ -69,7 +69,7 @@ jobs:
           repositories: kingdoms-infra
 
       - name: Deploy the stack (image pinned by the state file)
-        run: ./scripts/deploy.sh ${{ inputs.environment }}
+        run: ./.github/workflows/scripts/deploy.sh ${{ inputs.environment }}
         env:
           BACKUP_DIR: /opt/kingdoms/backups
           # The failed-health-gate recovery path (rollback.sh --auto) pushes

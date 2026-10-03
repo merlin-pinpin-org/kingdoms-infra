@@ -54,7 +54,7 @@ Run `make doctor` (or `make diagnose-deploy-<env>`) **before checking the
 runner**: it walks the blocking causes in order — stale runs holding the
 `deploy-<env>` concurrency group, pending environment approval, broken
 `runs-on` labels — and prints the exact fix with links. Read-only; agent
-sessions get the same via `scripts/diagnose_deploy.sh <env> --json`.
+sessions get the same via `.github/workflows/.github/workflows/scripts/diagnose_deploy.sh <env> --json`.
 
 ## Contributing
 
