@@ -5,9 +5,12 @@
 # on the requesting PR/issue. Read-only: never deploys, never pulls,
 # never touches the pinned state.
 #
-# No GitHub `environment:` gate: reading logs mutates nothing, and a
-# gate here would queue a read behind the ops approval for no gain.
-# The roster gate (capability env-logs) already decided who may read.
+# The GitHub `environment:` is declared for its SECRETS (DISCORD_TOKEN is
+# an environment secret, needed by the compose substitution) — not as a
+# gate: the test environment has no required reviewer, so a read never
+# queues. The roster gate (capability env-logs) already decided who may
+# read. The run carries the state branch deploy/<env>, allowed by the
+# environment deployment branch policy.
 name: Environment logs
 
 on:
@@ -53,6 +56,7 @@ jobs:
   logs:
     name: Dump logs (${{ github.event.client_payload.environment || inputs.environment }})
     runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', github.event.client_payload.environment || inputs.environment)) }}
+    environment: ${{ github.event.client_payload.environment || inputs.environment }}
     steps:
       - name: Check out the environment configuration
         uses: actions/checkout@v4
