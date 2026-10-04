@@ -24,6 +24,10 @@ This page is the environment matrix; the deployment procedure lives in
 | Secrets | GitHub environment secrets (injected by the runner) | GitHub environment secrets |
 | MongoDB exposed ports | 27017 | — |
 | Redis exposed ports | 6379 | — |
+
+Personal environments publish the same debug ports with a per-env host
+port (co-located envs on a shared VPS must not collide): `merlin` →
+27018/6380, `drasah` → 27019/6381.
 | Redis persistence | volume | volume + AOF |
 | Bot memory limit | — | 512M |
 | Deploy trigger | Push to the `deploy/test` state branch (written by the GitHub App from a `/deploy` PR comment, or re-pinned by a test-config change on main) | Push to the `deploy/prod` state branch (written by the release pipeline; the branch ruleset requires a PR — approving a prod deploy is merging it) |
