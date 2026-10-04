@@ -233,8 +233,12 @@ GitHub's registration token is displayed on the same Runners page
 
 ```bash
 sudo -iu kingdoms
-mkdir -p /opt/kingdoms/runners/test && cd /opt/kingdoms/runners/test
-# GitHub's Download command (versioned tarball from the Runners page), then:
+cd /opt/kingdoms/runners
+curl -o actions-runner-linux-x64-<VERSION>.tar.gz -L \
+     https://github.com/actions/runner/releases/download/v<VERSION>/actions-runner-linux-x64-<VERSION>.tar.gz
+# <VERSION> = whatever GitHub's Runners page currently shows (e.g. 2.337.0)
+mkdir -p test && cd test
+tar xzf ../actions-runner-linux-x64-<VERSION>.tar.gz
 ./config.sh --url https://github.com/merlin-pinpin-org/kingdoms-infra --token <TOKEN> --labels kingdoms,env-test
 ```
 
@@ -248,9 +252,12 @@ sudo ./svc.sh install kingdoms
 sudo ./svc.sh start
 ```
 
-The `svc.sh` service names differ per runner (`svc.sh install` derives
-the service name from the runner directory), so several runner
-services coexist cleanly on one VPS.
+The tarball is downloaded **once** to
+`/opt/kingdoms/runners/actions-runner-linux-x64-<VERSION>.tar.gz`, next
+to the environment directories, and shared: each new environment just
+extracts it into its own directory. The `svc.sh` service names differ
+per runner (`svc.sh install` derives the service name from the runner
+directory), so several runner services coexist cleanly on one VPS.
 
 Verify: the runner must appear **Idle** (green) on the GitHub
 Runners page, with the `self-hosted`, `kingdoms` and its `env-<name>`
@@ -266,7 +273,8 @@ which job:
 **Several environments on the same VPS:** repeat the whole sequence
 once per environment, each in its own `/opt/kingdoms/runners/<env>/`
 directory with its own `env-<name>` label (example: `runners/drasah`
-with `--labels kingdoms,env-drasah`).
+with `--labels kingdoms,env-drasah`). The tarball does not need
+re-downloading — reuse the one already in `/opt/kingdoms/runners/`.
 
 **Uninstall a runner** — the reverse sequence: stop and remove the
 service **as your admin login**, then deregister the runner **as

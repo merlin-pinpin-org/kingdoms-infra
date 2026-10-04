@@ -2,7 +2,10 @@
 
 Every command, in order, nothing else. One runner per environment,
 always in `/opt/kingdoms/runners/<env>/` (replace `<env>` throughout:
-`test`, `prod`, `drasah`, …).
+`test`, `prod`, `drasah`, …). The runner tarball is downloaded **once**
+to `/opt/kingdoms/runners/actions-runner-linux-x64-<VERSION>.tar.gz`,
+next to the environment directories, and extracted into each new
+environment — several environments share the same archive.
 
 Context: `principal` = your admin login on the VPS (sudo),
 `kingdoms` = the service user that owns `/opt/kingdoms`.
@@ -14,10 +17,14 @@ Context: `principal` = your admin login on the VPS (sudo),
 #    Download command + registration token
 #    Settings → Actions → Runners → New self-hosted runner (Linux / x64)
 
-# 1. as kingdoms — download and configure
+# 1. as kingdoms — download the tarball ONCE, then configure
 sudo -iu kingdoms
-mkdir -p /opt/kingdoms/runners/<env> && cd /opt/kingdoms/runners/<env>
-# paste GitHub's Download command here (versioned tarball + tar -xzf)
+cd /opt/kingdoms/runners
+curl -o actions-runner-linux-x64-<VERSION>.tar.gz -L \
+     https://github.com/actions/runner/releases/download/v<VERSION>/actions-runner-linux-x64-<VERSION>.tar.gz
+# <VERSION> = whatever GitHub's Runners page currently shows (e.g. 2.337.0)
+mkdir -p <env> && cd <env>
+tar xzf ../actions-runner-linux-x64-<VERSION>.tar.gz
 ./config.sh --url https://github.com/merlin-pinpin-org/kingdoms-infra \
             --token <TOKEN> --labels kingdoms,env-<env>
 exit
