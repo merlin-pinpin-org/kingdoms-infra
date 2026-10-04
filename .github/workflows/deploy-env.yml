@@ -71,7 +71,7 @@ jobs:
       - name: Deploy the stack (image pinned by the state file)
         run: ./scripts/deploy.sh ${{ inputs.environment }}
         env:
-          BACKUP_DIR: /opt/kingdoms/backups
+          BACKUP_DIR: /opt/kingdoms/backups/${{ inputs.environment }}
           # The failed-health-gate recovery path (rollback.sh --auto) pushes
           # the state revert to deploy/<env> with this token — the same
           # single-writer App as the pin (ADR-0018). On prod the push is

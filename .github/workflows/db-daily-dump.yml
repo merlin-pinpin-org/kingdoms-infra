@@ -47,7 +47,7 @@ jobs:
         env:
           # VPS-SETUP.md: the persistent backup directory survives
           # checkouts; the same path the deploy backup uses.
-          BACKUP_DIR: /opt/kingdoms/backups
+          BACKUP_DIR: /opt/kingdoms/backups/${{ matrix.environment }}
         run: ./scripts/backup_db.sh "${{ matrix.environment }}"
 
       - name: Upload the archives (private artifacts)

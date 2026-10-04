@@ -44,9 +44,11 @@ image) triggers the deploy, executed by the environment's **self-hosted
 runner installed on the VPS** — never applied by hand. `test` is deployed
 by PR comments (`/deploy`) and release validation pins; `prod` runs
 released `vX.Y.Z` images only and waits for the environment's required
-reviewers. See [docs/GITOPS.md](docs/GITOPS.md) for the model and
+reviewers. See [docs/GITOPS.md](docs/GITOPS.md) for the model,
 [docs/VPS-SETUP.md](docs/VPS-SETUP.md) for the complete server
-installation guide (step by step, no Linux knowledge required).
+installation guide (step by step, no Linux knowledge required), and
+[docs/RUNNER.md](docs/RUNNER.md) for the one-page runner install /
+uninstall cheat-sheet.
 
 ### A deploy is stuck?
 

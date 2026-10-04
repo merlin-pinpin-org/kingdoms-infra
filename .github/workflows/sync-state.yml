@@ -34,8 +34,22 @@ permissions:
   contents: write
 
 jobs:
+  discover:
+    # Environments are data: the sync matrix is the envs/*/ directories on
+    # main — adding an environment is adding its directory, nothing else.
+    name: Discover the environments
+    runs-on: ubuntu-latest
+    outputs:
+      envs: ${{ steps.list.outputs.envs }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: List the environment directories
+        id: list
+        run: echo "envs=$(find envs -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort | jq -R . | jq -s . | jq -c .)" >> "$GITHUB_OUTPUT"
+
   sync:
     name: Sync deploy/${{ matrix.env }} with main
+    needs: discover
     runs-on: ubuntu-latest
     concurrency:
       group: deploy-state-${{ matrix.env }}
@@ -43,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [test, prod]
+        env: ${{ fromJSON(needs.discover.outputs.envs) }}
     steps:
       - name: Mint the kingdoms-deployer App token (state-branch writer)
         id: app-token
@@ -57,12 +71,24 @@ jobs:
         run: |
           git config --global user.name "kingdoms-deployer[bot]"
           git config --global user.email "noreply@merlin-pinpin.org"
+      - name: Skip when the state branch does not exist yet
+        # A personal env's state branch is created by its first autopin;
+        # syncing a missing branch would fail on the checkout.
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if ! git ls-remote "https://x-access-token:${APP_TOKEN}@github.com/merlin-pinpin-org/kingdoms-infra.git" "refs/heads/deploy/${{ matrix.env }}" | grep -q .; then
+            echo "deploy/${{ matrix.env }} does not exist yet — the first pin-state creates it; nothing to sync."
+            echo "skip=true" >> "$GITHUB_ENV"
+          fi
       - uses: actions/checkout@v4
+        if: env.skip != 'true'
         with:
           ref: deploy/${{ matrix.env }}
           fetch-depth: 0
           persist-credentials: false
       - name: Merge origin/main into the state branch
+        if: env.skip != 'true'
         run: |
           set -euo pipefail
           git remote set-branches origin '*'
@@ -73,6 +99,7 @@ jobs:
           fi
           git merge origin/main --no-edit -m "deploy(${{ matrix.env }}): sync state branch with main"
       - name: Migrate the state file to the envs/ layout (one-time)
+        if: env.skip != 'true'
         run: |
           set -euo pipefail
           env="${{ matrix.env }}"
@@ -89,6 +116,7 @@ jobs:
             echo "state file migrated to ${state_file}"
           fi
       - name: Push the synced state branch
+        if: env.skip != 'true'
         env:
           APP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
