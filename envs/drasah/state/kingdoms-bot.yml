@@ -1,0 +1,20 @@
+# Desired state of kingdoms-bot on the drasah environment (ADR-0018).
+# Written by the deploy pipelines only (kingdoms-deployer GitHub App);
+# a push to this branch deploys this exact image.
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-925cfb6
+version_label: main@925cfb6
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/925cfb683dda8b3ac494418c1a0a743c80e9b850
+deploy_kind: main
+deploy_ref: 925cfb6
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/925cfb683dda8b3ac494418c1a0a743c80e9b850
+deploy_ts: 1791151223
+deploy_commit_ts: 1791127841
+deploy_commit: 925cfb683dda8b3ac494418c1a0a743c80e9b850
+deploy_ci_run_id: 
+deploy_ci_run_number: 
+deploy_ci_run_ts: 
+deployed_by: config-change-deploy (run 37238296146)
+deployed_at: "2026-10-04T22:00:23Z"
+source: drasah-config change on main (commit 4f7282b)
+deploy_branch: main
+deploy_pr_title: 
