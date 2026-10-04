@@ -15,7 +15,7 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(test prod)
+ENVIRONMENTS=(test prod drasah merlin)
 ENVIRONMENT="${1:-}"
 [[ -n "${ENVIRONMENT}" ]] || { echo "Usage: $0 <${ENVIRONMENTS[*]}> [--service <name>] [--since <30m>] [--from <iso>] [--to <iso>] [--tail <n>]" >&2; exit 1; }
 shift

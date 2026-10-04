@@ -47,7 +47,7 @@ jobs:
           # Known environments (keep in sync with sync-state.yml).
           env_name="$(jq -r '.env // empty' <<<"$PAYLOAD")"
           case "$env_name" in
-            test|prod) ;;
+            test|prod|drasah|merlin) ;;
             *)
               echo "::error::unknown or missing environment '$env_name' (expected: test, prod)"
               exit 1

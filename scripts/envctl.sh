@@ -6,7 +6,7 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(test prod)
+ENVIRONMENTS=(test prod drasah merlin)
 COMMANDS=(start stop restart status)
 
 ENVIRONMENT="${1:-}"

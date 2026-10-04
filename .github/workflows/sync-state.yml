@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [test, prod]
+        env: [test, prod, drasah, merlin]
     steps:
       - name: Mint the kingdoms-deployer App token (state-branch writer)
         id: app-token

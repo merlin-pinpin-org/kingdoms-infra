@@ -5,7 +5,7 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(test prod)
+ENVIRONMENTS=(test prod drasah merlin)
 ENVIRONMENT="${1:-test}"
 ENV_DIR="${REPO_ROOT}/envs/${ENVIRONMENT}"
 COMPOSE_FILE="${ENV_DIR}/docker-compose.yml"
