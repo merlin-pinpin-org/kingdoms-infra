@@ -49,7 +49,7 @@ jobs:
           case "$env_name" in
             test|prod) ;;
             *)
-              echo "::error::unknown or missing environment '$env_name' (expected: test, prod)"
+              echo "::error::unknown or missing environment '$env_name' (expected: test, prod, drasah)"
               exit 1
               ;;
           esac

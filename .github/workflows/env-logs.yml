@@ -22,7 +22,7 @@ on:
         description: "Environment to read logs from"
         required: true
         type: choice
-        options: [test, prod]
+        options: [test, prod, drasah]
       service:
         description: "Service (empty = all)"
         required: false

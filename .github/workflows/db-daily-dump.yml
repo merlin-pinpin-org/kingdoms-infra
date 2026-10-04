@@ -20,7 +20,7 @@ on:
         description: "Environment to dump (all = every environment)"
         required: true
         type: choice
-        options: [all, test, prod]
+        options: [all, test, prod, drasah]
 
 permissions:
   contents: read
