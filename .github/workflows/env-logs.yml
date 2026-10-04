@@ -19,10 +19,9 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Environment to read logs from"
+        description: "Environment to read logs from (a directory under envs/)"
         required: true
-        type: choice
-        options: [test, prod]
+        type: string
       service:
         description: "Service (empty = all)"
         required: false
@@ -58,14 +57,23 @@ jobs:
     runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', github.event.client_payload.environment || inputs.environment)) }}
     environment: ${{ github.event.client_payload.environment || inputs.environment }}
     steps:
+      - name: Resolve the environment (untrusted input, validated as data)
+        id: env
+        env:
+          PAYLOAD_ENV: ${{ github.event.client_payload.environment || '' }}
+          INPUT_ENV: ${{ inputs.environment || '' }}
+        run: |
+          env_name="${PAYLOAD_ENV:-${INPUT_ENV}}"
+          [[ "${env_name}" =~ ^[a-z0-9-]+$ ]] || { echo "::error::invalid environment name"; exit 1; }
+          echo "name=${env_name}" >> "$GITHUB_OUTPUT"
       - name: Check out the environment configuration
         uses: actions/checkout@v4
         with:
-          ref: deploy/${{ github.event.client_payload.environment || inputs.environment }}
+          ref: deploy/${{ steps.env.outputs.name }}
 
       - name: Collect the logs
         env:
-          ENVIRONMENT: ${{ github.event.client_payload.environment || inputs.environment }}
+          ENVIRONMENT: ${{ steps.env.outputs.name }}
           SERVICE: ${{ github.event.client_payload.service || inputs.service || '' }}
           SINCE: ${{ github.event.client_payload.since || inputs.since || '' }}
           FROM: ${{ github.event.client_payload.from || inputs.from || '' }}
