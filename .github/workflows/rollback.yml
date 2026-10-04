@@ -55,10 +55,11 @@ jobs:
         run: |
           set -euo pipefail
           env_name="${PAYLOAD_ENV:-${INPUT_ENV}}"
-          case "${env_name}" in
-            test|prod) echo "env_name=${env_name}" >> "$GITHUB_ENV" ;;
-            *) echo "::error::unknown environment '${env_name}'"; exit 1 ;;
-          esac
+          if [[ -d "envs/${env_name}" ]]; then
+            echo "env_name=${env_name}" >> "$GITHUB_ENV"
+          else
+            echo "::error::unknown environment '${env_name}' (no envs/${env_name}/ on main)"; exit 1
+          fi
 
       - name: Mint the kingdoms-deployer App token (state-branch writer)
         id: app-token
