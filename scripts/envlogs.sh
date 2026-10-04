@@ -15,7 +15,8 @@
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENVIRONMENTS=(test prod)
+mapfile -t ENVIRONMENTS < <(cd "${REPO_ROOT}/envs" && ls -d */ 2>/dev/null | tr -d '/')
+[[ ${#ENVIRONMENTS[@]} -gt 0 ]] || { echo "ERROR: no environment found under envs/" >&2; exit 1; }
 ENVIRONMENT="${1:-}"
 [[ -n "${ENVIRONMENT}" ]] || { echo "Usage: $0 <${ENVIRONMENTS[*]}> [--service <name>] [--since <30m>] [--from <iso>] [--to <iso>] [--tail <n>]" >&2; exit 1; }
 shift

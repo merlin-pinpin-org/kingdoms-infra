@@ -1,4 +1,4 @@
-.PHONY: check diagnose-deploy-test diagnose-deploy-prod doctor
+.PHONY: check diagnose-deploy-test diagnose-deploy-prod diagnose-env doctor
 
 # Fail-closed: a missing linter is an error, never a green-ish skip —
 # the sandbox gap is what let SC2046 reach main (2026-09-24). CI runs the
@@ -14,6 +14,11 @@ doctor: check
 	@echo "==> Deploy health by environment"
 	@./scripts/diagnose_deploy.sh test || true
 	@./scripts/diagnose_deploy.sh prod || true
+	@for env in $$(find envs -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -vE '^(test|prod)$$'); \
+	  do ./scripts/diagnose_env.sh $$env || true; done
+
+diagnose-env-%:
+	@./scripts/diagnose_env.sh $*
 
 diagnose-deploy-test:
 	@./scripts/diagnose_deploy.sh test

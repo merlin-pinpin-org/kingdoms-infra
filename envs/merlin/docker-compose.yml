@@ -1,0 +1,141 @@
+services:
+  kingdoms-bot:
+    # Test images are tagged with the commit SHA (built by the kingdoms-services
+    # Docker workflow: sha-<sha>, or pr-<n>-sha-<sha> for /deploy-test).
+    # The image comes from the pinned state file on the deploy/test branch
+    # (ADR-0018): deploy.sh exports KINGDOMS_BOT_IMAGE from it. No default:
+    # a deploy without pinned state is a bug.
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be pinned by deploy/merlin/state/kingdoms-bot.yml}
+    # `always`: the deploy must run the exact pinned image, never a stale
+    # local copy of the same tag.
+    pull_policy: always
+    environment:
+      # Secrets are injected at deploy time by the CD pipeline from the
+      # GitHub environment secrets (nothing secret is stored on the VPS);
+      # non-secret values have overridable defaults.
+      DISCORD_TOKEN: ${DISCORD_TOKEN:?DISCORD_TOKEN is required}
+      BOT_ADMINS: ${BOT_ADMINS:-}
+      KINGDOMS_DEPLOY_URL: ${KINGDOMS_DEPLOY_URL:-}
+      KINGDOMS_DEPLOY_LABEL: ${KINGDOMS_DEPLOY_LABEL:-}
+      KINGDOMS_DEPLOY_RUN_URL: ${KINGDOMS_DEPLOY_RUN_URL:-}
+      KINGDOMS_DEPLOY_INFRA_LABEL: ${KINGDOMS_DEPLOY_INFRA_LABEL:-}
+      KINGDOMS_DEPLOY_INFRA_URL: ${KINGDOMS_DEPLOY_INFRA_URL:-}
+      KINGDOMS_DEPLOY_INFRA_COMMIT_TS: ${KINGDOMS_DEPLOY_INFRA_COMMIT_TS:-}
+      KINGDOMS_DEPLOY_KIND: ${KINGDOMS_DEPLOY_KIND:-}
+      KINGDOMS_DEPLOY_REF: ${KINGDOMS_DEPLOY_REF:-}
+      KINGDOMS_DEPLOY_TREE_URL: ${KINGDOMS_DEPLOY_TREE_URL:-}
+      KINGDOMS_DEPLOY_TS: ${KINGDOMS_DEPLOY_TS:-}
+      KINGDOMS_DEPLOY_COMMIT_TS: ${KINGDOMS_DEPLOY_COMMIT_TS:-}
+      KINGDOMS_DEPLOY_COMMIT: ${KINGDOMS_DEPLOY_COMMIT:-}
+      KINGDOMS_DEPLOY_CI_RUN_ID: ${KINGDOMS_DEPLOY_CI_RUN_ID:-}
+      KINGDOMS_DEPLOY_CI_RUN_NUMBER: ${KINGDOMS_DEPLOY_CI_RUN_NUMBER:-}
+      KINGDOMS_DEPLOY_CI_RUN_TS: ${KINGDOMS_DEPLOY_CI_RUN_TS:-}
+      KINGDOMS_DEPLOY_RUN_NUMBER: ${KINGDOMS_DEPLOY_RUN_NUMBER:-}
+      KINGDOMS_DEPLOY_RUN_TS: ${KINGDOMS_DEPLOY_RUN_TS:-}
+      KINGDOMS_DEPLOY_IMAGE: ${KINGDOMS_DEPLOY_IMAGE:-}
+      KINGDOMS_DEPLOY_BRANCH: ${KINGDOMS_DEPLOY_BRANCH:-}
+      KINGDOMS_DEPLOY_PR_TITLE: ${KINGDOMS_DEPLOY_PR_TITLE:-}
+      KINGDOMS_DEPLOY_ENV: ${KINGDOMS_DEPLOY_ENV:-}
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      REDIS_URI: redis://kingdoms-redis:6379
+      MONGO_DB: ${MONGO_DB:-kingdoms}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # ADR-0020 process split: the bot talks to svc-core over gRPC.
+      CORE_URI: ${CORE_URI:-kingdoms-core:50051}
+    healthcheck:
+      # The image HEALTHCHECK also probes /healthz; the explicit compose
+      # healthcheck makes the deployment health gate (scripts/deploy.sh)
+      # observable: a crash-looping bot is reported unhealthy here.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      kingdoms-mongo:
+        condition: service_healthy
+      kingdoms-redis:
+        condition: service_healthy
+      kingdoms-core:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── ADR-0020 process split (kingdoms-infra#89) ──────────────────────────
+  # One image (ghcr.io/merlin-pinpin-org/kingdoms-services), four processes:
+  # the entrypoint dispatches on KINGDOMS_PROCESS. gRPC ports are exposed
+  # on the internal docker network only (no host publish, no ingress): the
+  # processes talk to each other, nobody outside the network does.
+
+  kingdoms-core:
+    # svc-core: the domain process (MongoDB/Redis owner, gRPC server on
+    # 50051). Same pinned image as the bot: all four processes deploy
+    # atomically from a single pin, and version skew between core and
+    # its clients cannot exceed one deploy.
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be pinned by deploy/merlin/state/kingdoms-bot.yml}
+    pull_policy: always
+    environment:
+      KINGDOMS_PROCESS: core
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      REDIS_URI: redis://kingdoms-redis:6379
+      CORE_GRPC_PORT: "50051"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    expose:
+      - "50051"
+    healthcheck:
+      # No grpc-health module in the image: a TCP connect probe on the
+      # gRPC port is the liveness signal (the gRPC server binds the port
+      # only when the servicers are up; a crash-looping process reports
+      # unhealthy, which the deploy health gate observes).
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 50051), timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      kingdoms-mongo:
+        condition: service_healthy
+      kingdoms-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # NOTE: ext-librematch and ext-aoe2lobby are removed from the TEST stack
+  # until kingdoms-services#129 ships the provider processes — the services
+  # image entrypoint only knows KINGDOMS_PROCESS=bot|core today, so the ext
+  # containers crash-looped and the deploy health gate failed every test
+  # deployment since kingdoms-infra#91. They come back with #129; prod keeps
+  # them declared (the 4-process stack deploys there only after #129).
+
+  kingdoms-mongo:
+    image: mongo:7.0
+    # Loopback binding only: the database listens on the docker network
+    # for the bot; the host publish is for operator debugging (mongosh
+    # from the VPS), never for the network. The VPS firewall (ufw,
+    # VPS-SETUP.md) stays the outer barrier; this is defence in depth.
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  kingdoms-redis:
+    image: redis:7.2
+    # Loopback binding only — same rationale as kingdoms-mongo above.
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:

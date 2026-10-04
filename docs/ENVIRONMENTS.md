@@ -1,7 +1,18 @@
 # Environments
 
-The Kingdoms platform runs the same stack in two environments. This page
-is the environment matrix; the deployment procedure lives in
+The Kingdoms platform runs the same stack in three kinds of environments:
+
+- **test** and **prod** — the shared validation and production
+  environments, deployed from pinned state on their `deploy/<env>` state
+  branch;
+- **personal environments** (`drasah`, `merlin`, …) — one per rostered
+  user, mapped to their integration branch `vibe/<alias>/main`: the env
+  runs whatever its user's integration branch head builds (**autopin**,
+  no command needed). It is the user's sandbox: their bot, their Discord,
+  their runner (see kingdoms `docs/CONVENTIONS.md` § *Integration
+  branches*).
+
+This page is the environment matrix; the deployment procedure lives in
 [DEPLOYMENT.md](DEPLOYMENT.md).
 
 | | test | prod |
@@ -83,6 +94,21 @@ automatically — adding one is the checklist below, nothing else:
 5. **Branch ruleset**: protect `deploy/<name>` (no force-push, no
    deletion; PR required for prod-like environments — approving a
    production deployment is merging that PR).
+
+For a **personal environment** (`<alias>`), steps 1–3 come as data
+(the manifest is the test one; the state branch is created by the first
+autopin) and the flow is simpler:
+
+- **GitHub environment** `<alias>`: branch policy on `deploy/<alias>`,
+  no required reviewers (it is the user's sandbox), secrets
+  `DISCORD_TOKEN` + `BOT_ADMINS` of the user's own bot.
+- **Runner**: label `env-<alias>` on the user's VPS (or the shared one
+  for now).
+- **Autopin**: a push to `vibe/<alias>/main` on kingdoms-services builds
+  the image (`sha-<sha>`) and pins it on `deploy/<alias>`
+  (`deploy_kind: integration`) — the pin push deploys the env. Diagnose
+  the chain with `scripts/diagnose_env.sh <alias>` (human report) or
+  `--flags` (grep-able FLAG lines; exit 1 when a BLOCK flag is raised).
 
 Prod-like environments (released `vX.Y.Z` images only, never re-pinned
 from a config change on main) are listed in `PROTECTED_ENVS` in
