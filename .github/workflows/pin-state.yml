@@ -84,9 +84,19 @@ jobs:
         run: |
           git config --global user.name "kingdoms-deployer[bot]"
           git config --global user.email "noreply@merlin-pinpin.org"
+      - name: Check whether the state branch exists
+        id: state-branch
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if git ls-remote "https://x-access-token:${APP_TOKEN}@github.com/merlin-pinpin-org/kingdoms-infra.git" "refs/heads/deploy/${{ env.env_name }}" | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
         with:
-          ref: deploy/${{ env.env_name }}
+          ref: ${{ steps.state-branch.outputs.exists == 'true' && format('deploy/{0}', env.env_name) || 'main' }}
           fetch-depth: 0
           persist-credentials: false
       - name: Merge origin/main, write the pinned state, push
@@ -94,9 +104,14 @@ jobs:
           APP_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_TOKEN: ${{ github.token }}
           PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          STATE_BRANCH_EXISTS: ${{ steps.state-branch.outputs.exists }}
         run: |
           set -euo pipefail
           env_name="${{ env.env_name }}"
+          if [[ "${STATE_BRANCH_EXISTS}" != "true" ]]; then
+            echo "deploy/${env_name} does not exist yet — bootstrapping it from main (first pin)."
+            git checkout -b "deploy/${env_name}"
+          fi
           git remote set-branches origin '*'
           git fetch origin main
           if git merge-base --is-ancestor origin/main HEAD; then
