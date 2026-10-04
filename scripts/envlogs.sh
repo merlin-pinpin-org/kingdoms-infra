@@ -45,6 +45,19 @@ die() { echo "[envlogs:${ENVIRONMENT}] ERROR: $*" >&2; exit 1; }
 
 COMPOSE_FILE="${REPO_ROOT}/envs/${ENVIRONMENT}/docker-compose.yml"
 [[ -f "${COMPOSE_FILE}" ]] || die "missing compose file: ${COMPOSE_FILE}"
+
+# Same substitution inputs as deploy.sh: the pinned image comes from the
+# state file (compose fails closed without it), DISCORD_TOKEN from the
+# GitHub environment secrets. Logs are read-only — the state is untouched.
+STATE_FILE="${REPO_ROOT}/envs/${ENVIRONMENT}/state/kingdoms-bot.yml"
+if [[ -f "${STATE_FILE}" ]]; then
+    pinned_image="$(grep -E '^image:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
+    [[ -n "${pinned_image:-}" ]] || die "state file ${STATE_FILE} has no image"
+    export KINGDOMS_BOT_IMAGE="${pinned_image}"
+fi
+[[ -n "${DISCORD_TOKEN:-}" ]] \
+    || die "DISCORD_TOKEN is not set (provide it via the GitHub environment secrets)"
+
 cd "${REPO_ROOT}/envs/${ENVIRONMENT}"
 
 ARGS=(--tail "${TAIL}" --timestamps)

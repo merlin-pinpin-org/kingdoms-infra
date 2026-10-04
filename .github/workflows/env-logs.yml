@@ -67,6 +67,7 @@ jobs:
           FROM: ${{ github.event.client_payload.from || inputs.from || '' }}
           TO: ${{ github.event.client_payload.to || inputs.to || '' }}
           TAIL: ${{ github.event.client_payload.tail || inputs.tail || '200' }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: |
           ARGS=("${ENVIRONMENT}")
           [[ -n "${SERVICE}" ]] && ARGS+=(--service "${SERVICE}")
