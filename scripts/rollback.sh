@@ -24,6 +24,16 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENTS=(test prod)
 ENVIRONMENT="${1:-test}"
 shift || true
+usage() {
+    echo "Usage: $0 <${ENVIRONMENTS[*]}> [archive.gz] [--auto|--yes]"
+    echo "  BACKUP_DIR=<dir> overrides the backup directory (default: <repo>/backups)."
+    echo "  Without an archive, restores the most recent backup of the environment."
+    echo "  --auto is the deploy.sh recovery path: re-apply the previous pinned"
+    echo "  state (no data restore) where the state branch accepts a direct push."
+    echo "  --yes restores a backup without the interactive confirmation (CI)."
+    exit 1
+}
+
 MODE=""
 for arg in "$@"; do
     case "${arg}" in
@@ -34,15 +44,6 @@ done
 BACKUP_DIR="${BACKUP_DIR:-${REPO_ROOT}/backups}"
 STATE_FILE="envs/${ENVIRONMENT}/state/kingdoms-bot.yml"
 
-usage() {
-    echo "Usage: $0 <${ENVIRONMENTS[*]}> [archive.gz] [--auto|--yes]"
-    echo "  BACKUP_DIR=<dir> overrides the backup directory (default: <repo>/backups)."
-    echo "  Without an archive, restores the most recent backup of the environment."
-    echo "  --auto is the deploy.sh recovery path: re-apply the previous pinned"
-    echo "  state (no data restore) where the state branch accepts a direct push."
-    echo "  --yes restores a backup without the interactive confirmation (CI)."
-    exit 1
-}
 
 log() { echo "[rollback:${ENVIRONMENT}] $*"; }
 warn() { echo "::warning::[rollback:${ENVIRONMENT}] $*" >&2; }
