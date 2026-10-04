@@ -49,3 +49,5 @@ jobs:
 
       - name: Run the control command (dumps the result)
         run: ./scripts/envctl.sh "${{ inputs.environment }}" "${{ inputs.command }}"
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
