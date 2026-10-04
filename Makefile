@@ -14,7 +14,7 @@ doctor: check
 	@echo "==> Deploy health by environment"
 	@./scripts/diagnose_deploy.sh test || true
 	@./scripts/diagnose_deploy.sh prod || true
-	@for env in $$(ls -d envs/*/ | sed 's|envs/||; s|/||' | grep -v '^test$$\|^prod$$'); \
+	@for env in $$(find envs -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | grep -vE '^(test|prod)$$'); \
 	  do ./scripts/diagnose_env.sh $$env || true; done
 
 diagnose-env-%:
