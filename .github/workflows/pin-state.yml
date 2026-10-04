@@ -129,7 +129,14 @@ jobs:
             git mv "deploy/state/${env_name}/kingdoms-bot.yml" "$state_file"
             rmdir "deploy/state/${env_name}" "deploy/state" 2>/dev/null || true
           fi
-          [[ -f "$state_file" ]] || { echo "::error::state file ${state_file} missing on deploy/${env_name}" >&2; exit 1; }
+          if [[ ! -f "$state_file" ]]; then
+            if [[ "${STATE_BRANCH_EXISTS}" == "true" ]]; then
+              echo "::error::state file ${state_file} missing on deploy/${env_name}" >&2
+              exit 1
+            fi
+            mkdir -p "envs/${env_name}/state"
+            echo "# Bootstrapped by the first pin (ADR-0018): deploy/${env_name} did not exist." > "$state_file"
+          fi
           field() { jq -r --arg f "$1" '.[$f] // ""' <<<"$PAYLOAD"; }
           # message, source and every composed identity are written here
           # (not passed in the dispatch payload, capped at 10 properties by
