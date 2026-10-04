@@ -186,6 +186,9 @@ Nothing secret is ever written to the server.
 
 ## 4. Install the GitHub Actions self-hosted runner
 
+Just want the raw command sequence? The condensed install / uninstall
+cheat-sheet lives in [RUNNER.md](RUNNER.md).
+
 The runner is the piece that receives deployment jobs from GitHub and
 runs them on this server. GitHub gives you the exact install commands;
 this guide only prepares the ground so theirs work as-is.
@@ -201,14 +204,17 @@ this guide only prepares the ground so theirs work as-is.
   sudo -iu kingdoms
   ```
 
-- Then move to `/opt/kingdoms`; GitHub's commands create the runner
-  folder wherever you stand:
+- Then create the runner directory — **one directory per environment,
+  always under `/opt/kingdoms/runners/<env>/`** (never a loose
+  `actions-runner` at the root) — and move into it; GitHub's commands
+  create the runner files wherever you stand:
 
   ```bash
-  cd /opt/kingdoms
+  # for each environment this VPS hosts (example: the test environment):
+  mkdir -p /opt/kingdoms/runners/test && cd /opt/kingdoms/runners/test
   ```
 
-- Stay in that shell as `kingdoms` for the whole GitHub install.
+- Stay in that shell as `kingdoms` for the whole download + configure.
 
 **Then follow GitHub's instructions.** Open
 **[Settings → Actions → Runners → New self-hosted runner](https://github.com/merlin-pinpin-org/kingdoms-infra/settings/actions/runners/new)**
@@ -217,16 +223,39 @@ x64**, and run the **Download** and **Configure** commands it displays.
 Do not copy them here — the page always shows the current runner
 version.
 
-One thing GitHub does not pre-fill: when their Configure step has you
-run `./config.sh`, pass the runner labels explicitly — one runner per
-environment hosted on this VPS, labeled with **its** environment name:
+The full sequence, exactly as it runs on the VPS — **one runner per
+environment, each in its own `/opt/kingdoms/runners/<env>/` directory**
+(example: the test environment):
+
+**1. Configure — as the `kingdoms` user, inside the runner directory.**
+GitHub's registration token is displayed on the same Runners page
+(the `--token` value):
 
 ```bash
-# first environment on this VPS (example: the test environment):
-./config.sh ... --labels kingdoms,env-test
+sudo -iu kingdoms
+mkdir -p /opt/kingdoms/runners/test && cd /opt/kingdoms/runners/test
+# GitHub's Download command (versioned tarball from the Runners page), then:
+./config.sh --url https://github.com/merlin-pinpin-org/kingdoms-infra --token <TOKEN> --labels kingdoms,env-test
 ```
 
-The labels tell the deploy workflows which runner may run which job:
+**2. Install and start the service — as your admin login (`principal`).**
+The `kingdoms` user cannot run sudo; go back to your admin login, then:
+
+```bash
+exit                                   # back to the admin login
+cd /opt/kingdoms/runners/test
+sudo ./svc.sh install kingdoms
+sudo ./svc.sh start
+```
+
+The `svc.sh` service names differ per runner (`svc.sh install` derives
+the service name from the runner directory), so several runner
+services coexist cleanly on one VPS.
+
+Verify: the runner must appear **Idle** (green) on the GitHub
+Runners page, with the `self-hosted`, `kingdoms` and its `env-<name>`
+labels. The labels tell the deploy workflows which runner may run
+which job:
 
 - `kingdoms` — member of the Kingdoms fleet,
 - `env-<name>` — this runner hosts the `<name>` environment. One
@@ -234,40 +263,28 @@ The labels tell the deploy workflows which runner may run which job:
   prod VPS `env-prod`, a personal environment's VPS `env-drasah`,
   `env-merlin`, and so on.
 
-**Several environments on the same VPS:** repeat the runner
-installation below once per environment, each in its own directory,
-with its own `env-<name>` label (example for a personal env):
+**Several environments on the same VPS:** repeat the whole sequence
+once per environment, each in its own `/opt/kingdoms/runners/<env>/`
+directory with its own `env-<name>` label (example: `runners/drasah`
+with `--labels kingdoms,env-drasah`).
+
+**Uninstall a runner** — the reverse sequence: stop and remove the
+service **as your admin login**, then deregister the runner **as
+`kingdoms`** (a fresh `--token` from the Runners page works for the
+removal too):
 
 ```bash
-cd /opt/kingdoms
-mkdir -p runners/merlin && cd runners/merlin
-# ... GitHub's Download command for a new runner, then:
-./config.sh ... --labels kingdoms,env-merlin
-```
-
-The `svc.sh` service names differ per runner (`svc.sh install` derives
-the service name from the runner directory), so several runner
-services coexist cleanly on one VPS.
-
-When GitHub has you run `./svc.sh` (its **Install the runner as a
-systemd service** instructions), run it from your admin login instead —
-the `kingdoms` user cannot run sudo. Go back to your admin login:
-
-```bash
+# 1. admin login:
+cd /opt/kingdoms/runners/<env>
+sudo ./svc.sh uninstall
+# 2. kingdoms user:
+sudo -iu kingdoms
+cd /opt/kingdoms/runners/<env>
+./config.sh remove --token <TOKEN>
+# 3. optionally remove the now-empty runner directory:
 exit
+sudo rm -rf /opt/kingdoms/runners/<env>
 ```
-
-Then:
-
-```bash
-cd /opt/kingdoms/actions-runner        # or /opt/kingdoms/runners/<env>
-sudo ./svc.sh install kingdoms
-sudo ./svc.sh start
-```
-
-Verify: the runner must appear **Idle** (green) on the GitHub
-Runners page, with the `self-hosted`, `kingdoms` and its `env-<name>`
-labels.
 
 Security note (important): this runner executes the deployment jobs of a
 **private-to-you** repository. Only repository administrators can add
@@ -351,7 +368,7 @@ their `vibe/<alias>/main` integration branch, via the autopin).
   (details: [DEVELOPER.md](DEVELOPER.md)).
 - **The deploy job stays queued**: the runner is offline — check it with
   `sudo ./svc.sh status` in the runner's directory
-  (`/opt/kingdoms/actions-runner` or `/opt/kingdoms/runners/<env>`),
+  (`/opt/kingdoms/runners/<env>`),
   restart with `sudo ./svc.sh start`.
 - **The runner never goes Idle / the service fails to start**: the most
   common cause is a wrong file owner — the download and `config.sh`
@@ -361,7 +378,8 @@ their `vibe/<alias>/main` integration branch, via the autopin).
   `sudo chown -R kingdoms:kingdoms <runner-directory>`, then
   `sudo ./svc.sh start` again. Also check
   `sudo journalctl -u actions.runner.kingdoms-... -e` for the service
-  error.
+  error. The journal unit name is derived from the runner directory
+  (`/opt/kingdoms/runners/<env>` → one unit per environment).
 - **`deploy.sh` says `DISCORD_TOKEN is not set`**: the GitHub
   environment of the deployed env has no `DISCORD_TOKEN` secret
   (step 3) — add it and re-run the **Deploy environment** workflow for
