@@ -6,8 +6,9 @@
 #
 # reset is destructive (data volumes wiped): it is only reachable through
 # the /reset-env PR keyword, gated by the env-reset roster capability
-# (self env only; ops anywhere). Prod control and reset additionally
-# require the environment approval.
+# (self env only; ops anywhere). reset is NEVER allowed on prod — the
+# roster gate denies it for every role, and the job below fails closed
+# on the prod name as defense in depth (no approval path exists).
 #
 # The prod environment is gated like any workflow touching it: the
 # `environment: prod` protection (required reviewers) applies — a
@@ -49,8 +50,13 @@ jobs:
         id: env
         env:
           INPUT_ENV: ${{ inputs.environment }}
+          INPUT_COMMAND: ${{ inputs.command }}
         run: |
           [[ "${INPUT_ENV}" =~ ^[a-z0-9-]+$ ]] || { echo "::error::invalid environment name"; exit 1; }
+          if [[ "${INPUT_ENV}" == prod && "${INPUT_COMMAND}" == reset ]]; then
+            echo "::error::reset is never allowed on prod (env-reset capability denies it for every role)"
+            exit 1
+          fi
           echo "name=${INPUT_ENV}" >> "$GITHUB_OUTPUT"
 
       - name: Check out the environment configuration
