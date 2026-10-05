@@ -1,3 +1,11 @@
+# Reset policy: this environment's data may be wiped by the /reset-env
+# keyword (kingdoms.env/resettable flag below). Environments without the
+# flag fail closed — prod never carries it.
+
+# kingdoms.env/resettable: opt-in to /reset-env (the env-reset roster
+# capability checks it in envctl.sh before wiping any data volume).
+x-kingdoms-env-resettable: true
+
 services:
   kingdoms-bot:
     # Test images are tagged with the commit SHA (built by the kingdoms-services
