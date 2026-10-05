@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # Control the Kingdoms stack of a target environment (test, prod):
-# start | stop | restart | status. Runs ON the environment's runner
-# (called by .github/workflows/env-control.yml) and dumps the result;
-# it never deploys, never pulls, never touches the pinned state.
+# start | stop | restart | status | reset. Runs ON the environment's
+# runner (called by .github/workflows/env-control.yml) and dumps the
+# result; it never deploys, never pulls, never touches the pinned state.
+#
+# reset is DESTRUCTIVE: it stops the stack and deletes the data volumes
+# (mongo_data, redis_data). Gated by the env-reset roster capability
+# (self env only; ops anywhere) before it can reach this script; prod
+# additionally requires the GitHub environment approval.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mapfile -t ENVIRONMENTS < <(cd "${REPO_ROOT}/envs" && ls -d */ 2>/dev/null | tr -d '/')
 [[ ${#ENVIRONMENTS[@]} -gt 0 ]] || { echo "ERROR: no environment found under envs/" >&2; exit 1; }
-COMMANDS=(start stop restart status)
+COMMANDS=(start stop restart status reset)
 
 ENVIRONMENT="${1:-}"
 COMMAND="${2:-}"
@@ -53,6 +58,10 @@ case "${COMMAND}" in
     restart)
         log "restarting the stack (no pull, no recreate)"
         docker compose restart
+        ;;
+    reset)
+        log "RESETTING: stopping the stack and deleting the data volumes"
+        docker compose down --volumes
         ;;
     status)
         log "stack status"

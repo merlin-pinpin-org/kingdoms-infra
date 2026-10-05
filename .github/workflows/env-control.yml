@@ -1,8 +1,13 @@
 # Control a live environment's stack from GitHub (workflow_dispatch):
-# start | stop | restart | status. Runs ON the environment's runner and
-# dumps the result — it never deploys, never pulls, never touches the
+# start | stop | restart | status | reset. Runs ON the environment's runner
+# and dumps the result — it never deploys, never pulls, never touches the
 # pinned state (scripts/envctl.sh). This is the operator's day-to-day
 # handle for an environment; deployments stay on the state-branch path.
+#
+# reset is destructive (data volumes wiped): it is only reachable through
+# the /reset-env PR keyword, gated by the env-reset roster capability
+# (self env only; ops anywhere). Prod control and reset additionally
+# require the environment approval.
 #
 # The prod environment is gated like any workflow touching it: the
 # `environment: prod` protection (required reviewers) applies — a
@@ -21,6 +26,7 @@ on:
           - start
           - stop
           - restart
+          - reset
       environment:
         description: "Environment to control (a directory under envs/)"
         required: true
