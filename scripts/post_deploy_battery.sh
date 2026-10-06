@@ -12,8 +12,16 @@ set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENVIRONMENT="${1:-test}"
-STATE_FILE="${REPO_ROOT}/envs/${ENVIRONMENT}/state/kingdoms-bot.yml"
+ENV_DIR="${REPO_ROOT}/envs/${ENVIRONMENT}"
+STATE_FILE="${ENV_DIR}/state/kingdoms-bot.yml"
 REPORT_FILE="${BATTERY_REPORT:-/tmp/battery-report.md}"
+
+# Container names are compose-owned (`<project>-<service>-1`, the project is
+# the env directory name — same default deploy.sh relies on by cd'ing into
+# the env dir): never inspect a service by a literal container name, the
+# name is not stable. Resolve the container id through compose instead.
+compose() { docker compose --project-directory "${ENV_DIR}" "$@"; }
+container_of() { compose ps -q "$1" 2>/dev/null || true; }
 
 log() { echo "[battery:${ENVIRONMENT}] $*"; }
 
@@ -35,7 +43,11 @@ p2_found() { note "- **P2** $*"; p2=$((p2+1)); log "P2: $*"; }
 ok() { note "- OK: $*"; log "OK: $*"; }
 
 # ── Check 1: stack identity — the running bot image matches the pin ──
-running_image="$(docker inspect --format '{{.Config.Image}}' kingdoms-bot 2>/dev/null || true)"
+bot_cid="$(container_of kingdoms-bot)"
+running_image=""
+if [[ -n "${bot_cid}" ]]; then
+    running_image="$(docker inspect --format '{{.Config.Image}}' "${bot_cid}" 2>/dev/null || true)"
+fi
 if [[ -z "${running_image}" ]]; then
     p0_found "bot container not found (kingdoms-bot) — the stack did not come up"
 elif [[ "${running_image}" != "${pinned_image}" ]]; then
@@ -45,10 +57,15 @@ else
 fi
 
 # Every declared service healthy (the deploy gate re-checked, cheap here).
-for service in $(cd "${REPO_ROOT}/envs/${ENVIRONMENT}" && docker compose config --services 2>/dev/null | sort); do
-    health="$(docker inspect --format '{{.State.Health.Status}}' "${service}" 2>/dev/null || echo "no-container")"
-    if [[ "${health}" == "no-container" ]]; then
+for service in $(compose config --services 2>/dev/null | sort); do
+    cid="$(container_of "${service}")"
+    if [[ -z "${cid}" ]]; then
         p0_found "service ${service} has no running container"
+        continue
+    fi
+    health="$(docker inspect --format '{{.State.Health.Status}}' "${cid}" 2>/dev/null || echo "")"
+    if [[ -z "${health}" ]]; then
+        p2_found "service ${service} reports no health status (may still be converging)"
     elif [[ "${health}" != "healthy" ]]; then
         p2_found "service ${service} reports health '${health}' (may still be converging)"
     else
