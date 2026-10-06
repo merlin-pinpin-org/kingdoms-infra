@@ -1,8 +1,14 @@
 # Control a live environment's stack from GitHub (workflow_dispatch):
-# start | stop | restart | status. Runs ON the environment's runner and
-# dumps the result — it never deploys, never pulls, never touches the
+# start | stop | restart | status | reset. Runs ON the environment's runner
+# and dumps the result — it never deploys, never pulls, never touches the
 # pinned state (scripts/envctl.sh). This is the operator's day-to-day
 # handle for an environment; deployments stay on the state-branch path.
+#
+# reset is destructive (data volumes wiped). Double gate:
+#   1. the env-reset roster capability (self env only; ops anywhere) —
+#      and never prod, for any role, no approval path;
+#   2. the env's compose manifest opts in via x-kingdoms-env-resettable
+#      (an allowlist: envctl.sh fails closed without the flag).
 #
 # The prod environment is gated like any workflow touching it: the
 # `environment: prod` protection (required reviewers) applies — a
@@ -21,6 +27,7 @@ on:
           - start
           - stop
           - restart
+          - reset
       environment:
         description: "Environment to control (a directory under envs/)"
         required: true
@@ -43,8 +50,13 @@ jobs:
         id: env
         env:
           INPUT_ENV: ${{ inputs.environment }}
+          INPUT_COMMAND: ${{ inputs.command }}
         run: |
           [[ "${INPUT_ENV}" =~ ^[a-z0-9-]+$ ]] || { echo "::error::invalid environment name"; exit 1; }
+          if [[ "${INPUT_ENV}" == prod && "${INPUT_COMMAND}" == reset ]]; then
+            echo "::error::reset is never allowed on prod (env-reset capability denies it for every role)"
+            exit 1
+          fi
           echo "name=${INPUT_ENV}" >> "$GITHUB_OUTPUT"
 
       - name: Check out the environment configuration

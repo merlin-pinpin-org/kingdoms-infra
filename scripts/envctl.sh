@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 # Control the Kingdoms stack of a target environment (test, prod):
-# start | stop | restart | status. Runs ON the environment's runner
-# (called by .github/workflows/env-control.yml) and dumps the result;
-# it never deploys, never pulls, never touches the pinned state.
+# start | stop | restart | status | reset. Runs ON the environment's
+# runner (called by .github/workflows/env-control.yml) and dumps the
+# result; it never deploys, never pulls, never touches the pinned state.
+#
+# reset is DESTRUCTIVE: it stops the stack and deletes the data volumes
+# (mongo_data, redis_data). Double gate before it can run:
+#   1. the env-reset roster capability (self env only; ops anywhere),
+#   2. the env itself opts in: x-kingdoms-env-resettable: true in its
+#      compose manifest (an allowlist — prod never carries the flag, and
+#      a new environment without it fails closed).
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 mapfile -t ENVIRONMENTS < <(cd "${REPO_ROOT}/envs" && ls -d */ 2>/dev/null | tr -d '/')
 [[ ${#ENVIRONMENTS[@]} -gt 0 ]] || { echo "ERROR: no environment found under envs/" >&2; exit 1; }
-COMMANDS=(start stop restart status)
+COMMANDS=(start stop restart status reset)
 
 ENVIRONMENT="${1:-}"
 COMMAND="${2:-}"
@@ -53,6 +60,15 @@ case "${COMMAND}" in
     restart)
         log "restarting the stack (no pull, no recreate)"
         docker compose restart
+        ;;
+    reset)
+        # Allowlist: only manifests carrying x-kingdoms-env-resettable: true.
+        resettable="$(docker compose --progress quiet config --format json \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("x-kingdoms-env-resettable") == True)')"
+        [[ "$resettable" == true ]] \
+            || die "reset is not allowed on this environment (no x-kingdoms-env-resettable flag in its compose manifest)"
+        log "RESETTING: stopping the stack and deleting the data volumes"
+        docker compose down --volumes
         ;;
     status)
         log "stack status"
