@@ -43,6 +43,7 @@ jobs:
   seed:
     name: Seed ${{ inputs.type }} (${{ inputs.environment }})
     runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', inputs.environment)) }}
+    environment: ${{ inputs.environment }}
     steps:
       - name: Check out the environment configuration
         uses: actions/checkout@v4
@@ -91,6 +92,16 @@ jobs:
             echo "data_file=$file" >> "$GITHUB_ENV"
           fi
           echo "data_dir=$data_dir" >> "$GITHUB_ENV"
+      - name: Resolve the pinned image from the state file
+        # Compose interpolation fails closed on a missing
+        # KINGDOMS_BOT_IMAGE (same as deploy.sh): export the pinned image
+        # so any docker compose command in this workflow targets the
+        # deployed stack.
+        run: |
+          state="envs/${{ inputs.environment }}/state/kingdoms-bot.yml"
+          pinned="$(grep -E '^image:' "$state" | head -1 | cut -d' ' -f2-)"
+          [[ -n "$pinned" ]] || { echo "ERROR: $state has no pinned image" >&2; exit 1; }
+          echo "KINGDOMS_BOT_IMAGE=$pinned" >> "$GITHUB_ENV"
       - name: Run the seed CLI in the env container
         env:
           ENVIRONMENT: ${{ inputs.environment }}
