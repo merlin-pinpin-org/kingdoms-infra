@@ -107,6 +107,7 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           SEED_TYPE: ${{ inputs.type }}
           LADDER_ID: ${{ inputs.ladder_id }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: |
           cd "envs/${ENVIRONMENT}"
           case "$SEED_TYPE" in
