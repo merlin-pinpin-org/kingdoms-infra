@@ -100,3 +100,67 @@ jobs:
           # The infra state commit date, distinct from the deploy run date
           # in the announcement (kingdoms-services#109: Committed vs Deployed).
           KINGDOMS_DEPLOY_INFRA_COMMIT_TS: ${{ steps.infra-id.outputs.commit_ts }}
+      # ── Post-deploy battery (kingdoms-infra#78) ─────────────────────
+      # Read-only, Docker/API only: no test tooling on the env runner.
+      # Exit 10 = confirmed P0 (wrong/missing identity) -> auto-rollback.
+      # P2 findings (inconclusive) report only — never roll back an
+      # unproven state.
+      - name: Post-deploy battery (identity + registration checks)
+        id: battery
+        run: |
+          ./scripts/post_deploy_battery.sh ${{ inputs.environment }}
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      - name: Automatic rollback (confirmed-broken deployment)
+        if: failure() && steps.battery.outcome == 'failure'
+        run: ./scripts/rollback.sh ${{ inputs.environment }} --auto
+        env:
+          ROLLBACK_TOKEN: ${{ steps.app-token.outputs.token }}
+      - name: Battery report
+        if: always()
+        run: |
+          {
+            echo "# Post-deploy battery — ${{ inputs.environment }}"
+            echo ""
+            cat /tmp/battery-report.md 2>/dev/null || echo "_no report produced_"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  journeys:
+    # Cross-repo behavioral verification (kingdoms-infra#78 §3): the
+    # SimCord journeys of kingdoms-services, run at the pinned commit on
+    # an ephemeral GitHub-hosted runner. No environment: (no secrets, no
+    # second approval), no concurrency coupling with the deploy group,
+    # and zero test tooling on the env VPS. Does not gate the deploy:
+    # a behavioral regression is a report problem (P1), not a state
+    # problem — the deployment verdict stays with the in-deploy checks.
+    name: SimCord journeys (pinned commit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the pinned state
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/${{ inputs.environment }}
+      - name: Run the journeys at the pinned commit
+        run: |
+          commit="$(grep -E '^deploy_commit:' envs/${{ inputs.environment }}/state/kingdoms-bot.yml | head -1 | cut -d' ' -f2-)"
+          if [ -z "$commit" ]; then
+            echo "P2: state file has no deploy_commit — journeys skipped (inconclusive)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git clone --quiet https://github.com/merlin-pinpin-org/kingdoms-services.git svc
+          cd svc
+          git checkout "$commit"
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          uv sync --all-extras
+          # Hermetic by contract: the journeys are in-memory and
+          # network-free; the job fails if that hermeticity regresses.
+          uv run pytest tests/integration/test_simcord_journeys.py -q
+      - name: Journeys report
+        if: always()
+        run: |
+          {
+            echo "## SimCord journeys (pinned commit)"
+            echo ""
+            echo "Behavioral verification of the deployed source. A failure here is a P1 report (proposed issue), not a rollback."
+          } >> "$GITHUB_STEP_SUMMARY"
