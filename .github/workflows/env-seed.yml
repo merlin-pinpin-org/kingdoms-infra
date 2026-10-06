@@ -113,20 +113,20 @@ jobs:
           case "$SEED_TYPE" in
             users)
               [[ -n "$LADDER_ID" ]] || { echo "ERROR: ladder_id is required for users" >&2; exit 1; }
-              docker compose cp "${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
+              docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.mods.ladder.profile_links_import_cli \
                 "$LADDER_ID" /tmp/seed.csv
               ;;
             matches)
               [[ -n "$LADDER_ID" ]] || { echo "ERROR: ladder_id is required for matches" >&2; exit 1; }
-              docker compose cp "${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
+              docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.mods.ladder.legacy_import_cli \
                 "$LADDER_ID" /tmp/seed.csv
               ;;
             season)
-              docker compose cp "${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.yaml
+              docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.yaml
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.core.games.aoe2.seed_cli_yaml \
                 /tmp/seed.yaml "$LADDER_ID"
