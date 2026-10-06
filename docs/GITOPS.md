@@ -17,6 +17,11 @@ the deployed state converges to them through automation.
    nobody applies changes by hand.
 4. **Continuously reconciled**: `scripts/deploy.sh` is idempotent; re-running
    it converges the environment to the manifest state.
+5. **Verified after apply** (kingdoms-infra#78): the post-deploy battery
+   reads the pinned state from the state file and confirms the running
+   deployment matches it — a confirmed mismatch rolls back
+   automatically, an inconclusive check reports only, and the
+   behavioral journeys run off-VPS at the pinned commit.
 
 ## Workflow
 
@@ -28,8 +33,11 @@ flowchart LR
     CI --> CD["CD: apply manifests to the target environment"]
     CD --> BACKUP["Mandatory pre-deploy backup"]
     BACKUP --> GATE["Post-deploy health gate"]
-    GATE -->|"healthy"| STACK["Bot + MongoDB + Redis"]
+    GATE -->|"healthy"| BATTERY["Post-deploy battery (identity + registration)"]
     GATE -->|"unhealthy"| ROLLBACK["Automatic rollback"]
+    BATTERY -->|"confirmed P0 (wrong identity)"| ROLLBACK
+    BATTERY -->|"confirmed / P2 findings reported"| STACK["Bot + MongoDB + Redis"]
+    BATTERY --> JOURNEYS["SimCord journeys on the pinned commit (GitHub-hosted, non-gating)"]
     ROLLBACK --> STACK
 ```
 
