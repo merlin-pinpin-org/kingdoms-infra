@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the drasah environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-213-20261006232119-dad3a0a
-version_label: pr-213-20261006232119-dad3a0a
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/213#issuecomment-6027248443
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-215-20261006232939-462f21f
+version_label: pr-215-20261006232939-462f21f
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/215#issuecomment-6027343499
 deploy_kind: pr
-deploy_ref: 213
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/dad3a0aef3eded46ff6631a22b9efd90592a8849
-deploy_ts: 1791328913
-deploy_commit_ts: 1791326307
-deploy_commit: dad3a0aef3eded46ff6631a22b9efd90592a8849
-deploy_ci_run_id: 37546052760
-deploy_ci_run_number: 298
-deploy_ci_run_ts: 1791328856
+deploy_ref: 215
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/462f21f9cf9c772f37b472f46f392998915d3736
+deploy_ts: 1791329416
+deploy_commit_ts: 1791329341
+deploy_commit: 462f21f9cf9c772f37b472f46f392998915d3736
+deploy_ci_run_id: 37546822501
+deploy_ci_run_number: 299
+deploy_ci_run_ts: 1791329355
 deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-10-06T23:21:53Z"
+deployed_at: "2026-10-06T23:30:16Z"
 source: 
-deploy_branch: feat/kingdoms-s2-spec-d55-d66
-deploy_pr_title: feat(kingdoms): Season II spec D55–D66 — config slice (3 cycles, protection window, marriage stock/locks, parish, corruption limit)
+deploy_branch: fix/kingdoms-factory-wiring
+deploy_pr_title: fix(factory): restore the kingdoms wiring dropped by the 4e8992e graft
