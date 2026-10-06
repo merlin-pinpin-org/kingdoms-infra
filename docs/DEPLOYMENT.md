@@ -111,7 +111,7 @@ it):
   environment reviewers before deploying. The branch ruleset requires a
   PR, so approving a prod deployment is merging it.
 
-Every deployment enforces two safety gates:
+Every deployment enforces three safety gates:
 
 1. **Pre-deploy backup (mandatory)**: `scripts/deploy.sh` runs
    `scripts/backup_db.sh` *before* touching the stack and aborts the
@@ -122,6 +122,21 @@ Every deployment enforces two safety gates:
    The bot serves a liveness endpoint (`GET /healthz`, port 8000) for the
    whole lifetime of the process; the compose healthcheck probes it and the
    gate reports a crash-looping bot as `unhealthy`.
+3. **Post-deploy battery** (kingdoms-infra#78): after the health gate,
+   `scripts/post_deploy_battery.sh` verifies the deployment identity —
+   the running `kingdoms-bot` container image equals the image pinned in
+   the state file, every service reports healthy, and the Discord
+   application has its commands registered (read-only REST check).
+   Severity semantics — the false-negative trap: a **confirmed**
+   identity mismatch is **P0** and triggers the existing automatic
+   rollback (`scripts/rollback.sh --auto`); an **inconclusive** check
+   (Discord 5xx, rate limit, missing configuration) is **P2**, reported
+   in the run's Step Summary only — never roll back an unproven state.
+   A second GitHub-hosted job (`SimCord journeys`) checks out
+   `kingdoms-services` at the pinned commit and runs the behavioral
+   journeys: it does not gate the deployment (a behavioral regression is
+   a P1 report, not a state problem), and zero test tooling ever
+   touches the env VPS (the journeys run on the ephemeral runner).
 
 For a manual, reproducible deployment (test only, e.g. on the VPS):
 
