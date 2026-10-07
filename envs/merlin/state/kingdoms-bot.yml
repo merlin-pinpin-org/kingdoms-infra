@@ -18,3 +18,5 @@ deployed_at: "2026-10-07T07:41:35Z"
 source: 
 deploy_branch: vibe/merlin/main
 deploy_pr_title: 
+
+# redeploy trigger 2026-10-07: retry after the concurrency-group blockage
