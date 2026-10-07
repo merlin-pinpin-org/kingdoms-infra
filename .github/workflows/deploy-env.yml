@@ -45,6 +45,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: deploy/${{ inputs.environment }}
+          # The auto-rollback (rollback.sh --auto) reverts the pin commit on
+          # this checkout and pushes it back to the state branch: a shallow
+          # clone hides the parent commit and the revert fails.
+          fetch-depth: 0
       - name: Compute the deployed infra identity (short sha label)
         id: infra-id
         run: |
