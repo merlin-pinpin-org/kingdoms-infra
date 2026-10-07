@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the drasah environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-229-20261007215613-6ad45ad
-version_label: pr-229-20261007215613-6ad45ad
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/229#issuecomment-6047649282
-deploy_kind: pr
-deploy_ref: 229
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/6ad45ad4a96419bdce39890a04a60716d7ae5989
-deploy_ts: 1791410218
-deploy_commit_ts: 1791409771
-deploy_commit: 6ad45ad4a96419bdce39890a04a60716d7ae5989
-deploy_ci_run_id: 37692795830
-deploy_ci_run_number: 332
-deploy_ci_run_ts: 1791410147
-deployed_by: Drasahaoe (/deploy)
-deployed_at: "2026-10-07T21:56:58Z"
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-144b8db
+version_label: drasah@144b8db
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/144b8db2012d74f00308bb60cd5b46b7c1a1f3df
+deploy_kind: integration
+deploy_ref: 144b8db
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/144b8db2012d74f00308bb60cd5b46b7c1a1f3df
+deploy_ts: 1791410241
+deploy_commit_ts: 1791410137
+deploy_commit: 144b8db2012d74f00308bb60cd5b46b7c1a1f3df
+deploy_ci_run_id: 37692784635
+deploy_ci_run_number: 773
+deploy_ci_run_ts: 1791410141
+deployed_by: Drasahaoe (autopin vibe/drasah/main)
+deployed_at: "2026-10-07T21:57:21Z"
 source: 
-deploy_branch: fix/kingdom-bootstrap-command
-deploy_pr_title: fix(bot): register the /kingdom salons+panels bootstrap command
+deploy_branch: vibe/drasah/main
+deploy_pr_title: 
