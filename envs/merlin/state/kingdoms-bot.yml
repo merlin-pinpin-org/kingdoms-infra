@@ -20,3 +20,4 @@ deploy_branch: vibe/merlin/main
 deploy_pr_title: 
 
 # redeploy trigger 2026-10-07: retry after the concurrency-group blockage
+# redeploy 2026-10-07: battery compose-env fix applied
