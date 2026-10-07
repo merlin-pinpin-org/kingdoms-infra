@@ -30,6 +30,11 @@ log() { echo "[battery:${ENVIRONMENT}] $*"; }
 pinned_image="$(grep -E '^image:' "${STATE_FILE}" | head -1 | cut -d' ' -f2-)"
 [[ -n "${pinned_image}" ]] || { echo "P0: state file has no pinned image" >&2; exit 10; }
 
+# The compose file interpolates ${KINGDOMS_BOT_IMAGE:?}: without it exported
+# every `compose ps` dies before listing containers and every check turns
+# into a false P0. Export the pin — the same read deploy.sh does.
+export KINGDOMS_BOT_IMAGE="${pinned_image}"
+
 : > "${REPORT_FILE}"
 echo "## Post-deploy battery — ${ENVIRONMENT}" >> "${REPORT_FILE}"
 echo "" >> "${REPORT_FILE}"
