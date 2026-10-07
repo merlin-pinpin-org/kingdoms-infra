@@ -28,7 +28,7 @@ on:
         required: false
         type: string
       ladder_id:
-        description: "Ladder id / owner_ref (required for users, matches, test-season)"
+        description: "Ladder id / owner_ref (required for matches, season, test-season)"
         required: false
         type: string
 
