@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the drasah environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-ae724c8
-version_label: drasah@ae724c8
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/ae724c85ec134742e24c05f8f045b18e0ae4a2f1
-deploy_kind: integration
-deploy_ref: ae724c8
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/ae724c85ec134742e24c05f8f045b18e0ae4a2f1
-deploy_ts: 1791381916
-deploy_commit_ts: 1791381809
-deploy_commit: ae724c85ec134742e24c05f8f045b18e0ae4a2f1
-deploy_ci_run_id: 37633533654
-deploy_ci_run_number: 717
-deploy_ci_run_ts: 1791381813
-deployed_by: Drasahaoe (autopin vibe/drasah/main)
-deployed_at: "2026-10-07T14:05:16Z"
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-226-20261007144659-e5c26bc
+version_label: pr-226-20261007144659-e5c26bc
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/226#issuecomment-6040467149
+deploy_kind: pr
+deploy_ref: 226
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/e5c26bcbbc06f78c8006918f0f772eb1bd15d120
+deploy_ts: 1791384467
+deploy_commit_ts: 1791384049
+deploy_commit: e5c26bcbbc06f78c8006918f0f772eb1bd15d120
+deploy_ci_run_id: 37639528946
+deploy_ci_run_number: 323
+deploy_ci_run_ts: 1791384388
+deployed_by: Drasahaoe (/deploy)
+deployed_at: "2026-10-07T14:47:47Z"
 source: 
-deploy_branch: vibe/drasah/main
-deploy_pr_title: 
+deploy_branch: fix/state-store-lazy-start
+deploy_pr_title: fix(core): connect the Redis state store lazily on first use
