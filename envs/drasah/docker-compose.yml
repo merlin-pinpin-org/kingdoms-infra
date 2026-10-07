@@ -87,6 +87,11 @@ services:
       REDIS_URI: redis://kingdoms-redis:6379
       CORE_GRPC_PORT: "50051"
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # ADR-0020 providers: core aggregates ext-librematch and ext-aoe2lobby
+      # over the docker network; without URIs it degrades cleanly (marked
+      # offline in the live dashboard) — the ext processes still serve.
+      EXT_LIBREMATCH_URI: ${EXT_LIBREMATCH_URI:-kingdoms-ext-librematch:50061}
+      EXT_AOE2LOBBY_URI: ${EXT_AOE2LOBBY_URI:-kingdoms-ext-aoe2lobby:50062}
     expose:
       - "50051"
     healthcheck:
@@ -106,12 +111,46 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # NOTE: ext-librematch and ext-aoe2lobby are removed from the TEST stack
-  # until kingdoms-services#129 ships the provider processes — the services
-  # image entrypoint only knows KINGDOMS_PROCESS=bot|core today, so the ext
-  # containers crash-looped and the deploy health gate failed every test
-  # deployment since kingdoms-infra#91. They come back with #129; prod keeps
-  # them declared (the 4-process stack deploys there only after #129).
+  kingdoms-ext-librematch:
+    # ext-librematch: AoE2 data provider (poll-only). Provider processes
+    # own their external API secrets (#89 secret split); optional secrets —
+    # the provider serves its declared capabilities either way.
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be pinned by deploy/drasah/state/kingdoms-bot.yml}
+    pull_policy: always
+    environment:
+      KINGDOMS_PROCESS: ext-librematch
+      EXT_GRPC_PORT: "50061"
+      LIBREMATCH_API_URL: ${LIBREMATCH_API_URL:-}
+      LIBREMATCH_API_KEY: ${LIBREMATCH_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    expose:
+      - "50061"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 50061), timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+  kingdoms-ext-aoe2lobby:
+    # ext-aoe2lobby: AoE2 live lobby events (aoe2lobby.com WebSocket).
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be pinned by deploy/drasah/state/kingdoms-bot.yml}
+    pull_policy: always
+    environment:
+      KINGDOMS_PROCESS: ext-aoe2lobby
+      EXT_GRPC_PORT: "50062"
+      AOE2LOBBY_WS_URL: ${AOE2LOBBY_WS_URL:-}
+      AOE2LOBBY_API_KEY: ${AOE2LOBBY_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    expose:
+      - "50062"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 50062), timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
 
   kingdoms-mongo:
     image: mongo:7.0
