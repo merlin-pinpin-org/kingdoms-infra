@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-5eac660
-version_label: main@5eac660
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/5eac66098874da8ac6a0cf5be421b1388c96b3a6
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:sha-6381498
+version_label: main@6381498
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/commit/6381498623bed57cc9d5287496054927fb7a1f8c
 deploy_kind: main
-deploy_ref: 5eac660
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/5eac66098874da8ac6a0cf5be421b1388c96b3a6
-deploy_ts: 1791300234
-deploy_commit_ts: 1791290228
-deploy_commit: 5eac66098874da8ac6a0cf5be421b1388c96b3a6
+deploy_ref: 6381498
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/6381498623bed57cc9d5287496054927fb7a1f8c
+deploy_ts: 1791395525
+deploy_commit_ts: 1791378352
+deploy_commit: 6381498623bed57cc9d5287496054927fb7a1f8c
 deploy_ci_run_id: 
 deploy_ci_run_number: 
 deploy_ci_run_ts: 
-deployed_by: config-change-deploy (run 37487082696)
-deployed_at: "2026-10-06T15:23:54Z"
-source: test-config change on main (commit 1c4bef4)
+deployed_by: config-change-deploy (run 37662329378)
+deployed_at: "2026-10-07T17:52:05Z"
+source: test-config change on main (commit 80d6cd4)
 deploy_branch: main
 deploy_pr_title: 
