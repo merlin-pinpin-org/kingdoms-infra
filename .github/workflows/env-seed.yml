@@ -6,7 +6,7 @@
 # code and the Mongo network are both available (#138 execution model).
 #
 # Types (each maps to one existing, idempotent CLI):
-#   users        — data/core/<file>.csv      via profile_links_import_cli
+#   users        — data/core/<file>.csv      via profile_links_import_cli (core identity import)
 #   matches      — data/mods/ladder/<file>.csv via legacy_import_cli
 #   season       — data/core/<file>.yaml     via seed_cli_yaml
 #   test-season  — synthetic dataset generated then imported (never prod)
@@ -43,6 +43,7 @@ jobs:
   seed:
     name: Seed ${{ inputs.type }} (${{ inputs.environment }})
     runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', inputs.environment)) }}
+    environment: ${{ inputs.environment }}
     steps:
       - name: Check out the environment configuration
         uses: actions/checkout@v4
@@ -92,30 +93,40 @@ jobs:
             echo "data_file=$file" >> "$GITHUB_ENV"
           fi
           echo "data_dir=$data_dir" >> "$GITHUB_ENV"
+      - name: Resolve the pinned image from the state file
+        # Compose interpolation fails closed on a missing
+        # KINGDOMS_BOT_IMAGE (same as deploy.sh): export the pinned image
+        # so any docker compose command in this workflow targets the
+        # deployed stack.
+        run: |
+          state="envs/${{ inputs.environment }}/state/kingdoms-bot.yml"
+          pinned="$(grep -E '^image:' "$state" | head -1 | cut -d' ' -f2-)"
+          [[ -n "$pinned" ]] || { echo "ERROR: $state has no pinned image" >&2; exit 1; }
+          echo "KINGDOMS_BOT_IMAGE=$pinned" >> "$GITHUB_ENV"
       - name: Run the seed CLI in the env container
         env:
           ENVIRONMENT: ${{ inputs.environment }}
           SEED_TYPE: ${{ inputs.type }}
           LADDER_ID: ${{ inputs.ladder_id }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: |
           cd "envs/${ENVIRONMENT}"
           case "$SEED_TYPE" in
             users)
-              [[ -n "$LADDER_ID" ]] || { echo "ERROR: ladder_id is required for users" >&2; exit 1; }
-              docker compose cp "${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
+              docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.mods.ladder.profile_links_import_cli \
-                "$LADDER_ID" /tmp/seed.csv
+                /tmp/seed.csv
               ;;
             matches)
               [[ -n "$LADDER_ID" ]] || { echo "ERROR: ladder_id is required for matches" >&2; exit 1; }
-              docker compose cp "${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
+              docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.mods.ladder.legacy_import_cli \
                 "$LADDER_ID" /tmp/seed.csv
               ;;
             season)
-              docker compose cp "${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.yaml
+              docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.yaml
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.core.games.aoe2.seed_cli_yaml \
                 /tmp/seed.yaml "$LADDER_ID"
