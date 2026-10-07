@@ -50,6 +50,10 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       # ADR-0020 process split: the bot talks to svc-core over gRPC.
       CORE_URI: ${CORE_URI:-kingdoms-core:50051}
+      # Provider stats (live dashboard enrichment): the bot reads the
+      # ext-librematch leaderboard stats through the same gRPC contract
+      # core uses (kingdoms #147 grouped dashboard).
+      EXT_LIBREMATCH_URI: ${EXT_LIBREMATCH_URI:-kingdoms-ext-librematch:50061}
     healthcheck:
       # The image HEALTHCHECK also probes /healthz; the explicit compose
       # healthcheck makes the deployment health gate (scripts/deploy.sh)
