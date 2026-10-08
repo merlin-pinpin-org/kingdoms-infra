@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the merlin environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-245-20261008154645-cc151b0
-version_label: merlin@cc151b0
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/cc151b0783fab7b44b00c8da15f098ae3397eec5
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-245-20261008155245-4ec9339
+version_label: merlin@4ec9339
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/4ec93399697fa820b0e2b6e57b81f3cd4e63dd66
 deploy_kind: integration
-deploy_ref: cc151b0
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/cc151b0783fab7b44b00c8da15f098ae3397eec5
-deploy_ts: 1791474451
-deploy_commit_ts: 1791474355
-deploy_commit: cc151b0783fab7b44b00c8da15f098ae3397eec5
-deploy_ci_run_id: 37803446507
-deploy_ci_run_number: 885
-deploy_ci_run_ts: 1791474362
+deploy_ref: 4ec9339
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/4ec93399697fa820b0e2b6e57b81f3cd4e63dd66
+deploy_ts: 1791474803
+deploy_commit_ts: 1791474717
+deploy_commit: 4ec93399697fa820b0e2b6e57b81f3cd4e63dd66
+deploy_ci_run_id: 37804241622
+deploy_ci_run_number: 890
+deploy_ci_run_ts: 1791474721
 deployed_by: merlin-pinpin (autopin vibe/merlin/main)
-deployed_at: "2026-10-08T15:47:31Z"
+deployed_at: "2026-10-08T15:53:23Z"
 source: 
 deploy_branch: vibe/merlin/main
 deploy_pr_title: 
