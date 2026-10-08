@@ -6,10 +6,13 @@
 # code and the Mongo network are both available (#138 execution model).
 #
 # Types (each maps to one existing, idempotent CLI):
-#   users        — data/core/<file>.csv      via identity_import_cli (core identity import)
-#   matches      — data/mods/ladder/<file>.csv via legacy_import_cli
-#   season       — data/core/<file>.yaml     via seed_cli_yaml
-#   test-season  — synthetic dataset generated then imported (never prod)
+#   users         — data/core/<file>.csv      via identity_import_cli (core identity import)
+#   ladder-season — full ladder season seed via season_import_cli: creates the
+#                   guild's ladder (ladder-<game>-<guild>) and its indexed
+#                   season, then imports the users and matches (guild-scoped,
+#                   fail-closed against the env's TEST_GUILD_ID)
+#   season        — data/core/<file>.yaml     via seed_cli_yaml
+#   test-season   — synthetic dataset generated then imported (never prod)
 name: Seed environment data
 on:
   workflow_dispatch:
@@ -22,7 +25,7 @@ on:
         description: "Seed type (which CLI runs)"
         required: true
         type: choice
-        options: [users, matches, season, test-season]
+        options: [users, ladder-season, season, test-season]
       file:
         description: "Source file path relative to kingdoms-services/ (empty = latest dump for the type)"
         required: false
@@ -32,7 +35,7 @@ on:
         required: false
         type: string
       guild_id:
-        description: "Test guild id whose ladder to seed (required for matches; must match the env's TEST_GUILD_ID)"
+        description: "Test guild id whose ladder to seed (required for ladder-season; must match the env's TEST_GUILD_ID)"
         required: false
         type: string
 
@@ -72,7 +75,7 @@ jobs:
         run: |
           case "$SEED_TYPE" in
             users)   data_dir="kingdoms-services/data/core";        prefix="users" ;;
-            matches) data_dir="kingdoms-services/data/mods/ladder"; prefix="matches" ;;
+            ladder-season) data_dir="kingdoms-services/data/core";  prefix="season" ;;
             season)  data_dir="kingdoms-services/data/core";        prefix="season" ;;
             test-season) data_dir=""; prefix="" ;;
           esac
@@ -87,8 +90,8 @@ jobs:
               base="${candidate##*/}"
               [[ "$base" =~ ^[0-9]+T[0-9]+Z- ]] || continue
               case "$SEED_TYPE" in
-                users|matches) [[ "$candidate" == *.csv ]] ;;
-                season)        [[ "$candidate" == *.yaml ]] ;;
+                users)          [[ "$candidate" == *.csv ]] ;;
+                ladder-season|season) [[ "$candidate" == *.yaml ]] ;;
               esac || continue
               [[ -z "$file" || "$candidate" > "$file" ]] && file="$candidate"
             done
@@ -124,21 +127,28 @@ jobs:
                 kingdoms.core.services.identity_import_cli \
                 /tmp/seed.csv
               ;;
-            matches)
+            ladder-season)
               # Guild-scoped, fail-closed: the ladder lives in the env's test
-              # guild (ladder:aoe2:<guild_id>). A missing guild, or one that
-              # is not this environment's declared TEST_GUILD_ID, aborts the
-              # seed before touching any data — a guildless run must never
-              # fall back to another env's or prod's data.
-              [[ -n "$GUILD_ID" ]] || { echo "ERROR: guild_id is required for matches — pass the test guild whose ladder to seed (/seed <env> matches [file] <guild_id>)" >&2; exit 1; }
+              # guild (ladder-<game>-<guild_id>) and its seasons carry an
+              # incremental index. A missing guild, or one that is not this
+              # environment's declared TEST_GUILD_ID, aborts the seed before
+              # touching any data — a guildless run must never fall back to
+              # another env's or prod's data.
+              [[ -n "$GUILD_ID" ]] || { echo "ERROR: guild_id is required for ladder-season — pass the test guild whose ladder to seed (/seed <env> ladder-season [file] <guild_id>)" >&2; exit 1; }
               env_guild="${ENV_GUILD_ID:-}"
-              [[ -n "$env_guild" ]] || { echo "ERROR: env ${ENVIRONMENT} declares no TEST_GUILD_ID (GitHub environment variable) — add it before seeding ladder matches; refusing to seed without the env's guild, this guards against seeding the wrong env (e.g. prod)" >&2; exit 1; }
+              [[ -n "$env_guild" ]] || { echo "ERROR: env ${ENVIRONMENT} declares no TEST_GUILD_ID (GitHub environment variable) — add it before seeding a ladder season; refusing to seed without the env's guild, this guards against seeding the wrong env (e.g. prod)" >&2; exit 1; }
               [[ "$GUILD_ID" == "$env_guild" ]] || { echo "ERROR: guild ${GUILD_ID} is not ${ENVIRONMENT}'s test guild (${env_guild}) — each env only seeds its own guild's ladder; refusing to seed another env's or prod's data" >&2; exit 1; }
-              LADDER_ID="ladder:aoe2:${GUILD_ID}"
-              docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
+              season_file="${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}"
+              users_file="$(ls -1 "${GITHUB_WORKSPACE}/kingdoms-services/data/core/"*-users.csv 2>/dev/null | sort | tail -1)"
+              matches_file="$(ls -1 "${GITHUB_WORKSPACE}/kingdoms-services/data/mods/ladder/"*-matches.csv 2>/dev/null | sort | tail -1)"
+              [[ -n "$users_file" && -n "$matches_file" ]] || { echo "ERROR: no users or matches dump found for the ladder-season seed" >&2; exit 1; }
+              docker compose cp "$season_file" kingdoms-core:/tmp/seed-season.yaml
+              docker compose cp "$users_file" kingdoms-core:/tmp/seed-users.csv
+              docker compose cp "$matches_file" kingdoms-core:/tmp/seed-matches.csv
               docker compose exec -T kingdoms-core python -m \
-                kingdoms.mods.ladder.legacy_import_cli \
-                "$LADDER_ID" /tmp/seed.csv
+                kingdoms.mods.ladder.season_import_cli \
+                /tmp/seed-season.yaml /tmp/seed-users.csv /tmp/seed-matches.csv \
+                "$GUILD_ID"
               ;;
             season)
               docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.yaml
