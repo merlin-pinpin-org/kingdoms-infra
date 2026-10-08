@@ -60,7 +60,7 @@ fi
 # 2. The docker.yml build ran (and succeeded) for that head.
 if [[ -n "$head_sha" ]]; then
   build_run="$(gh api "repos/${repo_svc}/actions/runs?head_sha=${head_sha}&per_page=10" \
-    --jq '[.workflow_runs[] | select(.name == "Docker")][0] | {status, conclusion, html_url}' 2>/dev/null || true)"
+    --jq '[.workflow_runs[] | select(.name == "Docker") | select(.event == "push")][0] | {status, conclusion, html_url}' 2>/dev/null || true)"
   if [[ -n "$build_run" && "$build_run" != "null" ]]; then
     status="$(printf '%s' "$build_run" | jq -r '.status')"
     conclusion="$(printf '%s' "$build_run" | jq -r '.conclusion // "none"')"
@@ -80,7 +80,7 @@ fi
 if [[ -n "${build_run:-}" && "$build_run" != "null" && "$(printf '%s' "$build_run" | jq -r '.html_url // empty')" != "" ]]; then
   run_id="$(printf '%s' "$build_run" | jq -r '.html_url' | grep -o '[0-9]*$')"
   autopin="$(gh api "repos/${repo_svc}/actions/runs/${run_id}/jobs" \
-    --jq '[.jobs[] | select(.name | startswith("Autopin"))][0] | {status, conclusion}' 2>/dev/null || true)"
+    --jq "[.jobs[] | select(.name | startswith(\"Autopin\")) | select(.conclusion == \"success\")][0] | if . == null then null else {status, conclusion} end" 2>/dev/null || true)"
   if [[ -n "$autopin" && "$autopin" != "null" ]]; then
     a_status="$(printf '%s' "$autopin" | jq -r '.status')"
     a_conclusion="$(printf '%s' "$autopin" | jq -r '.conclusion // "none"')"
