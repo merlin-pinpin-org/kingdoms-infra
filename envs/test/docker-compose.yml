@@ -23,6 +23,11 @@ services:
       # non-secret values have overridable defaults.
       DISCORD_TOKEN: ${DISCORD_TOKEN:?DISCORD_TOKEN is required}
       BOT_ADMINS: ${BOT_ADMINS:-}
+      # Test guild of this environment (GitHub environment variable
+      # TEST_GUILD_ID — non-secret). The bot syncs its commands and scopes
+      # its ladders to this guild (ladder:aoe2:<guild_id>); the matches seed
+      # fail-closes without it. Test envs only: prod never declares one.
+      CICD_GUILD_ID: ${TEST_GUILD_ID:-}
       KINGDOMS_DEPLOY_URL: ${KINGDOMS_DEPLOY_URL:-}
       KINGDOMS_DEPLOY_LABEL: ${KINGDOMS_DEPLOY_LABEL:-}
       KINGDOMS_DEPLOY_RUN_URL: ${KINGDOMS_DEPLOY_RUN_URL:-}
