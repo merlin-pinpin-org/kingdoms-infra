@@ -155,6 +155,30 @@ services:
         limits:
           memory: 512M
 
+  kingdoms-ext-aoe2techtree:
+    # ext-aoe2techtree: AoE2 game content provider (kingdoms.v1.Content).
+    # Serves localized faction/map content from the vendored aoe2techtree
+    # dataset (default) or a replacement HTTP API (AOE2TECHTREE_SOURCE=api +
+    # AOE2TECHTREE_API_URL) — the upstream is swappable without touching
+    # the contract or the core. No secrets in the default dataset mode.
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be pinned by deploy/state/prod/kingdoms-bot.yml}
+    pull_policy: always
+    environment:
+      KINGDOMS_PROCESS: ext-aoe2techtree
+      EXT_GRPC_PORT: "50063"
+      AOE2TECHTREE_SOURCE: ${AOE2TECHTREE_SOURCE:-dataset}
+      AOE2TECHTREE_API_URL: ${AOE2TECHTREE_API_URL:-}
+      AOE2TECHTREE_API_KEY: ${AOE2TECHTREE_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    expose:
+      - "50063"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 50063), timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
   kingdoms-mongo:
     image: mongo:7.0
     volumes:
