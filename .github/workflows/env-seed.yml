@@ -13,6 +13,9 @@
 #                   fail-closed against the env's TEST_GUILD_ID)
 #   season        — data/core/<file>.yaml     via seed_cli_yaml
 #   test-season   — synthetic dataset generated then imported (never prod)
+#   game-content  — localized faction/map content from the vendored aoe2techtree
+#                   dataset via content_refresh_cli: creates the missing catalog
+#                   civs then upserts the FR/EN content docs (idempotent)
 name: Seed environment data
 on:
   workflow_dispatch:
@@ -25,7 +28,7 @@ on:
         description: "Seed type (which CLI runs)"
         required: true
         type: choice
-        options: [users, ladder-season, season, test-season]
+        options: [users, ladder-season, season, test-season, game-content]
       file:
         description: "Source file path relative to kingdoms-services/ (empty = latest dump for the type)"
         required: false
@@ -78,9 +81,13 @@ jobs:
             ladder-season) data_dir="kingdoms-services/data/core";  prefix="season" ;;
             season)  data_dir="kingdoms-services/data/core";        prefix="season" ;;
             test-season) data_dir=""; prefix="" ;;
+            game-content) data_dir=""; prefix="" ;;
           esac
-          if [[ "$SEED_TYPE" == "test-season" ]]; then
-            echo "data_file=test-season" >> "$GITHUB_ENV"
+          if [[ "$SEED_TYPE" == "game-content" ]]; then
+            echo "data_file=game-content" >> "$GITHUB_ENV"
+          fi
+          if [[ "$SEED_TYPE" == "test-season" || "$SEED_TYPE" == "game-content" ]]; then
+            echo "data_file=$SEED_TYPE" >> "$GITHUB_ENV"
           elif [[ -n "$SEED_FILE" ]]; then
             [[ -f "$data_dir/$SEED_FILE" ]] || { echo "ERROR: $data_dir/$SEED_FILE not found" >&2; exit 1; }
             echo "data_file=$SEED_FILE" >> "$GITHUB_ENV"
@@ -155,6 +162,14 @@ jobs:
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.core.games.aoe2.seed_cli_yaml \
                 /tmp/seed.yaml "$LADDER_ID"
+              ;;
+            game-content)
+              # Catalog + localized content refresh from the vendored dataset
+              # (aoe2techtree, MIT + Microsoft Game Content Usage Rules):
+              # creates the missing civs, upserts the FR/EN content docs.
+              # Idempotent; safe on any env including prod.
+              docker compose exec -T kingdoms-core python -m \
+                kingdoms.core.games.aoe2.content_refresh_cli
               ;;
             test-season)
               [[ -n "$LADDER_ID" ]] || { echo "ERROR: ladder_id (owner_ref) is required for test-season" >&2; exit 1; }
