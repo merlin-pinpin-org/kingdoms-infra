@@ -278,3 +278,28 @@ release (label `vX.Y.Z`).
 
 The Deploy field additionally links the kingdoms-infra deploy job itself
 (`KINGDOMS_DEPLOY_RUN_URL`).
+
+## Seeding at deploy time
+
+The deploy workflows accept an optional post-deploy seed (the same
+idempotent CLIs as `/seed`), so an environment can be deployed **and**
+loaded in one validated run:
+
+- `seed_type` — `users` (the known-users import, allowed on every
+  environment including prod) or `ladder-season` (the full ladder
+  season seed, test environments only);
+- `seed_guild_id` — the target test guild (`ladder-season` only); it
+  must equal the environment's `TEST_GUILD_ID` or the seed aborts
+  before any write;
+- `seed_confirm` — the explicit validation: type exactly `SEED <env>`
+  (e.g. `SEED merlin`); anything else aborts the seed.
+
+The pre-seed scan step writes the destructive-run warning to the run
+summary before any write: the users import is **last-import-wins**
+(a profile linked to another account is rebound), and a changed
+ladder-season dataset replays the guild's matches, rating history and
+season enrollments.
+
+Prod stays minimal by design: only the `users` seed is accepted there —
+the known users and the CF ladder on its guild; `ladder-season` on prod
+fails closed before touching data.

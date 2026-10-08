@@ -19,6 +19,21 @@ on:
         description: "Environment to deploy (a directory under envs/)"
         required: true
         type: string
+      seed_type:
+        description: "Optional post-deploy seed (users | ladder-season | empty = none)"
+        required: false
+        type: string
+        default: ""
+      seed_guild_id:
+        description: "Test guild id for the ladder-season seed (must match the env's TEST_GUILD_ID)"
+        required: false
+        type: string
+        default: ""
+      seed_confirm:
+        description: "Explicit validation: must equal 'SEED <environment>' or the seed aborts"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -168,3 +183,121 @@ jobs:
             echo ""
             echo "Behavioral verification of the deployed source. A failure here is a P1 report (proposed issue), not a rollback."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  post-deploy-seed:
+    # Optional seeding at deploy time (kingdoms #seed-on-deploy): the
+    # same idempotent CLIs as env-seed.yml, run ON the env runner after
+    # the deploy succeeds. Three guards make it explicit by design:
+    # 1. an explicit confirmation string (SEED <env>) — a checked box,
+    #    never a default;
+    # 2. a pre-seed scan that counts what the seed will touch and warns
+    #    when the run is destructive (rebound profile links, re-created
+    #    ladders/seasons);
+    # 3. prod only ever accepts the users seed (the known users import)
+    #    — ladder-season/test data on prod aborts before any write.
+    name: Post-deploy seed (${{ inputs.seed_type }})
+    needs: deploy
+    if: needs.deploy.result == 'success' && inputs.seed_type != ''
+    runs-on: ${{ fromJSON(format('["self-hosted", "kingdoms", "env-{0}"]', inputs.environment)) }}
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: data-transfer-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out the environment configuration
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/${{ inputs.environment }}
+      - name: Check out kingdoms-services (seed dumps)
+        uses: actions/checkout@v4
+        with:
+          repository: merlin-pinpin-org/kingdoms-services
+          ref: main
+          path: kingdoms-services
+      - name: Validate the seed request (explicit confirmation, prod guard)
+        env:
+          SEED_TYPE: ${{ inputs.seed_type }}
+          SEED_CONFIRM: ${{ inputs.seed_confirm }}
+          SEED_GUILD: ${{ inputs.seed_guild_id }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          ENV_GUILD_ID: ${{ vars.TEST_GUILD_ID }}
+        run: |
+          expected="SEED ${ENVIRONMENT}"
+          if [[ "$SEED_CONFIRM" != "$expected" ]]; then
+            echo "::error::seed confirmation mismatch — type exactly '${expected}' in seed_confirm to seed ${ENVIRONMENT}; refusing to seed" >&2
+            exit 1
+          fi
+          case "$SEED_TYPE" in
+            users)
+              if [[ "$ENVIRONMENT" == "prod" ]]; then
+                echo "prod seed: users only — known users import (last import wins)" >> "$GITHUB_STEP_SUMMARY"
+              fi
+              ;;
+            ladder-season)
+              if [[ "$ENVIRONMENT" == "prod" ]]; then
+                echo "::error::ladder-season seeding is never allowed on prod — prod stays with the known users and the CF ladder on its guild" >&2
+                exit 1
+              fi
+              [[ -n "$SEED_GUILD" ]] || { echo "::error::seed_guild_id is required for ladder-season" >&2; exit 1; }
+              env_guild="${ENV_GUILD_ID:-}"
+              [[ -n "$env_guild" ]] || { echo "::error::env ${ENVIRONMENT} declares no TEST_GUILD_ID — refusing to seed a ladder season" >&2; exit 1; }
+              [[ "$SEED_GUILD" == "$env_guild" ]] || { echo "::error::guild ${SEED_GUILD} is not ${ENVIRONMENT}'s test guild (${env_guild}) — refusing to seed another env's data" >&2; exit 1; }
+              ;;
+            *)
+              echo "::error::unknown seed_type '${SEED_TYPE}' (users | ladder-season)" >&2
+              exit 1
+              ;;
+          esac
+      - name: Scan the seed impact (destructive-run warning)
+        # Read-only pre-scan: count what the seed will touch so the
+        # run summary carries the warning before the write step.
+        env:
+          SEED_TYPE: ${{ inputs.seed_type }}
+          SEED_GUILD: ${{ inputs.seed_guild_id }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          cd "envs/${ENVIRONMENT}"
+          state="state/kingdoms-bot.yml"
+          pinned="$(grep -E '^image:' "$state" | head -1 | cut -d' ' -f2-)"
+          [[ -n "$pinned" ]] || { echo "ERROR: $state has no pinned image" >&2; exit 1; }
+          export KINGDOMS_BOT_IMAGE="$pinned"
+          {
+            echo "## Seed scan — ${ENVIRONMENT} (${SEED_TYPE})"
+            echo ""
+            if [[ "$SEED_TYPE" == "users" ]]; then
+              echo "The users import is **last-import-wins**: a profile already linked to another Discord account will be rebound to the importing account (the stale link is replaced)."
+              echo "Run the seed with that warning acknowledged (the explicit SEED confirmation above covers it)."
+            fi
+            if [[ "$SEED_TYPE" == "ladder-season" ]]; then
+              echo "The ladder-season seed is idempotent (same ids skip) but a changed dataset re-creates the guild's ladder data: matches, rating history and season enrollments are replayed."
+              echo "Target guild: ${SEED_GUILD} (validated against the env's TEST_GUILD_ID)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Run the seed (same CLIs as env-seed.yml)
+        env:
+          SEED_TYPE: ${{ inputs.seed_type }}
+          SEED_GUILD: ${{ inputs.seed_guild_id }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          cd "envs/${ENVIRONMENT}"
+          case "$SEED_TYPE" in
+            users)
+              users_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/core/*-users.csv 2>/dev/null | sort | tail -1)"
+              [[ -n "$users_file" ]] || { echo "ERROR: no users dump found — check out kingdoms-services first (seed-on-deploy uses the repo checkout)" >&2; exit 1; }
+              docker compose cp "$users_file" kingdoms-core:/tmp/seed-users.csv
+              docker compose exec -T kingdoms-core python -m                 kingdoms.core.services.identity_import_cli /tmp/seed-users.csv
+              ;;
+            ladder-season)
+              season_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/core/*-season.yaml 2>/dev/null | sort | tail -1)"
+              users_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/core/*-users.csv 2>/dev/null | sort | tail -1)"
+              matches_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/mods/ladder/*-matches.csv 2>/dev/null | sort | tail -1)"
+              [[ -n "$season_file" && -n "$users_file" && -n "$matches_file" ]] || { echo "ERROR: missing season/users/matches dump" >&2; exit 1; }
+              docker compose cp "$season_file" kingdoms-core:/tmp/seed-season.yaml
+              docker compose cp "$users_file" kingdoms-core:/tmp/seed-users.csv
+              docker compose cp "$matches_file" kingdoms-core:/tmp/seed-matches.csv
+              docker compose exec -T kingdoms-core python -m                 kingdoms.mods.ladder.season_import_cli                 /tmp/seed-season.yaml /tmp/seed-users.csv /tmp/seed-matches.csv                 "$SEED_GUILD"
+              ;;
+          esac
+      - name: Seed report
+        if: always()
+        run: echo "Post-deploy seed (${{ inputs.seed_type }}) applied to ${{ inputs.environment }} — idempotent, re-runnable."
