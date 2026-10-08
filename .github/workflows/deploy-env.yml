@@ -104,6 +104,10 @@ jobs:
           BOT_ADMINS: ${{ vars.BOT_ADMINS }}
           MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
+          # The env's test guild (compose: CICD_GUILD_ID) — the ladder mod
+          # scopes its ladders to this guild; without it the mod's register
+          # hook fails and the mod stays inactive.
+          TEST_GUILD_ID: ${{ vars.TEST_GUILD_ID }}
           # The deploy run links itself in /status (Infra field) so the
           # running bot can point at the exact job that deployed it.
           KINGDOMS_DEPLOY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
