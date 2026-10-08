@@ -163,10 +163,14 @@ services:
     volumes:
       - mongo_data:/data/db
     healthcheck:
+      # mongosh cold-start on a busy shared VPS can exceed 5s; without
+      # margin the probe is killed mid-handshake and mongo flaps
+      # unhealthy (deploy-time false negative, drasah 2026-10-07).
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
-      timeout: 5s
+      timeout: 15s
       retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   kingdoms-redis:
