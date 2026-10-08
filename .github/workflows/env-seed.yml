@@ -28,7 +28,11 @@ on:
         required: false
         type: string
       ladder_id:
-        description: "Ladder id / owner_ref (required for matches, season, test-season)"
+        description: "Ladder id / owner_ref (required for season, test-season)"
+        required: false
+        type: string
+      guild_id:
+        description: "Test guild id whose ladder to seed (required for matches; must match the env's TEST_GUILD_ID)"
         required: false
         type: string
 
@@ -108,6 +112,8 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           SEED_TYPE: ${{ inputs.type }}
           LADDER_ID: ${{ inputs.ladder_id }}
+          GUILD_ID: ${{ inputs.guild_id }}
+          ENV_GUILD_ID: ${{ vars.TEST_GUILD_ID }}
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: |
           cd "envs/${ENVIRONMENT}"
@@ -119,7 +125,16 @@ jobs:
                 /tmp/seed.csv
               ;;
             matches)
-              [[ -n "$LADDER_ID" ]] || { echo "ERROR: ladder_id is required for matches" >&2; exit 1; }
+              # Guild-scoped, fail-closed: the ladder lives in the env's test
+              # guild (ladder:aoe2:<guild_id>). A missing guild, or one that
+              # is not this environment's declared TEST_GUILD_ID, aborts the
+              # seed before touching any data — a guildless run must never
+              # fall back to another env's or prod's data.
+              [[ -n "$GUILD_ID" ]] || { echo "ERROR: guild_id is required for matches — pass the test guild whose ladder to seed (/seed <env> matches [file] <guild_id>)" >&2; exit 1; }
+              env_guild="${ENV_GUILD_ID:-}"
+              [[ -n "$env_guild" ]] || { echo "ERROR: env ${ENVIRONMENT} declares no TEST_GUILD_ID (GitHub environment variable) — add it before seeding ladder matches; refusing to seed without the env's guild, this guards against seeding the wrong env (e.g. prod)" >&2; exit 1; }
+              [[ "$GUILD_ID" == "$env_guild" ]] || { echo "ERROR: guild ${GUILD_ID} is not ${ENVIRONMENT}'s test guild (${env_guild}) — each env only seeds its own guild's ladder; refusing to seed another env's or prod's data" >&2; exit 1; }
+              LADDER_ID="ladder:aoe2:${GUILD_ID}"
               docker compose cp "${GITHUB_WORKSPACE}/${{ env.data_dir }}/${{ env.data_file }}" kingdoms-core:/tmp/seed.csv
               docker compose exec -T kingdoms-core python -m \
                 kingdoms.mods.ladder.legacy_import_cli \
