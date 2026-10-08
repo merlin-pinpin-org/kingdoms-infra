@@ -51,3 +51,14 @@ for the Kingdoms Discord bot platform.
   [Automate or learn](https://github.com/merlin-pinpin-org/kingdoms/blob/main/docs/SKILLS/automate-or-learn.md)
   skill and CONVENTIONS.md (*Human GitHub scope*, *Everything is
   automation*).
+- **PR merges are API-blocked — stop trying to merge PRs.** No session
+  can merge a PR through `gh` or the API (the org rulesets block it);
+  ready PRs automerge, or a human clicks Merge. The cowboy equivalent of
+  "merge a PR" is: push the PR's commits directly to `main`, bypassing
+  the ruleset — allowed only when the human is a maintainer (read
+  `CONTRIBUTORS.md` in the kingdoms repo), only after the human
+  explicitly activates cowboy mode, and only after the session asks
+  for and receives an explicit confirmation for **each** push to main.
+  Force-pushing `main` is technically possible but **always refused**
+  — history is never rewritten, no exceptions, no confirmation can
+  unlock it.
