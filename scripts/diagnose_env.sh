@@ -133,8 +133,8 @@ else
 fi
 
 # 6. The GitHub environment exists (secrets land on its runner).
-gh_env="$(gh api "repos/${repo_infra}/environments" --jq --arg e "$alias_name" \
-  '[.environments[].name] | index($e) != null' 2>/dev/null || true)"
+gh_env="$(gh api "repos/${repo_infra}/environments" --paginate --jq \
+  "[.environments[].name] | index(\"$alias_name\") != null" 2>/dev/null || true)"
 if [[ "$gh_env" == "true" ]]; then
   flag OK "GitHub environment '${alias_name}' exists"
 else
@@ -142,10 +142,15 @@ else
 fi
 
 # 7. A runner answers the env-<alias> label (the deploy job needs it).
-runners="$(gh api "repos/${repo_infra}/actions/runners" \
-  --jq --arg l "env-${alias_name}" '[.runners[] | select(.labels[].name == $l)] | length' 2>/dev/null || true)"
-if [[ "${runners:-0}" -gt 0 ]]; then
+# The runners API needs admin scope; without it the check is
+# indeterminate (WARN, not BLOCK) — a queued deploy run already proves
+# a runner answered, so a BLOCK here is only meaningful with API access.
+runners="$(gh api "repos/${repo_infra}/actions/runners" --paginate \
+  --jq "[.runners[] | select(.labels[].name == \"env-${alias_name}\")] | length" 2>/dev/null || true)"
+if [[ "$runners" =~ ^[0-9]+$ && "$runners" -gt 0 ]]; then
   flag OK "runner with label env-${alias_name}: ${runners}"
+elif [[ ! "$runners" =~ ^[0-9]+$ ]]; then
+  flag WARN "runner list not readable with this token (admin scope needed) — check the latest deploy run instead"
 else
   flag BLOCK "no runner with label env-${alias_name} — the deploy job stays queued forever"
 fi
