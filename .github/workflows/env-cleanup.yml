@@ -1,10 +1,6 @@
-# One-shot ops repair, v3: recreate the drasah stack cleanly on its
-# runner. After the disk-full incidents the compose stack was left in a
-# half-recreated state: the bot runs but kingdoms-mongo is gone/down, so
-# the bot cannot resolve it and the deploy health gate fails.
-# This does exactly what the deploy does (up -d, pinned image from the
-# state file) plus --force-recreate --remove-orphans to clear the stale
-# containers/network state. Volumes are NEVER touched (no --volumes).
+# One-shot ops v4: capture the real disk usage of the drasah
+# runner and commit it to this ops branch (readable via the API without
+# log access). Read-only for the stack: df + docker system df only.
 name: Env disk cleanup (ops)
 
 on:
@@ -13,7 +9,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   cleanup:
@@ -26,49 +22,39 @@ jobs:
           find /opt/kingdoms/runners -type f -path '*/_diag/*' -mtime +1 -delete 2>/dev/null || true
           find /opt/kingdoms/runners -type f -path '*/_diag/*' -size +10M -delete 2>/dev/null || true
 
-      - name: Disk usage
-        run: df -h / || true
-
       - name: Remove unused images only (in-use images are kept)
         run: docker image prune -af || true
 
       - name: Remove build cache
         run: docker builder prune -af || true
 
-  recreate:
-    name: Recreate the drasah stack (pinned image, force-recreate)
-    needs: cleanup
-    runs-on: ["self-hosted", "kingdoms", "env-drasah"]
-    timeout-minutes: 20
-    environment: drasah
-    steps:
-      - name: Check out the pinned environment state
+      - name: Capture the real disk usage
+        run: |
+          {
+            echo "# drasah runner disk usage — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo
+            echo '## df -h /'
+            echo '~~~'
+            df -h /
+            echo '~~~'
+            echo
+            echo '## docker system df'
+            echo '~~~'
+            docker system df || true
+            echo '~~~'
+          } > /tmp/disk-usage.md
+
+      - name: Check out this ops branch (to commit the report)
         uses: actions/checkout@v4
         with:
-          ref: deploy/drasah
+          ref: ops/drasah-disk-cleanup
 
-      - name: Recreate the stack (no volume touch, pinned image, orphans removed)
-        env:
-          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      - name: Commit the report to the ops branch
         run: |
-          cd envs/drasah
-          pinned_image="$(grep -E '^image:' state/kingdoms-bot.yml | head -1 | cut -d' ' -f2-)"
-          echo "pinned image: ${pinned_image}"
-          export KINGDOMS_BOT_IMAGE="${pinned_image}"
-          docker compose pull --quiet || true
-          docker compose up -d --force-recreate --remove-orphans
-
-      - name: Stack state
-        run: docker compose -f envs/drasah/docker-compose.yml ps || true
-
-      - name: Health gate (90s)
-        run: |
-          deadline=$(( SECONDS + 90 ))
-          while (( SECONDS < deadline )); do
-            if curl -fsS http://localhost:8000/healthz >/dev/null 2>&1; then
-              echo "healthz OK"; exit 0
-            fi
-            sleep 5
-          done
-          echo "::warning::healthz not answering yet — check /logs drasah"
-          exit 0
+          mkdir -p ops-reports
+          cp /tmp/disk-usage.md ops-reports/drasah-disk-usage.md
+          git config user.name "kingdoms-deployer[bot]"
+          git config user.email "noreply@users.noreply.github.com"
+          git add ops-reports/drasah-disk-usage.md
+          git commit -m "ops: capture drasah runner disk usage report" || echo "nothing to commit"
+          git push
