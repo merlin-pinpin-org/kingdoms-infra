@@ -1,0 +1,43 @@
+# One-shot ops cleanup: reclaim disk space on an environment's
+# self-hosted runner (the drasah deploy runs failed with
+# "No space left on device"). NON-DESTRUCTIVE:
+#   - docker image prune -af: only images used by NO container are removed
+#     (running or stopped stacks keep their images; volumes never touched);
+#   - docker builder prune -af: build cache only;
+#   - runner _diag logs older than 2 days (diagnostic logs, safe to drop).
+# Never touches the pinned state, the stacks, the volumes or main.
+name: Env disk cleanup (ops)
+
+on:
+  push:
+    branches: [ops/drasah-disk-cleanup]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    name: Reclaim runner disk (unused images, build cache, old diag logs)
+    runs-on: ["self-hosted", "kingdoms", "env-drasah"]
+    steps:
+      - name: Disk usage before
+        run: |
+          df -h /
+          docker system df || true
+
+      - name: Remove unused images only (in-use images are kept)
+        run: docker image prune -af || true
+
+      - name: Remove build cache
+        run: docker builder prune -af || true
+
+      - name: Remove runner diag logs older than 2 days
+        run: |
+          find /opt/kingdoms/runners -type f -path '*/_diag/*' -mtime +2 -delete 2>/dev/null || true
+          find /opt/kingdoms/runners -type f -path '*/_diag/*' -size +50M -delete 2>/dev/null || true
+
+      - name: Disk usage after
+        run: |
+          df -h /
+          docker system df || true
