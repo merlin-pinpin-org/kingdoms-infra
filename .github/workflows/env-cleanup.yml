@@ -1,11 +1,9 @@
-# One-shot ops cleanup: reclaim disk space on an environment's
-# self-hosted runner (the drasah deploy runs failed with
-# "No space left on device"). NON-DESTRUCTIVE:
-#   - docker image prune -af: only images used by NO container are removed
-#     (running or stopped stacks keep their images; volumes never touched);
-#   - docker builder prune -af: build cache only;
-#   - runner _diag logs older than 2 days (diagnostic logs, safe to drop).
-# Never touches the pinned state, the stacks, the volumes or main.
+# One-shot ops cleanup, v2: reclaim disk space on the drasah runner.
+# v2 lessons: docker system df as a FIRST step can wedge/hang for a long
+# time on a full disk; the first action must be the cheapest one — purge
+# old runner _diag logs — so the worker can breathe again. Non-destructive:
+# in-use images (any container, running or stopped) are never removed;
+# volumes are never touched; the pinned state is never touched.
 name: Env disk cleanup (ops)
 
 on:
@@ -18,13 +16,17 @@ permissions:
 
 jobs:
   cleanup:
-    name: Reclaim runner disk (unused images, build cache, old diag logs)
+    name: Reclaim runner disk (diag logs, unused images, build cache)
     runs-on: ["self-hosted", "kingdoms", "env-drasah"]
+    timeout-minutes: 15
     steps:
-      - name: Disk usage before
+      - name: Purge old runner diag logs first (cheapest, frees worker space)
         run: |
-          df -h /
-          docker system df || true
+          find /opt/kingdoms/runners -type f -path '*/_diag/*' -mtime +1 -delete 2>/dev/null || true
+          find /opt/kingdoms/runners -type f -path '*/_diag/*' -size +10M -delete 2>/dev/null || true
+
+      - name: Disk usage before
+        run: df -h / || true
 
       - name: Remove unused images only (in-use images are kept)
         run: docker image prune -af || true
@@ -32,12 +34,7 @@ jobs:
       - name: Remove build cache
         run: docker builder prune -af || true
 
-      - name: Remove runner diag logs older than 2 days
-        run: |
-          find /opt/kingdoms/runners -type f -path '*/_diag/*' -mtime +2 -delete 2>/dev/null || true
-          find /opt/kingdoms/runners -type f -path '*/_diag/*' -size +50M -delete 2>/dev/null || true
-
       - name: Disk usage after
         run: |
-          df -h /
+          df -h / || true
           docker system df || true
