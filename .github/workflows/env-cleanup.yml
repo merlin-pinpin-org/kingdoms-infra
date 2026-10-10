@@ -1,9 +1,10 @@
-# One-shot ops cleanup, v2: reclaim disk space on the drasah runner.
-# v2 lessons: docker system df as a FIRST step can wedge/hang for a long
-# time on a full disk; the first action must be the cheapest one — purge
-# old runner _diag logs — so the worker can breathe again. Non-destructive:
-# in-use images (any container, running or stopped) are never removed;
-# volumes are never touched; the pinned state is never touched.
+# One-shot ops repair, v3: recreate the drasah stack cleanly on its
+# runner. After the disk-full incidents the compose stack was left in a
+# half-recreated state: the bot runs but kingdoms-mongo is gone/down, so
+# the bot cannot resolve it and the deploy health gate fails.
+# This does exactly what the deploy does (up -d, pinned image from the
+# state file) plus --force-recreate --remove-orphans to clear the stale
+# containers/network state. Volumes are NEVER touched (no --volumes).
 name: Env disk cleanup (ops)
 
 on:
@@ -25,7 +26,7 @@ jobs:
           find /opt/kingdoms/runners -type f -path '*/_diag/*' -mtime +1 -delete 2>/dev/null || true
           find /opt/kingdoms/runners -type f -path '*/_diag/*' -size +10M -delete 2>/dev/null || true
 
-      - name: Disk usage before
+      - name: Disk usage
         run: df -h / || true
 
       - name: Remove unused images only (in-use images are kept)
@@ -34,7 +35,40 @@ jobs:
       - name: Remove build cache
         run: docker builder prune -af || true
 
-      - name: Disk usage after
+  recreate:
+    name: Recreate the drasah stack (pinned image, force-recreate)
+    needs: cleanup
+    runs-on: ["self-hosted", "kingdoms", "env-drasah"]
+    timeout-minutes: 20
+    environment: drasah
+    steps:
+      - name: Check out the pinned environment state
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/drasah
+
+      - name: Recreate the stack (no volume touch, pinned image, orphans removed)
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
         run: |
-          df -h / || true
-          docker system df || true
+          cd envs/drasah
+          pinned_image="$(grep -E '^image:' state/kingdoms-bot.yml | head -1 | cut -d' ' -f2-)"
+          echo "pinned image: ${pinned_image}"
+          export KINGDOMS_BOT_IMAGE="${pinned_image}"
+          docker compose pull --quiet || true
+          docker compose up -d --force-recreate --remove-orphans
+
+      - name: Stack state
+        run: docker compose -f envs/drasah/docker-compose.yml ps || true
+
+      - name: Health gate (90s)
+        run: |
+          deadline=$(( SECONDS + 90 ))
+          while (( SECONDS < deadline )); do
+            if curl -fsS http://localhost:8000/healthz >/dev/null 2>&1; then
+              echo "healthz OK"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::warning::healthz not answering yet — check /logs drasah"
+          exit 0
