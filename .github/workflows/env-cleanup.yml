@@ -1,6 +1,8 @@
-# One-shot ops v4: capture the real disk usage of the drasah
-# runner and commit it to this ops branch (readable via the API without
-# log access). Read-only for the stack: df + docker system df only.
+# One-shot ops v5: cancel the zombie run 38018122208 (the cleanup
+# v1 wedged on "docker system df" with no timeout, holding the runner's
+# job slot until its 6h default timeout). Cancelling is a server-side
+# API call — the GITHUB_TOKEN with actions:write may cancel runs of its
+# own repository. Minimal job, no runner dependency beyond scheduling.
 name: Env disk cleanup (ops)
 
 on:
@@ -10,51 +12,20 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
-  cleanup:
-    name: Reclaim runner disk (diag logs, unused images, build cache)
-    runs-on: ["self-hosted", "kingdoms", "env-drasah"]
-    timeout-minutes: 15
+  cancel-zombie:
+    name: Cancel the wedged cleanup run 38018122208
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Purge old runner diag logs first (cheapest, frees worker space)
+      - name: Cancel run 38018122208 (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          find /opt/kingdoms/runners -type f -path '*/_diag/*' -mtime +1 -delete 2>/dev/null || true
-          find /opt/kingdoms/runners -type f -path '*/_diag/*' -size +10M -delete 2>/dev/null || true
-
-      - name: Remove unused images only (in-use images are kept)
-        run: docker image prune -af || true
-
-      - name: Remove build cache
-        run: docker builder prune -af || true
-
-      - name: Capture the real disk usage
-        run: |
-          {
-            echo "# drasah runner disk usage — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo
-            echo '## df -h /'
-            echo '~~~'
-            df -h /
-            echo '~~~'
-            echo
-            echo '## docker system df'
-            echo '~~~'
-            docker system df || true
-            echo '~~~'
-          } > /tmp/disk-usage.md
-
-      - name: Check out this ops branch (to commit the report)
-        uses: actions/checkout@v4
-        with:
-          ref: ops/drasah-disk-cleanup
-
-      - name: Commit the report to the ops branch
-        run: |
-          mkdir -p ops-reports
-          cp /tmp/disk-usage.md ops-reports/drasah-disk-usage.md
-          git config user.name "kingdoms-deployer[bot]"
-          git config user.email "noreply@users.noreply.github.com"
-          git add ops-reports/drasah-disk-usage.md
-          git commit -m "ops: capture drasah runner disk usage report" || echo "nothing to commit"
-          git push
+          gh api -X POST repos/merlin-pinpin-org/kingdoms-infra/actions/runs/38018122208/cancel             && echo "cancel requested" || echo "already cancelled or not cancellable (ok)"
+      - name: Report its status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/merlin-pinpin-org/kingdoms-infra/actions/runs/38018122208 --jq '{status, conclusion}'
