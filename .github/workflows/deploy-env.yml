@@ -290,15 +290,15 @@ jobs:
           cd "envs/${ENVIRONMENT}"
           case "$SEED_TYPE" in
             users)
-              users_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/core/*-users.csv 2>/dev/null | sort | tail -1)"
+              users_file="$(find "${GITHUB_WORKSPACE}/kingdoms-services/data/core" -maxdepth 1 -name '*users.csv' 2>/dev/null | sort | tail -1)"
               [[ -n "$users_file" ]] || { echo "ERROR: no users dump found — check out kingdoms-services first (seed-on-deploy uses the repo checkout)" >&2; exit 1; }
               docker compose cp "$users_file" kingdoms-core:/tmp/seed-users.csv
               docker compose exec -T kingdoms-core python -m                 kingdoms.core.services.identity_import_cli /tmp/seed-users.csv
               ;;
             ladder-season)
-              season_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/core/*-season.yaml 2>/dev/null | sort | tail -1)"
-              users_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/core/*-users.csv 2>/dev/null | sort | tail -1)"
-              matches_file="$(ls -1 "${GITHUB_WORKSPACE}"/kingdoms-services/data/mods/ladder/*-matches.csv 2>/dev/null | sort | tail -1)"
+              season_file="$(find "${GITHUB_WORKSPACE}/kingdoms-services/data/core" -maxdepth 1 -name '*season.yaml' 2>/dev/null | sort | tail -1)"
+              users_file="$(find "${GITHUB_WORKSPACE}/kingdoms-services/data/core" -maxdepth 1 -name '*users.csv' 2>/dev/null | sort | tail -1)"
+              matches_file="$(find "${GITHUB_WORKSPACE}/kingdoms-services/data/mods/ladder" -maxdepth 1 -name '*matches.csv' 2>/dev/null | sort | tail -1)"
               [[ -n "$season_file" && -n "$users_file" && -n "$matches_file" ]] || { echo "ERROR: missing season/users/matches dump" >&2; exit 1; }
               docker compose cp "$season_file" kingdoms-core:/tmp/seed-season.yaml
               docker compose cp "$users_file" kingdoms-core:/tmp/seed-users.csv
