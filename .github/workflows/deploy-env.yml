@@ -104,6 +104,10 @@ jobs:
           BOT_ADMINS: ${{ vars.BOT_ADMINS }}
           MONGO_DB: ${{ vars.MONGO_DB || 'kingdoms' }}
           LOG_LEVEL: ${{ vars.LOG_LEVEL || 'INFO' }}
+          # Liquipedia API compliance (kingdoms-services#247): the sync's
+          # User-Agent must identify the project and carry a contact;
+          # non-secret, GitHub environment variable on every env.
+          LIQUIPEDIA_CONTACT: ${{ vars.LIQUIPEDIA_CONTACT }}
           # The env's test guild (compose: CICD_GUILD_ID) — the ladder mod
           # scopes its ladders to this guild; without it the mod's register
           # hook fails and the mod stays inactive.
