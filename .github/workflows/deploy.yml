@@ -97,9 +97,11 @@ jobs:
     secrets: inherit
 
   repin-on-config-change:
-    # An environment-config change on main must also re-pin that env to
-    # the latest sha-<sha> image before deploying (ADR-0018): the pin
-    # push (Pin state workflow) triggers the deploy above. It shares the
+    # An environment-config change on main deploys the new manifests with
+    # the env's CURRENT pinned image (ADR-0018, amended): the pin may be
+    # a release, a pre-release or a PR image — a config change never
+    # swaps it. The pin push (Pin state workflow) re-dispatches the exact
+    # same image, only the merged manifests move; it shares the
     # deploy-state-<env> concurrency group with pin-state.yml and
     # sync-state.yml (one writer at a time per state branch).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -116,14 +118,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Re-pin every changed environment to the latest image
+      - name: Redeploy every changed environment at its current pin
         uses: actions/github-script@v7
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
-            // Prod-like environments pin released images only — never
-            // re-pin them from main. Adding a prod-like environment is
-            // adding it to this list (docs/ENVIRONMENTS.md).
+            // The env keeps whatever image its state branch pins —
+            // release, pre-release or PR. A config change on main only
+            // moves the manifests; the image identity is preserved.
             const protectedEnvs = ["prod"];
             const { execSync } = require("node:child_process");
             const before = "${{ github.event.before }}";
@@ -142,24 +144,39 @@ jobs:
               return;
             }
             const svc = "kingdoms-bot";
-            const repo = { owner: "merlin-pinpin-org", repo: "kingdoms-services" };
-            const runs = await github.rest.actions.listWorkflowRuns({
-              ...repo, workflow_id: "docker.yml", branch: "main", per_page: 1, status: "success",
-            });
-            if (runs.data.workflow_runs.length === 0) {
-              core.setFailed("no successful docker.yml run on main to pin");
-              return;
-            }
-            const imageSha = runs.data.workflow_runs[0].head_sha;
-            // docker/metadata-action publishes type=sha tags as sha-<short> (7
-            // chars by default) — pin the tag that exists on GHCR.
-            const short = imageSha.slice(0, 7);
-            const image = `ghcr.io/merlin-pinpin-org/kingdoms-services:sha-${short}`;
             for (const env of [...changed].sort()) {
               if (protectedEnvs.includes(env)) {
-                core.info(`${env} is prod-like: skipped (released images only)`);
+                core.info(`${env} is prod-like: config changes reach it through its own release pin`);
                 continue;
               }
+              // Read the env's CURRENT pin from its state branch and
+              // re-dispatch it unchanged (image + identity fields). The
+              // Pin state workflow merges the new main manifests in the
+              // same commit — the deploy that follows runs the current
+              // config with the current image.
+              let state;
+              try {
+                state = execSync(
+                  `git show origin/deploy/${env}:envs/${env}/state/kingdoms-bot.yml`,
+                  { encoding: "utf8" },
+                );
+              } catch (e) {
+                core.setFailed(`no deploy/${env} state branch to read the pin from: ${e.message}`);
+                return;
+              }
+              const field = (name) =>
+                (state.match(new RegExp(`^${name}:\\s*(.*)$`, "m")) || [])[1]?.trim() || "";
+              const image = field("image");
+              if (!image) {
+                core.setFailed(`deploy/${env} carries no pinned image`);
+                return;
+              }
+              const version_label = field("version_label");
+              const deploy_url = field("deploy_url");
+              const deploy_kind = field("deploy_kind");
+              const deploy_ref = field("deploy_ref");
+              const deploy_tree_url = field("deploy_tree_url");
+              const deploy_branch = field("deploy_branch");
               // Delegate the write to the Pin state workflow (single-writer
               // design, ADR-0018): it merges main into the state branch
               // and writes the state in one commit — same path as a
@@ -173,16 +190,16 @@ jobs:
                 client_payload: {
                   env,
                   image,
-                  version_label: `main@${short}`,
-                  deploy_url: `https://github.com/merlin-pinpin-org/kingdoms-services/commit/${imageSha}`,
-                  deploy_kind: "main",
-                  deploy_ref: short,
-                  deploy_tree_url: `https://github.com/merlin-pinpin-org/kingdoms-services/tree/${imageSha}`,
-                  deploy_branch: "main",
+                  version_label,
+                  deploy_url,
+                  deploy_kind,
+                  deploy_ref,
+                  deploy_tree_url,
+                  deploy_branch,
                   deployed_by: `config-change-deploy (run ${context.runId})`,
-                  source: `${env}-config change on main (commit ${context.sha.slice(0, 7)})`,
+                  source: `${env}-config change on main (commit ${context.sha.slice(0, 7)}) — image unchanged`,
                 },
               });
-              core.notice(`pin-state dispatched for ${env}: ${image} (config change on main)`);
+              core.notice(`pin-state dispatched for ${env}: ${image} unchanged, manifests refreshed`);
             }
             if (changed.size === 0) core.info("no environment configuration changed");
