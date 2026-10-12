@@ -64,7 +64,9 @@ the CI workflows instead.
    `env-<env>` self-hosted runner, applies the pinned state with
    `scripts/deploy.sh` and gates on health.
 4. `sync-state.yml` propagates `main` to the state branches; config changes
-   on `main` trigger a repin (never on `prod`).
+   on `main` redeploy the env **at its current pin** — the image (release,
+   pre-release or PR) is never swapped by a config change, only the
+   manifests move (`prod` is never touched by this path).
 
 Deployment is **GitOps-driven**: changes to the state branches are applied
 by CI/CD, never by hand on the VPS. Deploy scripts must stay idempotent and
