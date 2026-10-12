@@ -30,7 +30,7 @@ port (co-located envs on a shared VPS must not collide): `merlin` →
 27018/6380, `drasah` → 27019/6381.
 | Redis persistence | volume | volume + AOF |
 | Bot memory limit | — | 512M |
-| Deploy trigger | Push to the `deploy/test` state branch (written by the GitHub App from a `/deploy` PR comment, or re-pinned by a test-config change on main) | Push to the `deploy/prod` state branch (written by the release pipeline; the branch ruleset requires a PR — approving a prod deploy is merging it) |
+| Deploy trigger | Push to the `deploy/test` state branch (written by the GitHub App from a `/deploy` PR comment, or redeployed at its current pin by a test-config change on main — the image is never swapped by a config change) | Push to the `deploy/prod` state branch (written by the release pipeline; the branch ruleset requires a PR — approving a prod deploy is merging it) |
 | Pre-deploy backup | mandatory | mandatory |
 | Env template | — (secrets live in GitHub environment `test`) | — (GitHub environment `prod`) |
 | State branch | `deploy/test` (ADR-0018) | `deploy/prod` (ADR-0018) |
