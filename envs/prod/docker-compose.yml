@@ -81,6 +81,10 @@ services:
       REDIS_URI: redis://kingdoms-redis:6379
       CORE_GRPC_PORT: "50051"
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Liquipedia MediaWiki API compliance (kingdoms-services#247): the
+      # map sync's User-Agent must identify the project and carry a
+      # contact; non-secret GitHub environment variable (deploy-env.yml).
+      LIQUIPEDIA_CONTACT: ${LIQUIPEDIA_CONTACT:-}
     expose:
       - "50051"
     healthcheck:
