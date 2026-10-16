@@ -63,9 +63,20 @@ case "${COMMAND}" in
         ;;
     reset)
         # Allowlist: only manifests carrying x-kingdoms-env-resettable: true.
-        resettable="$(docker compose --progress quiet config --format json \
-            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("x-kingdoms-env-resettable") == True)')"
-        [[ "$resettable" == true ]] \
+        # Read the flag from the compose FILE, not from `docker compose config`:
+        # the config output strips top-level x- extension fields (compose-spec),
+        # so the flag is invisible there (the 2026-10-15 /reset-env failure).
+        resettable="$(python3 -c '
+import sys
+try:
+    import yaml
+except ImportError:
+    sys.exit(2)
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = yaml.safe_load(handle) or {}
+print(data.get("x-kingdoms-env-resettable") is True)
+' "${COMPOSE_FILE}")"
+        [[ "$resettable" == "True" ]] \
             || die "reset is not allowed on this environment (no x-kingdoms-env-resettable flag in its compose manifest)"
         log "RESETTING: stopping the stack and deleting the data volumes"
         docker compose down --volumes
