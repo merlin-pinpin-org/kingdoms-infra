@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the drasah environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-244-20261017074224-f804dad
-version_label: drasah@f804dad
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/f804dad2f598bcd73592fbaf4874346245659275
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-244-20261017074220-6998d03
+version_label: drasah@6998d03
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/6998d03e418cf4b8a2a0972315f65c2d8bf50889
 deploy_kind: integration
-deploy_ref: f804dad
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/f804dad2f598bcd73592fbaf4874346245659275
-deploy_ts: 1792222974
-deploy_commit_ts: 1792222890
-deploy_commit: f804dad2f598bcd73592fbaf4874346245659275
-deploy_ci_run_id: 39014575160
-deploy_ci_run_number: 1583
-deploy_ci_run_ts: 1792222892
+deploy_ref: 6998d03
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/6998d03e418cf4b8a2a0972315f65c2d8bf50889
+deploy_ts: 1792222989
+deploy_commit_ts: 1792222881
+deploy_commit: 6998d03e418cf4b8a2a0972315f65c2d8bf50889
+deploy_ci_run_id: 39014566817
+deploy_ci_run_number: 1581
+deploy_ci_run_ts: 1792222884
 deployed_by: Drasahaoe (autopin vibe/drasah/main)
-deployed_at: "2026-10-17T07:42:54Z"
+deployed_at: "2026-10-17T07:43:09Z"
 source: 
 deploy_branch: vibe/drasah/main
 deploy_pr_title: 
