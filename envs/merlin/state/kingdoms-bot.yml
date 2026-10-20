@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the merlin environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-263-20261020174817-d82415b
-version_label: pr-263-20261020174817-d82415b
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/263#issuecomment-6297380842
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-263-20261020175822-d82415b
+version_label: pr-263-20261020175822-d82415b
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/263#issuecomment-6297573061
 deploy_kind: pr
 deploy_ref: 263
 deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/d82415b002de5df96717a20d2520c084365c94c0
-deploy_ts: 1792518537
+deploy_ts: 1792519146
 deploy_commit_ts: 1792517708
 deploy_commit: d82415b002de5df96717a20d2520c084365c94c0
-deploy_ci_run_id: 39469185750
-deploy_ci_run_number: 813
-deploy_ci_run_ts: 1792518470
+deploy_ci_run_id: 39470606556
+deploy_ci_run_number: 816
+deploy_ci_run_ts: 1792519072
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-10-20T17:48:57Z"
+deployed_at: "2026-10-20T17:59:06Z"
 source: 
 deploy_branch: vibe/dev-console
 deploy_pr_title: feat(dev): the dev console — test-env-only guild ops for bot admins
