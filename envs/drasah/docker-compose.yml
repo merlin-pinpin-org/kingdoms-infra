@@ -51,7 +51,15 @@ services:
       KINGDOMS_DEPLOY_IMAGE: ${KINGDOMS_DEPLOY_IMAGE:-}
       KINGDOMS_DEPLOY_BRANCH: ${KINGDOMS_DEPLOY_BRANCH:-}
       KINGDOMS_DEPLOY_PR_TITLE: ${KINGDOMS_DEPLOY_PR_TITLE:-}
-      KINGDOMS_DEPLOY_ENV: ${KINGDOMS_DEPLOY_ENV:-}
+      # Pinned to the literal environment name: the dev console's runtime
+      # gate reads it (non-prod, opt-in below).
+      KINGDOMS_DEPLOY_ENV: drasah
+      # The console's guild allowlist (developer-mandated isolation):
+      # only these comma-separated guild ids may run the console's
+      # destructive actions — env-defined, runtime-immutable. Empty
+      # default: the console stays visible but its action buttons are
+      # disabled (fail closed). Prod never declares the variable.
+      KINGDOMS_TEST_GUILD_IDS: ${TEST_GUILD_IDS:-}
       MONGO_URI: mongodb://kingdoms-mongo:27017
       REDIS_URI: redis://kingdoms-redis:6379
       MONGO_DB: ${MONGO_DB:-kingdoms}
