@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-248-20261021094707-89d2226
-version_label: pr-248-20261021094707-89d2226
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/248#issuecomment-6312994761
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-248-20261021113456-3d9835c
+version_label: pr-248-20261021113456-3d9835c
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/248#issuecomment-6314913627
 deploy_kind: pr
 deploy_ref: 248
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/89d2226c0921e719c77bcf584827e42a6c0c3332
-deploy_ts: 1792576086
-deploy_commit_ts: 1792575995
-deploy_commit: 89d2226c0921e719c77bcf584827e42a6c0c3332
-deploy_ci_run_id: 39579581639
-deploy_ci_run_number: 853
-deploy_ci_run_ts: 1792576002
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/3d9835c4bdf20c10e646658f93472acf3b25f81c
+deploy_ts: 1792582562
+deploy_commit_ts: 1792581284
+deploy_commit: 3d9835c4bdf20c10e646658f93472acf3b25f81c
+deploy_ci_run_id: 39592958338
+deploy_ci_run_number: 855
+deploy_ci_run_ts: 1792582469
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-10-21T09:48:06Z"
+deployed_at: "2026-10-21T11:36:02Z"
 source: 
 deploy_branch: maps-data
 deploy_pr_title: feat(maps): Liquipedia maps provider — official API, rate-limited, licence-guarded
