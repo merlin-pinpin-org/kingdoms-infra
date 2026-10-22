@@ -59,6 +59,7 @@ services:
       # ADR-0020 process split: the bot talks to svc-core over gRPC.
       CORE_URI: ${CORE_URI:-kingdoms-core:50051}
       GAME_AOE2_URI: ${GAME_AOE2_URI:-kingdoms-game-aoe2:50071}
+      EXT_LIQUIPEDIA_URI: ${EXT_LIQUIPEDIA_URI:-kingdoms-ext-liquipedia:50064}
     healthcheck:
       # The image HEALTHCHECK also probes /healthz; the explicit compose
       # healthcheck makes the deployment health gate (scripts/deploy.sh)
@@ -161,6 +162,29 @@ services:
       - "50062"
     healthcheck:
       test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 50062), timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  kingdoms-ext-liquipedia:
+    # ext-liquipedia: Liquipedia content provider (kingdoms.v1.Content) —
+    # maps today, the wiki's other surfaces later. Owns its tables
+    # (liquipedia_maps, liquipedia_pages: the raw fetched data lives at
+    # the provider). Multi-game by design (game_key-keyed).
+    image: ${KINGDOMS_BOT_IMAGE:?KINGDOMS_BOT_IMAGE must be pinned by deploy/test/state/kingdoms-bot.yml}
+    pull_policy: always
+    environment:
+      KINGDOMS_PROCESS: ext-liquipedia
+      EXT_GRPC_PORT: "50064"
+      MONGO_URI: ${MONGO_URI:-mongodb://kingdoms-mongo:27017}
+      LIQUIPEDIA_CONTACT: ${LIQUIPEDIA_CONTACT:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    expose:
+      - "50064"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 50064), timeout=3).close()"]
       interval: 10s
       timeout: 5s
       retries: 5
