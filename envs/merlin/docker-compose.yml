@@ -159,7 +159,7 @@ services:
     environment:
       KINGDOMS_PROCESS: ext-aoe2lobby
       EXT_GRPC_PORT: "50062"
-      AOE2LOBBY_WS_URL: ${AOE2LOBBY_WS_URL:-}
+      AOE2LOBBY_WS_URL: ${AOE2LOBBY_WS_URL:-wss://data.aoe2lobby.com/ws/}
       AOE2LOBBY_API_KEY: ${AOE2LOBBY_API_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     expose:
