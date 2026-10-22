@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the test environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-278-20261022164929-4b6cbf8
-version_label: pr-278-20261022164929-4b6cbf8
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/278#issuecomment-6346222879
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-278-20261022171229-1df8c79
+version_label: pr-278-20261022171229-1df8c79
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/278#issuecomment-6346687981
 deploy_kind: pr
 deploy_ref: 278
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/4b6cbf87c50340b154cf8f460c3d1919de5dba6c
-deploy_ts: 1792687820
-deploy_commit_ts: 1792687104
-deploy_commit: 4b6cbf87c50340b154cf8f460c3d1919de5dba6c
-deploy_ci_run_id: 39817188447
-deploy_ci_run_number: 913
-deploy_ci_run_ts: 1792687743
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/1df8c79320040a561bd18390b52756ede537ae93
+deploy_ts: 1792689195
+deploy_commit_ts: 1792688863
+deploy_commit: 1df8c79320040a561bd18390b52756ede537ae93
+deploy_ci_run_id: 39820542180
+deploy_ci_run_number: 914
+deploy_ci_run_ts: 1792689119
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-10-22T16:50:20Z"
+deployed_at: "2026-10-22T17:13:15Z"
 source: 
 deploy_branch: vibe/maps-data-clean-c7622a
 deploy_pr_title: feat: la branche maps-data reconstruite — commits thématiques propres pour le rebase
