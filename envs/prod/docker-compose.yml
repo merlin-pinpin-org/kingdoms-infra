@@ -45,7 +45,6 @@ services:
       # ADR-0020 process split: the bot talks to svc-core over gRPC.
       CORE_URI: ${CORE_URI:-kingdoms-core:50051}
       GAME_AOE2_URI: ${GAME_AOE2_URI:-kingdoms-game-aoe2:50071}
-      GAME_AOE2_URI: ${GAME_AOE2_URI:-kingdoms-game-aoe2:50071}
     healthcheck:
       # The image HEALTHCHECK also probes /healthz; the explicit compose
       # healthcheck makes the deployment health gate (scripts/deploy.sh)
