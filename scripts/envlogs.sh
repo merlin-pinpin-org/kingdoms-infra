@@ -67,9 +67,13 @@ ARGS=(--tail "${TAIL}" --timestamps)
 [[ -n "${TO}" ]]    && ARGS+=(--until "${TO}")
 
 if [[ -n "${SERVICE}" ]]; then
-    # Fail loudly on a typo instead of silently dumping nothing.
-    docker compose config --services | grep -qx "${SERVICE}" \
-        || die "unknown service '${SERVICE}' (services: $(docker compose config --services | tr '\n' ' '))"
+    # Fail loudly on a typo instead of silently dumping nothing. The
+    # comparison normalizes whitespace: both sides are stripped and
+    # compared line-by-line (a stray CR or trailing space in the compose
+    # services output must never reject a valid service).
+    if ! docker compose config --services | tr -d '\r' | sed -e 's/[[:space:]]*$//' | grep -qx "${SERVICE}"; then
+        die "unknown service '${SERVICE}' (services: $(docker compose config --services | tr '\n' ' '))"
+    fi
     log "dumping logs of service ${SERVICE} (window: ${SINCE:-${FROM:-all}}, tail ${TAIL})"
     docker compose logs "${ARGS[@]}" "${SERVICE}"
 else
