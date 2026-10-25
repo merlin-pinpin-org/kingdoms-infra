@@ -47,6 +47,7 @@ and fail closed when one is missing.
 | Variable | Description |
 | -------- | ----------- |
 | `DISCORD_TOKEN` | Discord bot token (required) |
+| `LIBREMATCH_API_KEY` | AoE2 leaderboard API key — **required for profile registration**: without it `ext-librematch` declares `player_stats=false` and every profile binding is refused with the explicit `ProviderStatsUnavailableError` |
 | `BOT_ADMINS` | Comma-separated Discord user IDs of the bot operators (kingdoms-services#35), provisioned as an environment **variable**; empty means `/status` reports no operator |
 | `KINGDOMS_DEPLOY_URL` | URL shown by the `/status` Services field: the `/deploy` deployment comment permalink, a tree link (`/tree/<sha>`) for main, the release URL for prod (empty → `n/a`) |
 | `KINGDOMS_DEPLOY_LABEL` | Label shown by the `/status` Services field: `pr-<id>-<timestamp>-<sha>` for a PR deploy, `main@<sha>` for main, `vX.Y.Z` for a release (empty → package version) |
