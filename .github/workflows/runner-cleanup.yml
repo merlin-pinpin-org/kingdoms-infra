@@ -1,0 +1,64 @@
+name: Runner disk cleanup (drasah)
+
+# One-off housekeeping for the env-drasah self-hosted runner, which hit
+# "No space left on device" while writing _diag logs. Conservative by
+# design: only runner log/temp files older than 3 days, docker dangling
+# images, build cache, and old deploy images EXCEPT the pinned one and
+# the running one. Nothing touches the runner binaries, _work of the
+# current job, volumes, or the pinned state.
+on:
+  push:
+    branches: [ops/drasah-runner-cleanup]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    name: Cleanup env-drasah runner
+    runs-on: ["self-hosted", "kingdoms", "env-drasah"]
+    steps:
+      - name: Disk report (before)
+        run: |
+          if command -v sudo >/dev/null 2>&1; then S=sudo; else S=; fi
+          df -h
+          echo '--- /opt/kingdoms breakdown (top 40) ---'
+          $S du -xh --max-depth=2 /opt/kingdoms 2>/dev/null | sort -rh | head -40
+
+      - name: Check out env state (for the pinned image tag)
+        uses: actions/checkout@v4
+        with:
+          ref: deploy/drasah
+
+      - name: Clean runner logs and temp (older than 3 days)
+        run: |
+          if command -v sudo >/dev/null 2>&1; then S=sudo; else S=; fi
+          R=/opt/kingdoms/runners/drasah
+          echo "--- _diag logs >3d deleted ---"
+          $S find "$R/_diag" -type f -name "*.log" -mtime +3 -delete 2>/dev/null
+          $S find "$R/_diag" -type f -name "*.log.gz" -mtime +3 -delete 2>/dev/null
+          echo "--- _temp files >3d deleted ---"
+          $S find "$R/_temp" -type f -mtime +3 -delete 2>/dev/null
+          echo "--- _work dirs (report only, never deleted) ---"
+          $S du -sh "$R/_work"/* 2>/dev/null | sort -rh | head -10
+
+      - name: Clean docker dangling images, build cache, stopped containers
+        run: |
+          docker system df || true
+          docker container prune -f || true
+          docker image prune -f || true
+          docker builder prune -f || true
+
+      - name: Remove old deploy images (keep the pinned one)
+        run: |
+          PIN=$(grep -oE 'pr-244-[0-9]+-[0-9a-f]{7,}' envs/drasah/state/kingdoms-bot.yml | head -1)
+          echo "pinned image tag: ${PIN:-NOT FOUND}"
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep 'pr-244-' | while read -r img; do
+            case "$img" in *":${PIN}") echo "keeping $img"; continue;; esac
+            echo "removing $img"
+            docker rmi "$img" || echo "skip $img (in use)"
+          done
+
+      - name: Disk report (after)
+        run: df -h
