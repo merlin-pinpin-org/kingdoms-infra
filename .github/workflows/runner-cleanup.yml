@@ -1,0 +1,95 @@
+name: Runner disk cleanup (drasah)
+
+# One-off housekeeping for the env-drasah self-hosted runner ("No space
+# left on device" while writing _diag logs). Conservative: runner log
+# and temp files older than 3 days, docker dangling images, build cache,
+# stopped containers, old deploy images except the pinned/running one.
+# Never touches runner binaries, active _work, volumes, pinned state.
+# Every step is failure-proof and the full report is committed back to
+# this branch as CLEANUP_REPORT.md.
+on:
+  push:
+    branches: [ops/drasah-runner-cleanup, ops/drasah-runner-cleanup-2]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Cleanup env-drasah runner
+    runs-on: ["self-hosted", "kingdoms", "env-drasah"]
+    steps:
+      - name: Check out this branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Fetch the env state (for the pinned image tag)
+        run: git fetch origin deploy/drasah && git show origin/deploy/drasah:envs/drasah/state/kingdoms-bot.yml > envs/drasah/state/kingdoms-bot.yml || echo "STATE_FETCH_FAILED"
+      - name: Collect and clean
+        continue-on-error: true
+        run: |
+          {
+            echo "# Runner disk cleanup report"
+            echo
+            echo '## Disk before'
+            df -h || true
+            echo
+            echo '## /opt/kingdoms breakdown (top 40)'
+            du -xh --max-depth=2 /opt/kingdoms 2>/dev/null | sort -rh | head -40 || true
+
+            R=/opt/kingdoms/runners/drasah
+            echo
+            echo '## Runner _diag size before'
+            du -sh "$R/_diag" 2>/dev/null || true
+
+            echo
+            echo '## Deleting runner _diag logs and _temp files older than 3 days'
+            find "$R/_diag" -type f \( -name "*.log" -o -name "*.log.gz" \) -mtime +3 -print -delete 2>&1 | tail -5 || true
+            find "$R/_temp" -type f -mtime +3 -print -delete 2>&1 | tail -5 || true
+
+            echo
+            echo '## _work dirs (report only, never deleted)'
+            du -sh "$R/_work"/* 2>/dev/null | sort -rh | head -10 || true
+
+            echo
+            echo '## Docker usage before'
+            DOCKER="docker"
+            if ! docker info >/dev/null 2>&1; then DOCKER="sudo -n docker"; fi
+            $DOCKER system df || true
+            $DOCKER container prune -f || true
+            $DOCKER image prune -f || true
+            $DOCKER builder prune -f || true
+            echo
+            echo '## Docker usage after prune'
+            $DOCKER system df || true
+          } > /tmp/cleanup-report.md 2>&1
+
+      - name: Remove old deploy images (keep the pinned one)
+        continue-on-error: true
+        run: |
+          if ! docker info >/dev/null 2>&1; then DOCKER="sudo -n docker"; else DOCKER="docker"; fi
+          {
+            echo
+            echo '## Old deploy images (keeping the pinned one)'
+            PIN=$(grep -oE 'pr-244-[0-9]+-[0-9a-f]{7,}' envs/drasah/state/kingdoms-bot.yml | head -1 || true)
+            echo "pinned image tag: ${PIN:-NOT FOUND}"
+            $DOCKER images --format '{{.Repository}}:{{.Tag}}' | grep 'pr-244-' | while read -r img; do
+              case "$img" in *":${PIN}") echo "keeping $img"; continue;; esac
+              echo "removing $img"
+              $DOCKER rmi "$img" || echo "skip $img (in use or error)"
+            done
+            echo
+            echo '## Disk after'
+            df -h || true
+          } >> /tmp/cleanup-report.md 2>&1
+
+      - name: Commit the report back to the branch
+        continue-on-error: true
+        run: |
+          git config user.name "kingdoms-runner-cleanup[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          cp /tmp/cleanup-report.md CLEANUP_REPORT.md
+          git add CLEANUP_REPORT.md
+          git commit -m "chore(drasah): runner cleanup report (run ${GITHUB_RUN_ID})" || true
+          git push origin HEAD:${GITHUB_REF_NAME} || echo "PUSH_FAILED"
