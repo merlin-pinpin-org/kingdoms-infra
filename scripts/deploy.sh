@@ -84,12 +84,33 @@ fi
 # Mandatory backup before any deployment — except the very first one:
 # on a fresh VPS the stack does not exist yet, so there is nothing to
 # back up (backup_db.sh fails closed on a non-running MongoDB).
+#
+# A mongo that compose still lists as running but does NOT answer
+# (crash-looped mongod, broken docker-network DNS — merlin 2026-10-29)
+# must never deadlock the deploy: the backup fails, the stack is
+# re-converged (compose up restarts the store and its network), and the
+# backup retries once. Only a failure AFTER the converge aborts.
 if docker compose config --services >/dev/null 2>&1 \
     && docker compose ps --status running --format json 2>/dev/null \
         | grep -q "${MONGO_SERVICE}"; then
     log "running mandatory pre-deploy backup"
-    "${REPO_ROOT}/scripts/backup_db.sh" "${ENVIRONMENT}" \
-        || die "pre-deploy backup failed: aborting deployment"
+    if ! "${REPO_ROOT}/scripts/backup_db.sh" "${ENVIRONMENT}"; then
+        log "backup failed — the store is down but compose thinks it runs"
+        log "re-converging the stack first (restarts mongo + its network)"
+        docker compose up -d --remove-orphans "${MONGO_SERVICE}" \
+            || die "pre-deploy stack converge failed: aborting deployment"
+        MONGO_DEADLINE=$(( $(date +%s) + 90 ))
+        until docker compose ps --format json "${MONGO_SERVICE}" 2>/dev/null \
+            | grep -q '"Health":"healthy"'; do
+            if (( $(date +%s) > MONGO_DEADLINE )); then
+                die "mongo did not come back healthy after the converge"
+            fi
+            sleep 3
+        done
+        log "retrying the pre-deploy backup once"
+        "${REPO_ROOT}/scripts/backup_db.sh" "${ENVIRONMENT}" \
+            || die "pre-deploy backup failed after the stack converge: aborting"
+    fi
 else
     log "stack not running yet (first deployment?): skipping the backup"
 fi
