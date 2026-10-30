@@ -194,6 +194,10 @@ services:
       EXT_GRPC_PORT: "50062"
       AOE2LOBBY_WS_URL: ${AOE2LOBBY_WS_URL:-}
       AOE2LOBBY_API_KEY: ${AOE2LOBBY_API_KEY:-}
+      # The last received ws frame + its derived info persist to Mongo
+      # (the ws_last_frame collection) — the debugging trail.
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      MONGO_DB: ${MONGO_DB:-kingdoms}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
     expose:
       - "50062"
