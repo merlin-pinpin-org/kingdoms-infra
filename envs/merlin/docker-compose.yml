@@ -168,6 +168,11 @@ services:
     environment:
       KINGDOMS_PROCESS: game-aoe2
       GAME_GRPC_PORT: "50071"
+      # the per-player realtime state persists to Mongo (the
+      # player_state collection) — the panels read a snapshot, the
+      # requests never query the providers.
+      MONGO_URI: mongodb://kingdoms-mongo:27017
+      MONGO_DB: ${MONGO_DB:-kingdoms}
       EXT_AOE2LOBBY_URI: ${EXT_AOE2LOBBY_URI:-kingdoms-ext-aoe2lobby:50062}
       EXT_LIBREMATCH_URI: ${EXT_LIBREMATCH_URI:-kingdoms-ext-librematch:50061}
       # the providers panel shows every provider; the techtree is
