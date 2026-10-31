@@ -1,20 +1,20 @@
 # Desired state of kingdoms-bot on the merlin environment (ADR-0018).
 # Written by the deploy pipelines only (kingdoms-deployer GitHub App);
 # a push to this branch deploys this exact image.
-image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-275-20261031112959-61921ae
-version_label: pr-275-20261031112959-61921ae
-deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/275#issuecomment-6542798132
+image: ghcr.io/merlin-pinpin-org/kingdoms-services:pr-275-20261031125823-3902e8c
+version_label: pr-275-20261031125823-3902e8c
+deploy_url: https://github.com/merlin-pinpin-org/kingdoms-services/pull/275#issuecomment-6543663969
 deploy_kind: pr
 deploy_ref: 275
-deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/61921ae71fa1b8a50e332512059b4bfbbce98d4c
-deploy_ts: 1793446256
-deploy_commit_ts: 1793445877
-deploy_commit: 61921ae71fa1b8a50e332512059b4bfbbce98d4c
-deploy_ci_run_id: 41197067518
-deploy_ci_run_number: 1086
-deploy_ci_run_ts: 1793446175
+deploy_tree_url: https://github.com/merlin-pinpin-org/kingdoms-services/tree/3902e8c7accea5131731ff19e32298e245b4022d
+deploy_ts: 1793451552
+deploy_commit_ts: 1793451181
+deploy_commit: 3902e8c7accea5131731ff19e32298e245b4022d
+deploy_ci_run_id: 41203413313
+deploy_ci_run_number: 1093
+deploy_ci_run_ts: 1793451480
 deployed_by: merlin-pinpin (/deploy)
-deployed_at: "2026-10-31T11:30:56Z"
+deployed_at: "2026-10-31T12:59:12Z"
 source: 
 deploy_branch: vibe/provider-aoe2lobby
 deploy_pr_title: feat(aoe2lobby): real-protocol live adapter — snapshot-diff reducer, spectate context, 15s grace
